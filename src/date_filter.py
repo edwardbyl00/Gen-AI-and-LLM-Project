@@ -34,14 +34,49 @@ def filter_by_effective_date(policies, query_date):
 
     return valid_policies
 
+def select_latest_versions(policies):
+    """
+    If multiple versions of the same policy exist,
+    keep only the newest applicable version.
+    """
+
+    latest = {}
+
+    for policy in policies:
+        policy_key = policy.get("policy_key")
+
+        # Policies without versions are kept normally
+        if not policy_key:
+            latest[policy["document_id"]] = policy
+            continue
+
+        if policy_key not in latest:
+            latest[policy_key] = policy
+            continue
+
+        current_date = datetime.strptime(
+            policy["effective_date"], "%Y-%m-%d"
+        )
+
+        existing_date = datetime.strptime(
+            latest[policy_key]["effective_date"], "%Y-%m-%d"
+        )
+
+        if current_date > existing_date:
+            latest[policy_key] = policy
+
+    return list(latest.values())
+
 
 if __name__ == "__main__":
     policies = load_policies()
 
     results = filter_by_effective_date(
-        policies,
-        query_date="2025-06-01"
+    policies,
+    query_date="2026-06-01"
     )
+
+    results = select_latest_versions(results)
 
     for policy in results:
         print(
