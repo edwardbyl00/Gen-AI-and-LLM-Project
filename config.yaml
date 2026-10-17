@@ -1,0 +1,20 @@
+data_preparation:
+  chunking:
+    input: data/cleaned/deduplicated_documents.jsonl
+    output: data/processed/chunks.jsonl
+    report: reports/chunking_report.csv
+    summary: reports/chunking_summary.md
+    chunk_size: 500
+    chunk_overlap: 75
+    token_counter: regex_words_v1
+  quality:
+    documents: data/cleaned/deduplicated_documents.jsonl
+    chunks: data/processed/chunks.jsonl
+    inventory: reports/file_inventory.csv
+    duplicate_report: reports/duplicate_report.csv
+    content_validation: reports/cleaning_content_validation.csv
+    raw_root: data/raw
+    report: reports/quality_report.csv
+    summary: reports/data_quality_summary.md
+    short_chunk_threshold: 10
+    long_chunk_threshold: 500
