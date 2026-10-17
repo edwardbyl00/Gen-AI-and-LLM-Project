@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 
 from rank_bm25 import BM25Okapi
-
+from date_filter import filter_by_effective_date, select_latest_versions
 
 def load_policies():
     file_path = Path("data/mock/policies.json")
@@ -20,10 +20,21 @@ def tokenize(text):
     return re.findall(r"\b\w+\b", text.lower())
 
 
-def bm25_search(query, policies, top_k=3):
+def bm25_search(query, policies, query_date=None, top_k=3):
     """
     Search policy text using BM25 keyword retrieval.
+
+    If query_date is provided, only policies applicable
+    on that date are searched.
     """
+
+    if query_date:
+        policies = filter_by_effective_date(
+            policies,
+            query_date=query_date
+        )
+
+        policies = select_latest_versions(policies)
 
     corpus = []
 
@@ -58,6 +69,7 @@ if __name__ == "__main__":
     results = bm25_search(
         query=query,
         policies=policies,
+        query_date="2026-06-01",
         top_k=3
     )
 
