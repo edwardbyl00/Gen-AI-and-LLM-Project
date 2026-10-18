@@ -1,57 +1,57 @@
-from policy_retriever import retrieve_policy_evidence
+from policy_agent import run_policy_agent
 from llm_judge import judge_answer
 
 
-def evaluate_answer(
+def evaluate_candidate_answer(
     question,
     answer,
     query_date=None,
     top_k=3,
-    policies=None
+    policies=None,
+    dense_results=None,
 ):
     """
-    Retrieve evidence and judge an answer against that evidence.
+    Run the full P5 evaluation pipeline:
+
+    1. Policy agent retrieves and validates evidence.
+    2. Agent decides ANSWER_READY or ABSTAIN.
+    3. AI judge evaluates the candidate answer
+       against the retrieved evidence.
     """
 
-    retrieval = retrieve_policy_evidence(
+    agent_result = run_policy_agent(
         question=question,
         query_date=query_date,
         top_k=top_k,
-        policies=policies
+        policies=policies,
+        dense_results=dense_results,
     )
+
+    evidence = agent_result[
+        "retrieval"
+    ]["evidence"]
 
     judgement = judge_answer(
         question=question,
         answer=answer,
-        evidence=retrieval["evidence"]
+        evidence=evidence,
     )
 
     return {
-        "retrieval": retrieval,
-        "judgement": judgement
-    }
-
-
-if __name__ == "__main__":
-    result = evaluate_answer(
-        question="Can I use OA savings for my flat?",
-        answer=(
-            "CPF Ordinary Account savings may be used "
-            "for eligible housing purchases."
+        "question": question,
+        "answer": answer,
+        "agent_decision": (
+            agent_result["decision"]
         ),
-        query_date="2026-06-01"
-    )
-
-    print("\nRetrieved evidence:")
-    for item in result["retrieval"]["evidence"]:
-        print(
-            item["document_id"],
-            "|",
-            item["title"]
-        )
-
-    print("\nJudge:")
-    print(result["judgement"]["judgement"])
-
-    print("\nUsage:")
-    print(result["judgement"]["usage"])
+        "agent_reason": (
+            agent_result["reason"]
+        ),
+        "retrieval_mode": (
+            agent_result["retrieval"][
+                "retrieval_mode"
+            ]
+        ),
+        "evidence": evidence,
+        "trace": agent_result["trace"],
+        "judge": judgement,
+    }
