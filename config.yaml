@@ -1,10 +1,11 @@
 # Shared settings. Never type these into code (see Docs/MAINTENANCE.md).
 
 llm:
-  # Placeholder: same model as src/llm_judge.py on the kay branch.
-  # The team must confirm one model and use it for V0, V1 and V2.
-  model: "gpt-5.4"
-  # 0 makes runs repeatable. If the chosen model rejects this setting,
+  # Team standard: GPT-5.4, one model for V0, V1 and V2, so score
+  # differences come from the design, not from the model.
+  # Dated snapshot = the same model, frozen, so results stay reproducible.
+  model: "gpt-5.4-2026-03-05"
+  # 0 makes runs repeatable. If the model rejects this setting,
   # change it to null.
   temperature: 0
   seed: 42

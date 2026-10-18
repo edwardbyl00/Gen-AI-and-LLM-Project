@@ -87,9 +87,13 @@ Not yet on GitHub. The supervisor expects:
 ```
 price_agent(question, query_date) -> {
     "town", "flat_type", "period_start", "period_end",
-    "median_price", "n_deals", "data_as_of"
+    "median_price", "min_price", "max_price", "n_deals", "data_as_of"
 }
 ```
+
+`min_price` and `max_price` are needed because users ask for the cheapest
+or most expensive flat ("what's the cheapest 3-room in Bedok?"), not only
+the typical price.
 
 `period_start` and `period_end` let synthesis state the exact period used
 (routing spec, R2). `n_deals` lets synthesis warn when few deals exist.

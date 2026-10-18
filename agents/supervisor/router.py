@@ -36,6 +36,8 @@ ROUTING_SCHEMA = {
 }
 
 
+# Load the LLM configuration and check that a model has been specified.
+# Return the settings used to build the routing request.
 def load_settings():
     """Read the model settings from config.yaml (never typed into code)."""
     with open(CONFIG_FILE) as f:
@@ -46,12 +48,17 @@ def load_settings():
     return llm
 
 
+# Read the supervisor prompt template and replace its date placeholder
+# with the supplied date string so the model has the correct date context.
 def load_prompt(today):
     """Read the prompt file and put today's date into it."""
     template = PROMPT_FILE.read_text()
     return template.replace("{today}", today)
 
 
+# Load environment variables from the project's .env file, then create an
+# OpenAI client using OPENAI_API_KEY (or LLM_API_KEY as a fallback).
+# Raise an error if neither environment variable provides a key.
 def make_client():
     """Create the OpenAI client using the key stored in .env."""
     load_dotenv(PROJECT_ROOT / ".env")
@@ -61,6 +68,11 @@ def make_client():
     return OpenAI(api_key=api_key)
 
 
+# Classify a question by sending it and the dated supervisor prompt to the LLM.
+# Use the supplied client and date, or create a client and use today's date.
+# Request a response matching ROUTING_SCHEMA, include optional temperature
+# and seed settings when configured, and parse the JSON into a dictionary
+# containing route, false_belief, answerable, and reason.
 def route_question(question, client=None, today=None):
     """Classify one question. Returns a dict with route, false_belief,
     answerable and reason."""
