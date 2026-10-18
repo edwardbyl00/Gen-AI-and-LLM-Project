@@ -9,3 +9,8 @@ llm:
   # change it to null.
   temperature: 0
   seed: 42
+  # Give up on a call after this many seconds instead of hanging.
+  timeout_seconds: 30
+  # Cap on reply length. Left null until tested: some models count hidden
+  # "thinking" tokens towards it, and too low a cap cuts the reply off.
+  max_output_tokens: null
