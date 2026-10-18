@@ -53,4 +53,69 @@ for step in result["trace"]:
 
 assert result["decision"] == "ABSTAIN"
 
+# --------------------------------------------------
+# Case 3: Hybrid retrieval
+# --------------------------------------------------
+
+dense_results = [
+    {
+        "document_id": "H01",
+        "title": "HDB Eligibility",
+        "source": "HDB",
+        "category": "policy",
+        "effective_date": "2026-01-01",
+        "text": "Eligibility requirements for HDB housing.",
+    },
+    {
+        "document_id": "C01",
+        "title": "Using CPF to Buy a Home",
+        "source": "CPF",
+        "category": "policy",
+        "effective_date": "2026-01-01",
+        "text": (
+            "CPF Ordinary Account savings may be used "
+            "for eligible housing purchases."
+        ),
+    },
+]
+
+
+hybrid_result = run_policy_agent(
+    question="Can I use OA savings for my flat?",
+    query_date="2026-06-01",
+    dense_results=dense_results,
+)
+
+
+print("\nHYBRID CASE")
+print(
+    "Mode:",
+    hybrid_result["retrieval"]["retrieval_mode"],
+)
+print(
+    "Decision:",
+    hybrid_result["decision"],
+)
+
+hybrid_ids = [
+    item["document_id"]
+    for item in hybrid_result[
+        "retrieval"
+    ]["evidence"]
+]
+
+print("Results:", hybrid_ids)
+
+
+assert (
+    hybrid_result["retrieval"][
+        "retrieval_mode"
+    ]
+    == "hybrid"
+)
+
+assert hybrid_result["decision"] == "ANSWER_READY"
+
+assert hybrid_ids[0] == "C01"
+
 print("\nPolicy agent tests passed.")

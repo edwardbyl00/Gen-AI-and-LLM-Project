@@ -6,6 +6,7 @@ def run_policy_agent(
     query_date=None,
     top_k=3,
     policies=None,
+    dense_results=None,
 ):
     """
     Agentic policy retrieval loop.
@@ -31,6 +32,7 @@ def run_policy_agent(
         query_date=query_date,
         top_k=top_k,
         policies=policies,
+        dense_results=dense_results,
     )
 
     # Step 2: Record re-query if it happened
