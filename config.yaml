@@ -1,0 +1,10 @@
+# Shared settings. Never type these into code (see Docs/MAINTENANCE.md).
+
+llm:
+  # Placeholder: same model as src/llm_judge.py on the kay branch.
+  # The team must confirm one model and use it for V0, V1 and V2.
+  model: "gpt-5.4"
+  # 0 makes runs repeatable. If the chosen model rejects this setting,
+  # change it to null.
+  temperature: 0
+  seed: 42
