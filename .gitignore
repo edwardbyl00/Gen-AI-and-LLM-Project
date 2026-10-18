@@ -218,3 +218,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local source documents (shared separately; never commit raw SingleFile HTML)
+data/raw/
+
+# macOS metadata
+.DS_Store
