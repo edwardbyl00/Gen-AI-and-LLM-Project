@@ -49,6 +49,8 @@ def retrieve_policy_evidence(
         "final_query": output["final_query"],
         "requeried": output["requeried"],
         "rewrite_accepted": output["rewrite_accepted"],
+        "original_coverage": output.get("original_coverage", 0.0),
+        "final_coverage": output.get("final_coverage", 0.0),
         "evidence": evidence,
     }
 
