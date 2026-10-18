@@ -159,6 +159,12 @@ ENV/
 env.bak/
 venv.bak/
 
+# Locally generated embedding vectors and metadata
+data/embeddings/
+
+# Locally generated persistent vector database
+data/vector_db/
+
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -224,3 +230,6 @@ data/raw/
 
 # macOS metadata
 .DS_Store
+
+# Local R session history
+.Rhistory

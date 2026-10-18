@@ -4,9 +4,12 @@ data_preparation:
     output: data/processed/chunks.jsonl
     report: reports/chunking_report.csv
     summary: reports/chunking_summary.md
-    chunk_size: 500
-    chunk_overlap: 75
-    token_counter: regex_words_v1
+    validation_report: reports/chunking_validation.csv
+    raw_root: data/raw
+    tokenizer: BAAI/bge-base-en-v1.5
+    target_chunk_size: 400
+    max_chunk_size: 512
+    chunk_overlap: 0
   quality:
     documents: data/cleaned/deduplicated_documents.jsonl
     chunks: data/processed/chunks.jsonl
@@ -18,3 +21,19 @@ data_preparation:
     summary: reports/data_quality_summary.md
     short_chunk_threshold: 10
     long_chunk_threshold: 500
+  embedding:
+    input: data/processed/chunks.jsonl
+    output_dir: data/embeddings/bge-base-en-v1.5
+    summary: reports/embedding_summary.md
+    smoke_test: reports/embedding_smoke_test.csv
+    model: BAAI/bge-base-en-v1.5
+    batch_size: 16
+    max_length: 512
+    normalize: true
+  vector_store:
+    chunks: data/processed/chunks.jsonl
+    embedding_dir: data/embeddings/bge-base-en-v1.5
+    persist_directory: data/vector_db/chroma
+    collection_name: hdb_housing_advisory_bge_base_v1_5
+    distance_metric: cosine
+    batch_size: 100
