@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
 
-from hybrid_search import bm25_search, load_policies
+from retrieval import bm25_search, load_policies
 from policy_retriever import retrieve_policy_evidence
 
 

@@ -1,4 +1,74 @@
-from rrf_fusion import reciprocal_rank_fusion
+def _extract_item(result):
+    """
+    Support either dictionaries or (dictionary, score) tuples.
+    """
+
+    if isinstance(result, tuple):
+        return result[0]
+
+    return result
+
+
+def _result_key(result):
+    """
+    Prefer chunk_id for real P4 chunks.
+    Fall back to document_id for mock data.
+    """
+
+    item = _extract_item(result)
+
+    return (
+        item.get("chunk_id")
+        or item.get("document_id")
+    )
+
+
+def reciprocal_rank_fusion(rankings, k=60):
+    """
+    Fuse ranked result lists using Reciprocal Rank Fusion.
+
+    RRF score:
+        sum(1 / (k + rank))
+    """
+
+    fused_scores = {}
+    items = {}
+
+    for ranking in rankings:
+        for rank, result in enumerate(
+            ranking,
+            start=1,
+        ):
+            key = _result_key(result)
+
+            if key is None:
+                continue
+
+            item = _extract_item(result)
+
+            items[key] = item
+
+            fused_scores[key] = (
+                fused_scores.get(key, 0.0)
+                + 1 / (k + rank)
+            )
+
+    ordered_keys = sorted(
+        fused_scores,
+        key=fused_scores.get,
+        reverse=True,
+    )
+
+    fused_results = []
+
+    for key in ordered_keys:
+        result = dict(items[key])
+
+        result["rrf_score"] = fused_scores[key]
+
+        fused_results.append(result)
+
+    return fused_results
 
 
 def hybrid_retrieve(
@@ -7,19 +77,8 @@ def hybrid_retrieve(
     top_k=5,
 ):
     """
-    Combine keyword (BM25) and dense/vector retrieval results
+    Combine BM25 and dense/vector retrieval rankings
     using Reciprocal Rank Fusion.
-
-    Parameters
-    ----------
-    bm25_results:
-        Ranked BM25 results. May contain (document, score) tuples.
-
-    dense_results:
-        Ranked semantic/vector retrieval results.
-
-    top_k:
-        Number of final fused results to return.
     """
 
     rankings = []

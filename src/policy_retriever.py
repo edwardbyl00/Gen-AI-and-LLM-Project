@@ -1,6 +1,7 @@
-from hybrid_search import load_policies
-from requery import search_with_requery
-
+from retrieval import (
+    load_policies,
+    search_with_requery,
+)
 
 def retrieve_policy_evidence(
     question,
