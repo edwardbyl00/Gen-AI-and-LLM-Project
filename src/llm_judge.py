@@ -163,14 +163,24 @@ ENV_PATH = (
 
 load_dotenv(ENV_PATH)
 
-api_key = os.getenv("OPENAI_API_KEY")
 
-if not api_key:
-    raise ValueError(
-        "OPENAI_API_KEY was not found in .env"
-    )
+def _get_client():
+    """
+    Create the OpenAI client only when a real LLM
+    judgement is requested.
 
-client = OpenAI(api_key=api_key)
+    This allows free/mock tests to run without
+    requiring an API key.
+    """
+
+    api_key = os.getenv("OPENAI_API_KEY")
+
+    if not api_key:
+        raise ValueError(
+            "OPENAI_API_KEY was not found in .env"
+        )
+
+    return OpenAI(api_key=api_key)
 
 
 MODEL = "gpt-5.4"
@@ -184,6 +194,7 @@ def judge_answer(
     answer,
     evidence,
 ):
+    client = _get_client()
     prompt = build_judge_prompt(
         question=question,
         answer=answer,
