@@ -8,6 +8,9 @@ from date_utils import (
     filter_by_effective_date,
     select_latest_versions,
 )
+from pathlib import Path
+
+from chunk_adapter import load_chunks_jsonl
 
 
 def _policy_text(policy):
@@ -78,6 +81,7 @@ def retrieve_policy_evidence(
     top_k=3,
     policies=None,
     dense_results=None,
+    use_dense=False,
 ):
     """
     Retrieve policy evidence.
@@ -90,7 +94,12 @@ def retrieve_policy_evidence(
     """
 
     if policies is None:
-        policies = load_policies()
+        if use_dense:
+            policies = load_chunks_jsonl(
+                Path("data/processed/chunks.jsonl")
+            )
+        else:
+            policies = load_policies()
 
     output = search_with_requery(
         query=question,
@@ -98,6 +107,14 @@ def retrieve_policy_evidence(
         query_date=query_date,
         top_k=top_k,
     )
+
+    if dense_results is None and use_dense:
+        from dense_retriever import dense_retrieve
+
+        dense_results = dense_retrieve(
+            output["final_query"],
+            top_k=top_k,
+        )
 
     # --------------------------------------------------
     # Hybrid path

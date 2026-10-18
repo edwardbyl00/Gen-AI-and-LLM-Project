@@ -9,6 +9,7 @@ def evaluate_candidate_answer(
     top_k=3,
     policies=None,
     dense_results=None,
+    use_dense=False,
 ):
     """
     Run the full P5 evaluation pipeline:
@@ -20,11 +21,12 @@ def evaluate_candidate_answer(
     """
 
     agent_result = run_policy_agent(
-        question=question,
+        question,
         query_date=query_date,
         top_k=top_k,
         policies=policies,
         dense_results=dense_results,
+        use_dense=use_dense,
     )
 
     evidence = agent_result[

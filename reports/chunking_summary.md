@@ -1,20 +1,24 @@
-# Structure Aware Chunking Summary
+# Embedding-Safe Structure-Aware Chunking Summary
 
 ## Configuration
 
-- Input documents: 42
-- Target chunk size: 500 regex word tokens
-- Configured overlap: 75 regex word tokens
-- Token counter: regex_words_v1
+- Documents: 42
+- Tokenizer: `BAAI/bge-base-en-v1.5` (special tokens included; no truncation)
+- Target size: 400 tokens
+- Hard maximum: 512 tokens
+- Overlap: 0 tokens; linked chunks use explicit navigation metadata
 
-## Result
+## Results
 
-- Generated chunks: 587
-- Minimum chunk tokens: 1
-- Median chunk tokens: 189
-- Maximum chunk tokens: 500
-- Oversized chunks retained intentionally: 0
-- Chunks containing table fragments: 136
-- Legal provision chunks: 136
+- Chunks: 1282
+- Token distribution (min / Q1 / median / mean / Q3 / max): 18 / 72 / 127.0 / 173.84 / 256 / 511
+- Chunks over 512: 0
+- Linked chunks: 180
+- Table chunks: 475
+- Legal-provision chunks: 183
+- Manual-review chunks: 91
+- Validation failures: 0
+- Validation warnings: 91
+- Overall validation: PASS
 
-Tables are split by row with their header rows repeated. Legal provisions are split at numeric subsection boundaries where possible. A table row or legal subsection that cannot be safely divided may exceed the target and is explicitly flagged rather than truncated.
+Headings are stored as repeated context rather than standalone chunks. Tables preserve row labels and column headers. Long legal provisions and oversized table rows are split at semantic boundaries and connected through `parent_id`, ordered part fields, and previous/next chunk IDs.
