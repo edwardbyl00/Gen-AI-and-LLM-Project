@@ -18,3 +18,6 @@ data_preparation:
     summary: reports/data_quality_summary.md
     short_chunk_threshold: 10
     long_chunk_threshold: 500
+    
+judge:
+  model: "gpt-5.4"

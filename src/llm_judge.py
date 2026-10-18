@@ -1,3 +1,4 @@
+import yaml
 import json
 import os
 from pathlib import Path
@@ -161,6 +162,31 @@ ENV_PATH = (
     / ".env"
 )
 
+CONFIG_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "config.yaml"
+)
+
+
+def _load_judge_config():
+    with open(
+        CONFIG_PATH,
+        "r",
+        encoding="utf-8",
+    ) as f:
+        config = yaml.safe_load(f) or {}
+
+    judge_config = config.get("judge", {})
+
+    model = judge_config.get("model")
+
+    if not model:
+        raise ValueError(
+            "judge.model was not found in config.yaml"
+        )
+
+    return judge_config
+
 load_dotenv(ENV_PATH)
 
 
@@ -183,7 +209,8 @@ def _get_client():
     return OpenAI(api_key=api_key)
 
 
-MODEL = "gpt-5.4"
+JUDGE_CONFIG = _load_judge_config()
+MODEL = JUDGE_CONFIG["model"]
 
 INPUT_PRICE = 2.50
 OUTPUT_PRICE = 15.00

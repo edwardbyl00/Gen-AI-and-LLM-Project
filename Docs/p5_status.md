@@ -80,6 +80,41 @@ Question
 - `src/pipeline.py`
   - end-to-end P5 evaluation pipeline
 
+
+## Latest main integration — 18 Oct 2026
+
+### Real P4 corpus compatibility
+- P5 successfully loads and retrieves from P4's real processed corpus.
+- Real corpus size: 587 chunks.
+- `test_data_integration.py` passes against the real corpus.
+- P5's existing chunk adapter is compatible with P4's current chunk schema.
+
+### Effective-date readiness
+Real-corpus date audit:
+
+- Total chunks: 587
+- With `effective_date`: 0
+- Missing `effective_date`: 587
+- Date coverage: 0.0%
+
+Missing by source:
+- HDB: 352
+- CPF: 57
+- SSO: 145
+- IRAS: 33
+
+Therefore, date-aware retrieval is implemented and tested with mock data, but cannot yet be validated on the real corpus. Missing dates must not be inferred.
+
+### Dense retrieval integration
+P5 already supports hybrid BM25 + dense retrieval through RRF.
+
+The current real P4 corpus is available, but a production-ready dense/vector retrieval interface has not yet been integrated into P5. Once P4 exposes the final semantic retriever, P5 will connect it to the existing hybrid retrieval path.
+
+### Shared configuration
+- LLM judge model is now read from `config.yaml`.
+- Current judge model: `gpt-5.4`.
+- P5 dependencies have been added to the shared `requirements.txt`.
+
 ## Testing
 
 Run all free regression tests:
