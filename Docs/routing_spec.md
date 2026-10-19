@@ -259,3 +259,11 @@ the merged synthesis prompt (P2):
 - A personal affordability calculator built as a deterministic tool, with
   explicit consent, no data stored and a clear "not financial advice"
   boundary.
+- Past BTO launch prices as a third data source, so BTO price questions
+  (e.g. "What is the launch price of a 4-room BTO flat in the next Bayshore
+  launch?") can be answered with like-for-like context, such as recent
+  launch price ranges, instead of a plain decline. Resale prices are
+  deliberately not used as a substitute (R5): a resale flat is sold at
+  market price and a BTO flat at a subsidised price, so quoting resale
+  figures would anchor the user on the wrong number. Needs a new source,
+  collection and a lookup, so it is outside the core scope.
