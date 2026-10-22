@@ -62,26 +62,46 @@ def policy_stub(question, query_date, top_k=3):
 
 
 def policy_real(question, query_date, top_k=3):
-    """Call P5's retrieve_policy_evidence() from src/policy_retriever.py."""
+    """Call P5's policy agent with real hybrid retrieval."""
     src = str(PROJECT_ROOT / "src")
     if src not in sys.path:
-        # P5's modules import each other by bare name (e.g. hybrid_search),
-        # so src/ must be on the import path.
         sys.path.insert(0, src)
+
     try:
-        # Import only when the real agent is called, so stub mode can run
-        # before P5's code and its dependencies are installed.
-        from policy_retriever import retrieve_policy_evidence
+        from policy_agent import run_policy_agent
     except ImportError as error:
         raise ImportError(
-            "P5's policy agent (src/policy_retriever.py) is not in this "
-            "branch yet. Merge it, or set agents.policy to 'stub'."
+            "P5's policy agent (src/policy_agent.py) is not available. "
+            "Merge it, or set agents.policy to 'stub'."
         ) from error
-    result = retrieve_policy_evidence(question, query_date=query_date, top_k=top_k)
-    # Synthesis needs url and effective_date on every item to cite sources.
+
+    agent_result = run_policy_agent(
+        question,
+        query_date=query_date,
+        top_k=top_k,
+        use_dense=True,
+    )
+
+    retrieval = agent_result.get("retrieval", {})
+
+    # Keep P2's expected top-level retrieval shape.
+    result = dict(retrieval)
+
+    # Add P5 agentic decision information.
+    result["decision"] = agent_result.get("decision")
+    result["reason"] = agent_result.get("reason")
+    result["trace"] = agent_result.get("trace", [])
+
+    # If P5 decides evidence is insufficient, do not let synthesis
+    # answer from that weak evidence.
+    if result["decision"] != "ANSWER_READY":
+        result["evidence"] = []
+
+    # Synthesis needs these fields for citations.
     for item in result.get("evidence", []):
         item.setdefault("url", None)
         item.setdefault("effective_date", None)
+
     return result
 
 

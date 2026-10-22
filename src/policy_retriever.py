@@ -72,6 +72,7 @@ def _build_evidence(policy, score):
             "section_path"
         ),
         "score": round(float(score), 6),
+        "dense_score": policy.get("dense_score"),
     }
 
 
@@ -143,6 +144,14 @@ def retrieve_policy_evidence(
                 )
             )
 
+        top_dense_score = None
+
+        if dense_documents:
+            dense_score = dense_documents[0].get("dense_score")
+
+            if dense_score is not None:
+                top_dense_score = float(dense_score)
+
         fused_results = hybrid_retrieve(
             bm25_results=output["results"],
             dense_results=dense_documents,
@@ -182,6 +191,7 @@ def retrieve_policy_evidence(
             ),
             "final_coverage": final_coverage,
             "evidence": evidence,
+            "top_dense_score": top_dense_score,
         }
 
     # --------------------------------------------------

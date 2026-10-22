@@ -71,7 +71,41 @@ def build_context(bundle):
     else:
         lines.append("- none provided")
 
-    passages = (bundle.get("policy_result") or {}).get("evidence", [])
+    policy = bundle.get("policy_result") or {}
+
+    lines += [
+        "",
+        "Policy agent decision:",
+        f"- decision: {policy.get('decision') or 'not stated'}",
+        f"- reason: {policy.get('reason') or 'not stated'}",
+    ]
+
+    raw_passages = policy.get("evidence", [])
+
+    passages = []
+    by_url = {}
+
+    for item in raw_passages:
+        url = item.get("url")
+
+        if url and url in by_url:
+            existing = by_url[url]
+            extra_text = str(item.get("text", "")).strip()
+
+            if extra_text and extra_text not in existing.get("text", ""):
+                existing["text"] = (
+                    existing.get("text", "").rstrip()
+                    + "\n\n"
+                    + extra_text
+                )
+            continue
+
+        merged = dict(item)
+        passages.append(merged)
+
+        if url:
+            by_url[url] = merged
+
     lines += ["", "Policy passages:"]
     if not passages:
         lines.append("- none provided")

@@ -68,12 +68,20 @@ def run_policy_agent(
 
     top_score = evidence[0].get("score", 0)
     coverage = retrieval.get("final_coverage", 0.0)
+    top_dense_score = retrieval.get("top_dense_score")
 
-    if top_score <= 0 or coverage < 0.5:
+    insufficient_dense = (
+        retrieval.get("retrieval_mode") == "hybrid"
+        and top_dense_score is not None
+        and top_dense_score < 0.72
+    )
+
+    if top_score <= 0 or coverage < 0.5 or insufficient_dense:
         trace.append({
             "step": "CHECK_EVIDENCE",
             "result": "INSUFFICIENT_EVIDENCE",
             "top_score": top_score,
+            "top_dense_score": top_dense_score,
             "coverage": coverage,
         })
 
