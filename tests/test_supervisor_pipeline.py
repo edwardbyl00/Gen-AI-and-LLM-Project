@@ -4,7 +4,16 @@ import pytest
 
 from agents.supervisor.adapters import (get_policy_agent, get_price_agent,
                                         policy_stub, price_stub)
+from agents.supervisor import pipeline
 from agents.supervisor.pipeline import handle_question
+
+
+@pytest.fixture(autouse=True)
+def no_real_synthesis(monkeypatch):
+    """Every test here uses a fake synthesis step, so no API calls."""
+    fake = lambda bundle: {"answer": "fake", "declined": False,
+                           "cited": [], "sources": [], "events": []}
+    monkeypatch.setattr(pipeline, "synthesise", fake)
 
 
 def fake_route(route, false_belief=False, answerable=True):
@@ -65,7 +74,7 @@ def test_strict_mode_raises_agent_errors():
 def test_step_log_records_router_and_agents():
     bundle = handle_question("q", today="2026-10-19", route_fn=fake_route("both"),
                              price_fn=Spy(), policy_fn=Spy())
-    assert [s["step"] for s in bundle["steps"]] == ["router", "price_agent", "policy_agent"]
+    assert [s["step"] for s in bundle["steps"]] == ["router", "price_agent", "policy_agent", "synthesis"]
 
 
 def test_config_picks_stubs_by_default():
