@@ -1,0 +1,21 @@
+question_id,question,kind,route,false_belief,answerable,rationale,labelled_by
+PR_P2_01,Can I rent out my whole HDB flat after buying it?,rules,policy,FALSE,TRUE,Rule on renting out a flat; no prices needed.,P2
+PR_P2_02,Can PRs use their CPF to pay for an HDB resale flat?,rules,policy,FALSE,TRUE,CPF usage rule for a specific group.,P2
+PR_P2_03,What documents do I need for an HDB resale application?,rules,policy,FALSE,TRUE,Procedure question.,P2
+PR_P2_04,How much is the Proximity Housing Grant?,rules,policy,FALSE,TRUE,TRAP: an amount written in a rule is policy not price.,P2
+PR_P2_05,What was the median price of a 5-room flat in Punggol in 2025?,numbers,price,FALSE,TRUE,Statistic from resale transactions.,P2
+PR_P2_06,How many 4-room resale flats were sold in Toa Payoh last year?,numbers,price,FALSE,TRUE,Count of deals from resale transactions.,P2
+PR_P2_07,What have executive flats in Pasir Ris been going for lately?,numbers,price,FALSE,TRUE,TRAP: vague time word does not make it unanswerable (R2).,P2
+PR_P2_08,What is the most expensive 3-room flat sold in Queenstown since 2022?,numbers,price,FALSE,TRUE,Maximum from resale transactions.,P2
+PR_P2_09,"What is the resale levy, and what did 5-room flats in Bedok sell for in 2024?",both,both,FALSE,TRUE,Rule plus resale prices.,P2
+PR_P2_10,"Can I use my CPF OA for a 3-room resale in Clementi, and roughly how much would it cost?",both,both,FALSE,TRUE,CPF rule plus typical price.,P2
+PR_P2_11,Can I afford a 4-room flat in Sengkang on a household income of $7000?,unanswerable,both,FALSE,FALSE,TRAP: personal finances (R1); affordability rules plus typical prices as context.,P2
+PR_P2_12,"Now that the MOP is only 3 years, when can I sell a flat I bought in 2023?",myth,policy,TRUE,TRUE,MOP is not 3 years; policy corrects it.,P2
+PR_P2_13,"My single sister will have to buy a BTO, so what do resale 2-room flats in Jurong East cost for comparison?",myth,both,TRUE,TRUE,TRAP: myth with no signal word (assumes singles cannot buy resale); policy corrects it (R3).,P2
+PR_P2_14,"Since resale prices in Bishan have fallen every year since 2020, is now a good time to buy?",myth,price,TRUE,FALSE,TRAP: myth about prices is corrected by price data (R3); timing advice is not answerable. VERIFY the price trend with P1's data.,P2
+PR_P2_15,"Since I'm 36 and single, can I buy a 3-room resale flat?",rules,policy,FALSE,TRUE,TRAP: 'since' describes the user not the rules; not a myth.,P2
+PR_P2_16,"Given that grants are only for BTO flats, how much cash do I need for a 4-room resale in Yishun?",myth,both,TRUE,TRUE,Grants exist for resale flats; policy corrects it and price answers the cost.,P2
+PR_P2_17,Will resale prices in Tampines drop after the new MRT line opens?,unanswerable,price,FALSE,FALSE,Forecast (R4); recent Tampines prices are like-for-like context.,P2
+PR_P2_18,What is the launch price of a 4-room BTO flat in the next Bayshore launch?,unanswerable,none,FALSE,FALSE,TRAP: BTO prices are not in our data (R5); resale prices are not substituted.,P2
+PR_P2_19,Will the CPF housing grant amounts be increased next year?,unanswerable,policy,FALSE,FALSE,Future rule change (R4); current amounts as context unless an official change is announced.,P2
+PR_P2_20,What's the best way to invest my CPF Special Account savings?,out_of_scope,none,FALSE,FALSE,TRAP: mentions CPF but is investment advice not housing.,P2

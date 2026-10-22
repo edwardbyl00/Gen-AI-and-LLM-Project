@@ -162,7 +162,7 @@ in evaluation instead of being hidden.
 | ----------- | ----------------- | -------------------- |
 | `route = none` with `answerable = true` | Nothing is looked up, so there is no source to answer from | Set `answerable = false` and reply that the system cannot help with this question |
 | `route = none` with `false_belief = true` | A false belief can only be corrected with evidence; with no lookup the system would be correcting from the model's own memory, which is what the plain chatbot (V0) does | Set `route = policy` so the policy agent looks for the correcting rule; if it finds nothing, the normal "I don't know" path applies |
-| Missing field, or a value outside the allowed list | The output cannot be read reliably | Retry routing once; if it fails again, use `route = none`, `false_belief = false`, `answerable = false` |
+| Missing field, a value outside the allowed list, a reply that is not valid JSON, or an API failure after the library's own retries | The output cannot be read reliably | Retry routing once; if it fails again, use `route = none`, `false_belief = false`, `answerable = false` |
 
 ## 5. Worked examples
 
@@ -243,6 +243,10 @@ the merged synthesis prompt (P2):
 
 - `false_belief = true`: correct the belief first, with a cited source,
   before answering the rest (R3).
+- `false_belief = true` is the router's suspicion, based on the model's own
+  knowledge (the router cannot see the sources). Synthesis corrects the
+  belief only when the retrieved evidence contradicts it; if the evidence
+  supports it, the belief is treated as true.
 - `answerable = false` with a lookup: present the facts as context only;
   never turn them into a prediction or a recommendation (R4, R5).
 - Personal figures volunteered by the user are never used or repeated
@@ -255,3 +259,11 @@ the merged synthesis prompt (P2):
 - A personal affordability calculator built as a deterministic tool, with
   explicit consent, no data stored and a clear "not financial advice"
   boundary.
+- Past BTO launch prices as a third data source, so BTO price questions
+  (e.g. "What is the launch price of a 4-room BTO flat in the next Bayshore
+  launch?") can be answered with like-for-like context, such as recent
+  launch price ranges, instead of a plain decline. Resale prices are
+  deliberately not used as a substitute (R5): a resale flat is sold at
+  market price and a BTO flat at a subsidised price, so quoting resale
+  figures would anchor the user on the wrong number. Needs a new source,
+  collection and a lookup, so it is outside the core scope.

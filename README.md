@@ -1,5 +1,6 @@
 # Gen-AI-and-LLM-Project
 
+
 ## Stage 8 local ChromaDB
 
 Install the pinned dependencies in the project virtual environment, then build the local database from the existing Stage 6 artifacts:
@@ -27,3 +28,6 @@ Reproduce the 40-question NumPy/Chroma consistency audit with:
 ```
 
 The generated persistent database under `data/vector_db/` is local and ignored by Git. Reusable scripts, tests, configuration and reports remain trackable.
+=======
+Start with the [project process guide](Docs/PROJECT_PROCESS.md) for the current progress on `main`, the data and question-handling flows, and how the components connect.
+

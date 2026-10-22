@@ -1,3 +1,28 @@
+# Shared settings. Never type these into code (see Docs/MAINTENANCE.md).
+
+llm:
+  # Team standard: GPT-5.4, one model for V0, V1 and V2, so score
+  # differences come from the design, not from the model.
+  # Dated snapshot = the same model, frozen, so results stay reproducible.
+  model: "gpt-5.4-2026-03-05"
+  # 0 makes runs repeatable. If the model rejects this setting,
+  # change it to null.
+  temperature: 0
+  seed: 42
+  # Give up on a call after this many seconds instead of hanging.
+  timeout_seconds: 30
+  # Cap on reply length. Left null until tested: some models count hidden
+  # "thinking" tokens towards it, and too low a cap cuts the reply off.
+  max_output_tokens: null
+
+agents:
+  # "stub" = fake data in the agreed shape, so the pipeline runs before the
+  # real agents exist. Switch each to "real" once that agent is merged.
+  price: stub
+  policy: stub
+  # How many policy passages to retrieve (passed to P5's agent).
+  policy_top_k: 3
+
 data_preparation:
   chunking:
     input: data/cleaned/deduplicated_documents.jsonl
