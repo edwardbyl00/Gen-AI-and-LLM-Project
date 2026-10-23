@@ -1,5 +1,30 @@
 from policy_retriever import retrieve_policy_evidence
 
+def _clean_requery(query):
+    query = str(query or "").strip()
+
+    removable = [
+        "site:hdb.gov.sg",
+        "site:cpf.gov.sg",
+        "hdb.gov.sg",
+        "www.hdb.gov.sg",
+        "cpf.gov.sg",
+        "www.cpf.gov.sg",
+    ]
+
+    lower_query = query.lower()
+
+    for token in removable:
+        lower_query = lower_query.replace(
+            token,
+            "",
+        )
+
+    return " ".join(
+        lower_query.split()
+    )
+
+
 def _merge_evidence(*evidence_lists):
     """Combine evidence lists without duplicate chunks."""
     merged = []
@@ -104,10 +129,15 @@ def run_policy_agent(
         trace.append({
             "step": "ASSESS_EVIDENCE",
             "sufficient": first_assessment["sufficient"],
+            "answer_mode": first_assessment.get("answer_mode"),
             "reason": first_assessment["reason"],
             "relevant_indices": first_assessment[
                 "relevant_indices"
             ],
+            "missing_user_information": first_assessment.get(
+                "missing_user_information",
+                [],
+            ),
         })
 
         # Evidence already sufficient
@@ -144,14 +174,22 @@ def run_policy_agent(
         )
 
         if suggested_queries:
+            cleaned_queries = []
+
+            for subquery in suggested_queries:
+                cleaned = _clean_requery(subquery)
+
+                if cleaned:
+                    cleaned_queries.append(cleaned)
+
             trace.append({
                 "step": "DECOMPOSE_QUERY",
-                "queries": suggested_queries,
+                "queries": cleaned_queries,
             })
 
             extra_evidence = []
 
-            for subquery in suggested_queries:
+            for subquery in cleaned_queries:
                 sub_retrieval = retrieve_policy_evidence(
                     subquery,
                     query_date=query_date,
@@ -179,15 +217,16 @@ def run_policy_agent(
 
             trace.append({
                 "step": "REASSESS_EVIDENCE",
-                "sufficient": second_assessment[
-                    "sufficient"
-                ],
-                "reason": second_assessment[
-                    "reason"
-                ],
+                "sufficient": second_assessment["sufficient"],
+                "answer_mode": second_assessment.get("answer_mode"),
+                "reason": second_assessment["reason"],
                 "relevant_indices": second_assessment[
                     "relevant_indices"
                 ],
+                "missing_user_information": second_assessment.get(
+                    "missing_user_information",
+                    [],
+                ),
             })
 
             if second_assessment["sufficient"]:

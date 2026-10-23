@@ -73,33 +73,66 @@ Candidate policy passages:
 
 Assess the evidence strictly.
 
-A passage is relevant only if it directly helps answer
-the user's actual question. Mere overlap on terms such as
-HDB, CPF, resale flat, housing, or policy is not enough.
+Assess the evidence strictly against the user's actual question.
 
-Set sufficient=true only when the relevant passages provide
-enough factual support to give a useful grounded answer
-without guessing.
+A passage is relevant only if it directly helps answer the question.
+Mere overlap on terms such as HDB, CPF, resale flat, housing, or policy
+is not enough.
 
-If the evidence is unrelated, merely topical, or missing
-important information needed to answer the question,
-set sufficient=false.
+Set sufficient=true when the passages provide enough policy evidence
+to give a useful grounded answer.
 
-If evidence is insufficient, suggest at most 2 targeted search queries.
-If the question has multiple parts, decompose it so each query targets one missing part.
-Do not repeat the original question unchanged unless necessary.
+A useful answer may be CONDITIONAL. Do not require all user-specific
+facts to be known before setting sufficient=true.
+
+For example:
+- If the question asks what options may be available, the evidence is
+  sufficient if it supports the relevant options and conditions.
+- If the question asks what additional facts are needed, the evidence
+  is sufficient if it identifies the applicable rules and which user
+  facts would determine the outcome.
+- Missing user information such as household type, remaining lease,
+  property ownership, or loan type is NOT by itself a reason to mark
+  the evidence insufficient.
+
+Set sufficient=false only when important POLICY INFORMATION needed to
+answer the question is missing, or when the passages are merely
+topically related and do not support a grounded answer.
+
+If evidence is insufficient because POLICY INFORMATION is missing,
+suggest at most 2 targeted search queries.
+Do not generate new searches merely because user-specific information
+is missing.
+
+Suggested queries are used to search a LOCAL HDB/CPF policy corpus.
+
+Therefore:
+- Write short, retrieval-focused keyword queries.
+- Preserve the important policy concept, household type, transaction type,
+  eligibility condition, age, citizenship, or CPF rule from the question.
+- Do NOT use web-search operators such as "site:".
+- Do NOT include URLs or domain names.
+- Do NOT write long conversational questions.
+- Each query should target one missing policy rule.
+
+Good:
+"HDB new flat eligibility married Singapore citizen permanent resident spouse"
+
+Bad:
+"site:hdb.gov.sg can a Singapore citizen with PR spouse buy BTO"
 
 Return JSON only:
 
 {{
   "sufficient": true,
+  "answer_mode": "conditional",
   "relevant_indices": [1, 2],
   "reason": "Brief explanation",
-  "missing_information": "What information is still missing, or empty if sufficient",
-  "suggested_queries": [
-    "Targeted search query 1",
-    "Targeted search query 2"
-  ]
+  "missing_policy_information": "",
+  "missing_user_information": [
+    "Any user facts still needed to determine the final outcome"
+  ],
+  "suggested_queries": []
 }}
 """.strip()
 
@@ -157,16 +190,31 @@ Return JSON only:
         if str(query).strip()
     ]
 
+    missing_user_information = result.get(
+        "missing_user_information",
+        [],
+    )
+
+    if not isinstance(missing_user_information, list):
+        missing_user_information = []
+
     return {
         "sufficient": bool(
             result.get("sufficient")
+        ),
+        "answer_mode": str(
+            result.get("answer_mode", "direct")
         ),
         "relevant_indices": relevant_indices,
         "reason": str(
             result.get("reason", "")
         ),
-        "missing_information": str(
-            result.get("missing_information", "")
+        "missing_policy_information": str(
+            result.get("missing_policy_information", "")
         ),
+        "missing_user_information": [
+            str(item)
+            for item in missing_user_information
+        ],
         "suggested_queries": suggested_queries,
     }
