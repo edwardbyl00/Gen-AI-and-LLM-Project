@@ -23,18 +23,25 @@ def _result_key(result):
     )
 
 
-def reciprocal_rank_fusion(rankings, k=60):
+def reciprocal_rank_fusion(rankings, k=60, weights=None):
     """
-    Fuse ranked result lists using Reciprocal Rank Fusion.
+    Fuse ranked result lists using weighted Reciprocal Rank Fusion.
 
-    RRF score:
-        sum(1 / (k + rank))
+    Weighted RRF score:
+        sum(weight / (k + rank))
+
+    If weights are not provided, all rankings receive equal weight.
     """
+    if weights is None:
+        weights = [1.0] * len(rankings)
+
+    if len(weights) != len(rankings):
+        raise ValueError("weights must match number of rankings")
 
     fused_scores = {}
     items = {}
 
-    for ranking in rankings:
+    for ranking, weight in zip(rankings, weights):
         for rank, result in enumerate(
             ranking,
             start=1,
@@ -45,12 +52,11 @@ def reciprocal_rank_fusion(rankings, k=60):
                 continue
 
             item = _extract_item(result)
-
             items[key] = item
 
             fused_scores[key] = (
                 fused_scores.get(key, 0.0)
-                + 1 / (k + rank)
+                + weight / (k + rank)
             )
 
     ordered_keys = sorted(
@@ -63,9 +69,7 @@ def reciprocal_rank_fusion(rankings, k=60):
 
     for key in ordered_keys:
         result = dict(items[key])
-
         result["rrf_score"] = fused_scores[key]
-
         fused_results.append(result)
 
     return fused_results
@@ -75,23 +79,30 @@ def hybrid_retrieve(
     bm25_results,
     dense_results,
     top_k=5,
+    bm25_weight=1.0,
+    dense_weight=1.0,
 ):
     """
     Combine BM25 and dense/vector retrieval rankings
-    using Reciprocal Rank Fusion.
+    using weighted Reciprocal Rank Fusion.
     """
-
     rankings = []
+    weights = []
 
     if bm25_results:
         rankings.append(bm25_results)
+        weights.append(bm25_weight)
 
     if dense_results:
         rankings.append(dense_results)
+        weights.append(dense_weight)
 
     if not rankings:
         return []
 
-    fused = reciprocal_rank_fusion(rankings)
+    fused = reciprocal_rank_fusion(
+        rankings,
+        weights=weights,
+    )
 
     return fused[:top_k]

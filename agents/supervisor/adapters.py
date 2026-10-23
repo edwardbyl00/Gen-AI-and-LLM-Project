@@ -78,8 +78,9 @@ def policy_real(question, query_date, top_k=3):
     agent_result = run_policy_agent(
         question,
         query_date=query_date,
-        top_k=top_k,
+        top_k=10,
         use_dense=True,
+        use_llm_assessor=True,
     )
 
     retrieval = agent_result.get("retrieval", {})

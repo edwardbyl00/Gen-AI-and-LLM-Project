@@ -1,5 +1,24 @@
 from policy_retriever import retrieve_policy_evidence
 
+def _merge_evidence(*evidence_lists):
+    """Combine evidence lists without duplicate chunks."""
+    merged = []
+    seen = set()
+
+    for evidence in evidence_lists:
+        for item in evidence:
+            key = (
+                item.get("chunk_id")
+                or item.get("document_id")
+            )
+
+            if key in seen:
+                continue
+
+            seen.add(key)
+            merged.append(item)
+
+    return merged
 
 def run_policy_agent(
     question,
@@ -7,7 +26,9 @@ def run_policy_agent(
     top_k=3,
     policies=None,
     dense_results=None,
-    use_dense=False
+    use_dense=False,
+    use_llm_assessor=False,
+    assessor_fn=None,
 ):
     """
     Agentic policy retrieval loop.
@@ -62,6 +83,148 @@ def run_policy_agent(
         return {
             "decision": "ABSTAIN",
             "reason": "No relevant policy evidence was retrieved.",
+            "retrieval": retrieval,
+            "trace": trace,
+        }
+
+        # --------------------------------------------------
+    # LLM evidence assessment + one self-correction loop
+    # --------------------------------------------------
+
+    if use_llm_assessor:
+        if assessor_fn is None:
+            from evidence_assessor import assess_evidence
+            assessor_fn = assess_evidence
+
+        first_assessment = assessor_fn(
+            question,
+            evidence,
+        )
+
+        trace.append({
+            "step": "ASSESS_EVIDENCE",
+            "sufficient": first_assessment["sufficient"],
+            "reason": first_assessment["reason"],
+            "relevant_indices": first_assessment[
+                "relevant_indices"
+            ],
+        })
+
+        # Evidence already sufficient
+        if first_assessment["sufficient"]:
+            selected = [
+                evidence[index - 1]
+                for index in first_assessment[
+                    "relevant_indices"
+                ]
+                if 1 <= index <= len(evidence)
+            ]
+
+            if selected:
+                retrieval["evidence"] = selected
+
+            trace.append({
+                "step": "ANSWER_READY",
+            })
+
+            return {
+                "decision": "ANSWER_READY",
+                "reason": first_assessment["reason"],
+                "retrieval": retrieval,
+                "trace": trace,
+            }
+
+        # --------------------------------------------------
+        # Self-correction: targeted subqueries
+        # --------------------------------------------------
+
+        suggested_queries = first_assessment.get(
+            "suggested_queries",
+            [],
+        )
+
+        if suggested_queries:
+            trace.append({
+                "step": "DECOMPOSE_QUERY",
+                "queries": suggested_queries,
+            })
+
+            extra_evidence = []
+
+            for subquery in suggested_queries:
+                sub_retrieval = retrieve_policy_evidence(
+                    subquery,
+                    query_date=query_date,
+                    top_k=10,
+                    policies=policies,
+                    use_dense=use_dense,
+                )
+
+                extra_evidence.extend(
+                    sub_retrieval.get(
+                        "evidence",
+                        [],
+                    )
+                )
+
+            combined_evidence = _merge_evidence(
+                evidence,
+                extra_evidence,
+            )
+
+            second_assessment = assessor_fn(
+                question,
+                combined_evidence,
+            )
+
+            trace.append({
+                "step": "REASSESS_EVIDENCE",
+                "sufficient": second_assessment[
+                    "sufficient"
+                ],
+                "reason": second_assessment[
+                    "reason"
+                ],
+                "relevant_indices": second_assessment[
+                    "relevant_indices"
+                ],
+            })
+
+            if second_assessment["sufficient"]:
+                selected = [
+                    combined_evidence[index - 1]
+                    for index in second_assessment[
+                        "relevant_indices"
+                    ]
+                    if 1 <= index <= len(
+                        combined_evidence
+                    )
+                ]
+
+                retrieval["evidence"] = selected
+
+                trace.append({
+                    "step": "ANSWER_READY",
+                })
+
+                return {
+                    "decision": "ANSWER_READY",
+                    "reason": second_assessment["reason"],
+                    "retrieval": retrieval,
+                    "trace": trace,
+                }
+
+        # Still insufficient after self-correction
+        retrieval["evidence"] = []
+
+        trace.append({
+            "step": "ABSTAIN",
+            "reason": first_assessment["reason"],
+        })
+
+        return {
+            "decision": "ABSTAIN",
+            "reason": first_assessment["reason"],
             "retrieval": retrieval,
             "trace": trace,
         }
