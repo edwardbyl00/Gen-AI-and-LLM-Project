@@ -1,123 +1,80 @@
-# P5 – Advanced RAG / Policy Agent Status
+# P5 — Advanced / Agentic RAG Status
 
-## Scope
+## Status
 
-P5 implements advanced policy retrieval and evaluation for the housing-policy assistant.
+**Implementation and evaluation complete.**
 
-Current components:
+P5 extends the P4 dense-retrieval baseline with advanced retrieval, evidence assessment, agentic self-correction, safe abstention, and LLM-based evaluation.
 
-- Date-aware policy filtering
-- Latest applicable policy-version selection
-- BM25 keyword retrieval
-- Query rewriting and re-query
-- Retrieval evidence coverage checks
-- Abstention when retrieved evidence is insufficient
-- Reciprocal Rank Fusion (RRF)
-- Hybrid BM25 + dense/vector retrieval interface
-- Policy-agent decision trace
-- AI-as-judge evaluation
-- Token and estimated API-cost tracking
-- P4 chunk-schema adapter
-- End-to-end P5 evaluation pipeline
+## Implemented
 
-## Main Flow
+### Advanced Retrieval
 
-Question
+* BM25 lexical retrieval
+* BGE dense retrieval using `BAAI/bge-base-en-v1.5`
+* Reciprocal Rank Fusion (RRF)
+* Query rewriting / re-query
+* Weighted hybrid retrieval experiments
 
-→ BM25 retrieval
+### Agentic Policy Retrieval
 
-→ optional query rewrite / re-query
+* Evidence sufficiency assessment using an LLM
+* Separation of missing **policy evidence** from missing **user information**
+* Conditional answering when user-specific facts are missing
+* Query decomposition when evidence is insufficient
+* Targeted retrieval and reassessment
+* Evidence selection before synthesis
+* Safe `ABSTAIN` behaviour when evidence remains insufficient
+* Cleaning of LLM-generated subqueries for the local corpus
 
-→ optional dense/vector retrieval
+### Evaluation
 
-→ Reciprocal Rank Fusion
+* Dense vs advanced retrieval benchmark
+* Baseline vs agentic answer-level pilot
+* Existing faithfulness LLM-as-judge
+* Ground-truth-aware LLM judge
+* Decision repeatability evaluation
 
-→ evidence validation
+## Retrieval Evaluation
 
-→ ANSWER_READY or ABSTAIN
+39 covered policy questions were used for ordinary retrieval metrics. H29 was retained separately as a no-policy-evidence control.
 
-→ candidate answer
+| Metric    | Dense Baseline | Advanced Hybrid |
+| --------- | -------------: | --------------: |
+| Hit@5     |          0.667 |           0.641 |
+| Hit@10    |          0.744 |           0.744 |
+| Recall@5  |          0.363 |           0.341 |
+| Recall@10 |          0.467 |           0.427 |
+| MRR@10    |          0.473 |           0.477 |
 
-→ AI judge
+**Finding:** naive BM25 + dense hybrid retrieval did not outperform the strong dense baseline overall. It improved the rank of some difficult questions, but reduced aggregate recall and Hit@5.
 
-## Main Source Files
+Therefore, P5 does **not** claim that hybrid retrieval is universally better. Dense retrieval remains the stronger retrieval backbone for this corpus.
 
-- `src/retrieval.py`
-  - BM25
-  - query coverage
-  - query rewriting
-  - re-query logic
+## Agentic Answer Evaluation
 
-- `src/date_utils.py`
-  - effective-date filtering
-  - latest-version selection
-  - date metadata audit
+A 10-question pilot compared:
 
-- `src/hybrid_retriever.py`
-  - Reciprocal Rank Fusion
-  - hybrid retrieval wrapper
+* **Baseline:** dense top-10 retrieval → synthesis
+* **Agentic P5:** retrieval → evidence assessment → targeted self-correction/decomposition → reassessment → answer or abstain → synthesis
 
-- `src/policy_retriever.py`
-  - retrieval interface
-  - evidence packaging
+### LLM-as-Judge Results
 
-- `src/policy_agent.py`
-  - policy-agent decision logic
-  - evidence validation
-  - abstention
-  - execution trace
+| Evaluation                  | Baseline |   Agentic P5 |
+| --------------------------- | -------: | -----------: |
+| Faithfulness-oriented judge | 7.8 / 10 | **8.5 / 10** |
+| Ground-truth-aware judge    | 7.4 / 10 | **8.7 / 10** |
 
-- `src/llm_judge.py`
-  - evaluation rubric
-  - prompt construction
-  - judge-output validation
-  - OpenAI judge
-  - token/cost tracking
+The agentic approach improved difficult cases such as C06 and C10 by recovering additional relevant evidence and reassessing it before synthesis.
 
-- `src/chunk_adapter.py`
-  - P4 chunk-schema normalisation
+C04 and H29 demonstrated safe abstention behaviour when sufficient policy evidence was unavailable.
 
-- `src/pipeline.py`
-  - end-to-end P5 evaluation pipeline
+## Repeatability
 
+The 10-question agentic pilot was repeated across three runs.
 
-## Latest main integration — 18 Oct 2026
+* Mean decision agreement: **96.7%**
+* Fully stable questions: **9 / 10**
+* H01 was the only unstable case.
 
-### Real P4 corpus compatibility
-- P5 successfully loads and retrieves from P4's real processed corpus.
-- Real corpus size: 587 chunks.
-- `test_data_integration.py` passes against the real corpus.
-- P5's existing chunk adapter is compatible with P4's current chunk schema.
-
-### Effective-date readiness
-Real-corpus date audit:
-
-- Total chunks: 587
-- With `effective_date`: 0
-- Missing `effective_date`: 587
-- Date coverage: 0.0%
-
-Missing by source:
-- HDB: 352
-- CPF: 57
-- SSO: 145
-- IRAS: 33
-
-Therefore, date-aware retrieval is implemented and tested with mock data, but cannot yet be validated on the real corpus. Missing dates must not be inferred.
-
-### Dense retrieval integration
-P5 already supports hybrid BM25 + dense retrieval through RRF.
-
-The current real P4 corpus is available, but a production-ready dense/vector retrieval interface has not yet been integrated into P5. Once P4 exposes the final semantic retriever, P5 will connect it to the existing hybrid retrieval path.
-
-### Shared configuration
-- LLM judge model is now read from `config.yaml`.
-- Current judge model: `gpt-5.4`.
-- P5 dependencies have been added to the shared `requirements.txt`.
-
-## Testing
-
-Run all free regression tests:
-
-```powershell
-py tests/run_all.py
+H01 is a borderline evidence-sufficiency case. Additional repeated testing produced both `ANSWER_READY` and `ABSTAIN` outcomes, demonstrating that LLM-based evidence assessment can introduce run_
