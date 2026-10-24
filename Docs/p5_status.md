@@ -1,80 +1,169 @@
-# P5 — Advanced / Agentic RAG Status
+# P5 Status — Agentic RAG
 
 ## Status
 
-**Implementation and evaluation complete.**
+P5 implementation and evaluation are complete.
 
-P5 extends the P4 dense-retrieval baseline with advanced retrieval, evidence assessment, agentic self-correction, safe abstention, and LLM-based evaluation.
+The final P5 contribution extends the policy RAG pipeline with evidence assessment, targeted self-correction, reassessment, safe abstention, supervisor integration, regression tests, and efficiency telemetry.
 
-## Implemented
+The main finding is that naive hybrid retrieval did **not** consistently outperform the dense baseline. The strongest P5 value came from the agentic control loop:
 
-### Advanced Retrieval
+**retrieve → assess evidence → targeted decomposition/self-correction → reassess → answer or abstain**
 
-* BM25 lexical retrieval
-* BGE dense retrieval using `BAAI/bge-base-en-v1.5`
-* Reciprocal Rank Fusion (RRF)
-* Query rewriting / re-query
-* Weighted hybrid retrieval experiments
+## Implemented Components
 
-### Agentic Policy Retrieval
+### Date-aware filtering
+Date filtering utilities were implemented in `src/date_utils.py`.
 
-* Evidence sufficiency assessment using an LLM
-* Separation of missing **policy evidence** from missing **user information**
-* Conditional answering when user-specific facts are missing
-* Query decomposition when evidence is insufficient
-* Targeted retrieval and reassessment
-* Evidence selection before synthesis
-* Safe `ABSTAIN` behaviour when evidence remains insufficient
-* Cleaning of LLM-generated subqueries for the local corpus
+Real-corpus validation was not possible because all **1,282 chunks** lacked authoritative policy `effective_date` metadata:
 
-### Evaluation
+- HDB: 702 missing
+- CPF: 303 missing
+- SSO: 189 missing
+- IRAS: 88 missing
+- Date coverage: 0%
 
-* Dense vs advanced retrieval benchmark
-* Baseline vs agentic answer-level pilot
-* Existing faithfulness LLM-as-judge
-* Ground-truth-aware LLM judge
-* Decision repeatability evaluation
+All chunks have `retrieved_at`, but this represents corpus capture time rather than policy effective date and was not used as a substitute.
 
-## Retrieval Evaluation
+### Advanced retrieval
+P5 implemented BM25, BGE dense retrieval, Reciprocal Rank Fusion, query coverage checks, acronym-aware query rewriting, re-query support, and weighted hybrid experiments.
 
-39 covered policy questions were used for ordinary retrieval metrics. H29 was retained separately as a no-policy-evidence control.
+| Metric | Dense | Hybrid | Change |
+|---|---:|---:|---:|
+| Hit@5 | 0.667 | 0.641 | -0.026 |
+| Hit@10 | 0.744 | 0.744 | 0.000 |
+| Recall@5 | 0.363 | 0.341 | -0.021 |
+| Recall@10 | 0.467 | 0.427 | -0.040 |
+| MRR@10 | 0.473 | 0.477 | +0.004 |
 
-| Metric    | Dense Baseline | Advanced Hybrid |
-| --------- | -------------: | --------------: |
-| Hit@5     |          0.667 |           0.641 |
-| Hit@10    |          0.744 |           0.744 |
-| Recall@5  |          0.363 |           0.341 |
-| Recall@10 |          0.467 |           0.427 |
-| MRR@10    |          0.473 |           0.477 |
+Hybrid retrieval did not improve aggregate performance, so dense retrieval remained the stronger default backbone.
 
-**Finding:** naive BM25 + dense hybrid retrieval did not outperform the strong dense baseline overall. It improved the rank of some difficult questions, but reduced aggregate recall and Hit@5.
+### Evidence assessment and self-correction
+`src/evidence_assessor.py` evaluates whether retrieved evidence is sufficient for a grounded answer. It distinguishes missing policy evidence from missing user-specific information, allowing conditional answers when the policy evidence is adequate.
 
-Therefore, P5 does **not** claim that hybrid retrieval is universally better. Dense retrieval remains the stronger retrieval backbone for this corpus.
+`src/policy_agent.py` then:
+1. retrieves evidence;
+2. assesses sufficiency;
+3. answers immediately if sufficient;
+4. otherwise generates up to two targeted local-corpus queries;
+5. retrieves and merges additional evidence;
+6. reassesses against the original question; and
+7. returns `ANSWER_READY` or `ABSTAIN`.
 
-## Agentic Answer Evaluation
+Web-specific syntax such as `site:hdb.gov.sg` and `site:cpf.gov.sg` is removed before local retrieval.
 
-A 10-question pilot compared:
+### Safe abstention
+If no usable evidence is retrieved, or evidence remains insufficient after self-correction, the agent returns `ABSTAIN` instead of allowing unsupported policy claims.
 
-* **Baseline:** dense top-10 retrieval → synthesis
-* **Agentic P5:** retrieval → evidence assessment → targeted self-correction/decomposition → reassessment → answer or abstain → synthesis
+### Supervisor integration
+P5 is integrated through `agents/supervisor/adapters.py` with configuration-driven retrieval limits. P1 price functionality remains outside P5 scope.
 
-### LLM-as-Judge Results
+### Automated testing
+The final regression suite includes original P5 tests, supervisor tests, P5 integration tests, and deterministic agentic-control tests.
 
-| Evaluation                  | Baseline |   Agentic P5 |
-| --------------------------- | -------: | -----------: |
-| Faithfulness-oriented judge | 7.8 / 10 | **8.5 / 10** |
-| Ground-truth-aware judge    | 7.4 / 10 | **8.7 / 10** |
+`tests/test_p5_agentic_control.py` validates:
+- successful self-correction after decomposition;
+- safe abstention when self-correction still fails.
 
-The agentic approach improved difficult cases such as C06 and C10 by recovering additional relevant evidence and reassessing it before synthesis.
+`tests/test_p5_integration.py` validates:
+- local query cleaning;
+- configuration-driven `top_k`;
+- forwarding of LLM-assessor settings.
 
-C04 and H29 demonstrated safe abstention behaviour when sufficient policy evidence was unavailable.
+All tests passed at the final implementation checkpoint.
 
-## Repeatability
+## Evaluation
 
-The 10-question agentic pilot was repeated across three runs.
+### Dense baseline
+The dense baseline uses `BAAI/bge-base-en-v1.5`, cosine similarity, and a 1,282-chunk corpus.
 
-* Mean decision agreement: **96.7%**
-* Fully stable questions: **9 / 10**
-* H01 was the only unstable case.
+| Metric | Score |
+|---|---:|
+| Hit@5 | 0.667 |
+| Hit@10 | 0.744 |
+| Recall@5 | 0.363 |
+| Recall@10 | 0.467 |
+| MRR@10 | 0.473 |
 
-H01 is a borderline evidence-sufficiency case. Additional repeated testing produced both `ANSWER_READY` and `ABSTAIN` outcomes, demonstrating that LLM-based evidence assessment can introduce run_
+### Final 10-question baseline vs agentic pilot
+
+Pilot IDs: `H01, H07, H14, H15, H23, H29, C01, C04, C06, C10`
+
+#### Answer quality
+
+| Metric | Baseline | Agentic |
+|---|---:|---:|
+| Faithfulness-style LLM judge | 7.6 / 10 | 8.4 / 10 |
+| Ground-truth LLM judge | 6.9 / 10 | 8.6 / 10 |
+
+Agentic decisions:
+- `ANSWER_READY`: 8 / 10
+- `ABSTAIN`: 2 / 10
+
+#### Efficiency trade-off
+
+| Metric | Result |
+|---|---:|
+| Baseline mean latency | 6.504 s/question |
+| Agentic mean latency | 14.294 s/question |
+| Agentic latency overhead | +7.790 s/question |
+| Evidence-assessor calls | 15 total |
+| Average assessor calls | 1.5/question |
+| Assessor tokens | 60,052 total |
+| Average assessor tokens | 6,005.2/question |
+| Average assessor latency | 6.073 s/question |
+
+The agentic system improved quality on both judge lenses, but required additional LLM calls, tokens, and latency.
+
+The reported **USD 0.1776** is the cost of the LLM-as-judge evaluation calls only and should not be interpreted as the full production cost of the agentic pipeline.
+
+### Repeatability
+Across three repeated runs of the 10-question pilot:
+- mean decision agreement: 96.7%;
+- 9/10 questions were fully stable;
+- H01 was the only borderline case with decision variation.
+
+### Key examples
+**C06** is the clearest self-correction example: initial evidence was insufficient, targeted decomposition retrieved additional evidence, reassessment succeeded, and the case became `ANSWER_READY`.
+
+**H29** is an evidence-gap control asking for resale-price aggregation. The policy corpus does not contain the required transaction data, so it should not be treated as an ordinary policy-RAG failure.
+
+## Overall P5 Finding
+
+Naive hybrid retrieval did not outperform the dense baseline consistently. The main P5 improvement came from the agentic control loop:
+
+**retrieve → assess → self-correct/decompose → reassess → answer or abstain**
+
+This improved final answer quality while providing a safer mechanism for insufficient evidence. The trade-off was higher latency and token usage.
+
+## Limitations
+
+- Hybrid retrieval did not improve aggregate retrieval performance.
+- All 1,282 chunks lacked authoritative policy effective-date metadata.
+- H01 remained a stochastic borderline case.
+- H29 is outside the policy corpus and belongs to the price-agent route.
+- Agentic evidence assessment increases latency and token usage.
+- The answer-quality pilot uses 10 questions, while retrieval evaluation covers 39 ordinary policy questions.
+- P1 price-agent implementation is outside P5 scope.
+
+## Reproducibility
+
+Run the full regression suite:
+
+```powershell
+python tests/run_all.py
+```
+
+Run the final judged baseline-vs-agentic pilot:
+
+```powershell
+$env:PYTHONPATH=".;src"
+python scripts/evaluate_agentic_answers.py --judge
+```
+
+Key outputs:
+
+- `evaluation/advanced_retrieval_metrics.json`
+- `evaluation/advanced_retrieval_results_40q.csv`
+- `evaluation/agentic_vs_baseline_pilot_10q_judged.json`
+- `evaluation/agentic_vs_baseline_pilot_10q_judged_efficiency_summary.json`

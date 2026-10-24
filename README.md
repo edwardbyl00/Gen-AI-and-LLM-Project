@@ -1,33 +1,204 @@
-# Gen-AI-and-LLM-Project
+# AskGov SG
 
+AskGov SG is a Singapore housing advisory assistant that combines policy retrieval with a multi-agent workflow for HDB/CPF policy and housing-related questions.
 
-## Stage 8 local ChromaDB
+This README includes the reproducible setup for the final P5 Agentic RAG evaluation.
 
-Install the pinned dependencies in the project virtual environment, then build the local database from the existing Stage 6 artifacts:
+## Environment
 
-```bash
-.venv/bin/python -m pip install -r requirements.txt
-.venv/bin/python scripts/build_chroma_db.py
+Activate the project virtual environment from the repository root:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
 ```
 
-The build is idempotent. It validates the chunk fingerprint, embedding model, dimensions, ordering, metadata mapping, vectors and links before inserting anything. It refuses to mix an existing collection with a different dataset or model and never regenerates embeddings.
+API credentials are stored in a local `.env` file. Do not commit `.env`.
 
-Example interfaces:
+Runtime model and agent settings are stored in:
 
-```bash
-.venv/bin/python scripts/query_chroma_db.py --query "Can I use CPF to buy an HDB resale flat?" --top-k 5
-.venv/bin/python scripts/query_chroma_db.py --chunk-id C05_c0014
-.venv/bin/python scripts/query_chroma_db.py --linked-chunk-id H01_c0009
-.venv/bin/python scripts/query_chroma_db.py --query "CPF withdrawal limits" --document-id C03 --top-k 5
+```text
+config.yaml
 ```
 
-Reproduce the 40-question NumPy/Chroma consistency audit with:
+## P5 Agentic RAG
 
-```bash
-.venv/bin/python scripts/validate_chroma_consistency.py --device cpu
+The final P5 policy flow is:
+
+```text
+Question
+  ↓
+Policy retrieval
+  ↓
+Evidence assessment
+  ↓
+Sufficient?
+  ├─ Yes → select relevant evidence → ANSWER_READY
+  └─ No
+       ↓
+    targeted decomposition
+       ↓
+    retrieve additional evidence
+       ↓
+    merge + deduplicate
+       ↓
+    reassess
+       ├─ sufficient → ANSWER_READY
+       └─ insufficient → ABSTAIN
 ```
 
-The generated persistent database under `data/vector_db/` is local and ignored by Git. Reusable scripts, tests, configuration and reports remain trackable.
-=======
-Start with the [project process guide](Docs/PROJECT_PROCESS.md) for the current progress on `main`, the data and question-handling flows, and how the components connect.
+P5 includes:
 
+- BGE dense retrieval
+- BM25 lexical retrieval
+- Reciprocal Rank Fusion experiments
+- query coverage and re-query logic
+- LLM-based evidence sufficiency assessment
+- targeted decomposition/self-correction
+- evidence reassessment
+- safe abstention
+- token and latency telemetry
+- supervisor integration
+- automated regression and integration tests
+
+The main finding was that naive hybrid retrieval did not consistently outperform the dense baseline. The strongest improvement came from the agentic evidence-assessment and self-correction loop.
+
+## Run the Regression Suite
+
+```powershell
+python tests/run_all.py
+```
+
+The consolidated suite covers:
+
+- retrieval
+- date utilities
+- data integration
+- policy agent
+- P5 pipeline
+- supervisor components
+- P5 integration
+- deterministic self-correction
+- safe abstention
+
+## Run the Final P5 Evaluation
+
+From the repository root:
+
+```powershell
+$env:PYTHONPATH=".;src"
+python scripts/evaluate_agentic_answers.py --judge
+```
+
+The evaluator compares a single-pass dense RAG baseline against the P5 agentic pipeline.
+
+### Baseline
+- dense retrieval;
+- synthesis;
+- no evidence-assessor gate;
+- no targeted decomposition;
+- no agentic pre-synthesis abstention.
+
+### Agentic P5
+- retrieve evidence;
+- assess sufficiency;
+- generate targeted subqueries when needed;
+- retrieve and merge additional evidence;
+- reassess;
+- answer or abstain.
+
+## Final P5 Results
+
+| Metric | Baseline | Agentic |
+|---|---:|---:|
+| Faithfulness-style LLM judge | 7.6 / 10 | 8.4 / 10 |
+| Ground-truth LLM judge | 6.9 / 10 | 8.6 / 10 |
+| Mean end-to-end latency | 6.504 s | 14.294 s |
+
+Additional agentic efficiency results:
+
+- latency overhead: +7.790 s/question
+- evidence-assessor calls: 15 total
+- average assessor calls: 1.5/question
+- assessor tokens: 60,052 total
+- average assessor tokens: 6,005.2/question
+- average assessor latency: 6.073 s/question
+- final decisions: 8 `ANSWER_READY`, 2 `ABSTAIN`
+
+The agentic system improved answer quality on both evaluation rubrics, at the cost of additional LLM calls, token usage, and latency.
+
+The evaluation output labelled `Judge cost USD` refers only to LLM-as-judge evaluation calls and should not be interpreted as the full production cost of the agentic pipeline.
+
+## Evaluation Outputs
+
+Final answer evaluation:
+
+```text
+evaluation/agentic_vs_baseline_pilot_10q_judged.json
+```
+
+Efficiency summary:
+
+```text
+evaluation/agentic_vs_baseline_pilot_10q_judged_efficiency_summary.json
+```
+
+Advanced retrieval evaluation:
+
+```text
+evaluation/advanced_retrieval_metrics.json
+evaluation/advanced_retrieval_results_40q.csv
+```
+
+Dense baseline evaluation:
+
+```text
+evaluation/dense_retrieval_metrics.json
+evaluation/dense_retrieval_results_40q.csv
+```
+
+## Important P5 Notes
+
+### Date metadata
+Date-aware filtering was implemented, but all 1,282 corpus chunks lacked authoritative policy `effective_date` metadata.
+
+The available `retrieved_at` value represents corpus capture time and was not substituted for policy effective date.
+
+### Hybrid retrieval
+Equal-weight BM25 + dense RRF did not improve aggregate retrieval performance over the dense baseline. This negative result was retained rather than hidden through post-hoc tuning.
+
+### Repeatability
+Across three repeated runs of the 10-question agentic pilot:
+
+- mean decision agreement: 96.7%;
+- 9/10 questions were fully stable;
+- H01 was the only borderline case with decision variation.
+
+### H29
+H29 asks for resale transaction-price aggregation. The policy corpus does not contain the required transaction data.
+
+In the integrated system this question belongs to the price-agent route rather than the policy RAG route.
+
+## P5 Key Files
+
+```text
+src/date_utils.py
+src/retrieval.py
+src/dense_retriever.py
+src/hybrid_retriever.py
+src/policy_retriever.py
+src/evidence_assessor.py
+src/policy_agent.py
+src/pipeline.py
+scripts/evaluate_advanced_retrieval.py
+scripts/evaluate_agentic_answers.py
+scripts/evaluate_agent_repeatability.py
+tests/test_p5_agentic_control.py
+tests/test_p5_integration.py
+tests/run_all.py
+```
+
+For the detailed P5 implementation and evaluation record, see:
+
+```text
+Docs/p5_status.md
+```
