@@ -10,6 +10,8 @@ def evaluate_candidate_answer(
     policies=None,
     dense_results=None,
     use_dense=False,
+    use_llm_assessor=False,
+    assessor_fn=None,
 ):
     """
     Run the full P5 evaluation pipeline:
@@ -27,6 +29,8 @@ def evaluate_candidate_answer(
         policies=policies,
         dense_results=dense_results,
         use_dense=use_dense,
+        use_llm_assessor=use_llm_assessor,
+        assessor_fn=assessor_fn,
     )
 
     evidence = agent_result[

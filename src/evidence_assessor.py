@@ -5,6 +5,7 @@ from pathlib import Path
 import yaml
 from dotenv import load_dotenv
 from openai import OpenAI
+import time
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -136,8 +137,9 @@ Return JSON only:
 }}
 """.strip()
 
-    client = _get_client()
+    start = time.perf_counter()
 
+    client = _get_client()
     response = client.chat.completions.create(
         model=MODEL,
         messages=[
@@ -159,6 +161,8 @@ Return JSON only:
             "type": "json_object"
         },
     )
+
+    elapsed_seconds = time.perf_counter() - start
 
     result = json.loads(
         response.choices[0].message.content
@@ -198,6 +202,8 @@ Return JSON only:
     if not isinstance(missing_user_information, list):
         missing_user_information = []
 
+    usage = response.usage
+
     return {
         "sufficient": bool(
             result.get("sufficient")
@@ -217,4 +223,16 @@ Return JSON only:
             for item in missing_user_information
         ],
         "suggested_queries": suggested_queries,
+        "_usage": {
+            "input_tokens": usage.prompt_tokens,
+            "output_tokens": usage.completion_tokens,
+            "total_tokens": (
+                usage.prompt_tokens
+                + usage.completion_tokens
+            ),
+            "latency_seconds": round(
+                elapsed_seconds,
+                3,
+            ),
+        },
     }

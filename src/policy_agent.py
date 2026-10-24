@@ -1,15 +1,49 @@
 from policy_retriever import retrieve_policy_evidence
 
+
+def _add_assessor_usage(total, assessment):
+    """Accumulate token usage and latency from one assessor call."""
+    total["calls"] += 1
+
+    usage = assessment.get("_usage", {})
+
+    total["input_tokens"] += int(
+        usage.get("input_tokens", 0)
+    )
+    total["output_tokens"] += int(
+        usage.get("output_tokens", 0)
+    )
+    total["total_tokens"] += int(
+        usage.get("total_tokens", 0)
+    )
+    total["latency_seconds"] += float(
+        usage.get("latency_seconds", 0.0)
+    )
+
+
+def _format_assessor_usage(total):
+    """Return assessor usage with stable, rounded output."""
+    return {
+        **total,
+        "latency_seconds": round(
+            total["latency_seconds"],
+            3,
+        ),
+    }
+
+
 def _clean_requery(query):
     query = str(query or "").strip()
 
     removable = [
+        "site:www.hdb.gov.sg",
+        "site:www.cpf.gov.sg",
         "site:hdb.gov.sg",
         "site:cpf.gov.sg",
-        "hdb.gov.sg",
         "www.hdb.gov.sg",
-        "cpf.gov.sg",
         "www.cpf.gov.sg",
+        "hdb.gov.sg",
+        "cpf.gov.sg",
     ]
 
     lower_query = query.lower()
@@ -45,6 +79,7 @@ def _merge_evidence(*evidence_lists):
 
     return merged
 
+
 def run_policy_agent(
     question,
     query_date=None,
@@ -62,9 +97,16 @@ def run_policy_agent(
     1. Retrieve policy evidence.
     2. Re-query automatically if retrieval is weak.
     3. Check whether usable evidence remains.
-    4. Decide whether the system is ready to answer
-       or should abstain.
+    4. Optionally use an LLM assessor and one self-correction loop.
+    5. Decide whether the system is ready to answer or should abstain.
     """
+    assessor_usage = {
+        "calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "total_tokens": 0,
+        "latency_seconds": 0.0,
+    }
 
     trace = []
 
@@ -93,8 +135,10 @@ def run_policy_agent(
 
     evidence = retrieval.get("evidence", [])
 
-    # Step 3: Evidence check
+    # Step 3: Stop immediately when retrieval found no evidence.
     if not evidence:
+        reason = "No relevant policy evidence was retrieved."
+
         trace.append({
             "step": "CHECK_EVIDENCE",
             "result": "NO_EVIDENCE",
@@ -102,20 +146,22 @@ def run_policy_agent(
 
         trace.append({
             "step": "ABSTAIN",
-            "reason": "No relevant policy evidence was retrieved.",
+            "reason": reason,
         })
 
         return {
             "decision": "ABSTAIN",
-            "reason": "No relevant policy evidence was retrieved.",
+            "reason": reason,
             "retrieval": retrieval,
             "trace": trace,
+            "assessor_usage": _format_assessor_usage(
+                assessor_usage
+            ),
         }
 
-        # --------------------------------------------------
+    # --------------------------------------------------
     # LLM evidence assessment + one self-correction loop
     # --------------------------------------------------
-
     if use_llm_assessor:
         if assessor_fn is None:
             from evidence_assessor import assess_evidence
@@ -126,10 +172,17 @@ def run_policy_agent(
             evidence,
         )
 
+        _add_assessor_usage(
+            assessor_usage,
+            first_assessment,
+        )
+
         trace.append({
             "step": "ASSESS_EVIDENCE",
             "sufficient": first_assessment["sufficient"],
-            "answer_mode": first_assessment.get("answer_mode"),
+            "answer_mode": first_assessment.get(
+                "answer_mode"
+            ),
             "reason": first_assessment["reason"],
             "relevant_indices": first_assessment[
                 "relevant_indices"
@@ -140,7 +193,7 @@ def run_policy_agent(
             ),
         })
 
-        # Evidence already sufficient
+        # Evidence already sufficient.
         if first_assessment["sufficient"]:
             selected = [
                 evidence[index - 1]
@@ -162,12 +215,14 @@ def run_policy_agent(
                 "reason": first_assessment["reason"],
                 "retrieval": retrieval,
                 "trace": trace,
+                "assessor_usage": _format_assessor_usage(
+                    assessor_usage
+                ),
             }
 
         # --------------------------------------------------
         # Self-correction: targeted subqueries
         # --------------------------------------------------
-
         suggested_queries = first_assessment.get(
             "suggested_queries",
             [],
@@ -215,10 +270,17 @@ def run_policy_agent(
                 combined_evidence,
             )
 
+            _add_assessor_usage(
+                assessor_usage,
+                second_assessment,
+            )
+
             trace.append({
                 "step": "REASSESS_EVIDENCE",
                 "sufficient": second_assessment["sufficient"],
-                "answer_mode": second_assessment.get("answer_mode"),
+                "answer_mode": second_assessment.get(
+                    "answer_mode"
+                ),
                 "reason": second_assessment["reason"],
                 "relevant_indices": second_assessment[
                     "relevant_indices"
@@ -251,9 +313,13 @@ def run_policy_agent(
                     "reason": second_assessment["reason"],
                     "retrieval": retrieval,
                     "trace": trace,
+                    "assessor_usage": _format_assessor_usage(
+                        assessor_usage
+                    ),
                 }
 
-        # Still insufficient after self-correction
+        # Still insufficient after self-correction, or no useful
+        # suggested queries were produced.
         retrieval["evidence"] = []
 
         trace.append({
@@ -266,8 +332,14 @@ def run_policy_agent(
             "reason": first_assessment["reason"],
             "retrieval": retrieval,
             "trace": trace,
+            "assessor_usage": _format_assessor_usage(
+                assessor_usage
+            ),
         }
 
+    # --------------------------------------------------
+    # Legacy deterministic evidence gate
+    # --------------------------------------------------
     top_score = evidence[0].get("score", 0)
     coverage = retrieval.get("final_coverage", 0.0)
     top_dense_score = retrieval.get("top_dense_score")
@@ -279,6 +351,8 @@ def run_policy_agent(
     )
 
     if top_score <= 0 or coverage < 0.5 or insufficient_dense:
+        reason = "Retrieved evidence was not sufficiently relevant."
+
         trace.append({
             "step": "CHECK_EVIDENCE",
             "result": "INSUFFICIENT_EVIDENCE",
@@ -289,17 +363,20 @@ def run_policy_agent(
 
         trace.append({
             "step": "ABSTAIN",
-            "reason": "Retrieved evidence was not sufficiently relevant.",
+            "reason": reason,
         })
 
         return {
             "decision": "ABSTAIN",
-            "reason": "Retrieved evidence was not sufficiently relevant.",
+            "reason": reason,
             "retrieval": retrieval,
             "trace": trace,
+            "assessor_usage": _format_assessor_usage(
+                assessor_usage
+            ),
         }
 
-    # Evidence is usable
+    # Evidence is usable.
     trace.append({
         "step": "CHECK_EVIDENCE",
         "result": "EVIDENCE_FOUND",
@@ -316,4 +393,7 @@ def run_policy_agent(
         "reason": "Relevant policy evidence was retrieved.",
         "retrieval": retrieval,
         "trace": trace,
+        "assessor_usage": _format_assessor_usage(
+            assessor_usage
+        ),
     }

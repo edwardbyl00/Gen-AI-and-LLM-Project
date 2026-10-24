@@ -8,6 +8,9 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC = PROJECT_ROOT / "src"
 
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
@@ -163,6 +166,16 @@ def generate_agentic(question):
         "answer": answer,
         "trace": agent["trace"],
         "latency_seconds": round(latency, 3),
+        "assessor_usage": agent.get(
+            "assessor_usage",
+            {
+                "calls": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "total_tokens": 0,
+                "latency_seconds": 0.0,
+            },
+        ),
     }
 
 
@@ -332,6 +345,12 @@ def main():
             ],
             "| latency=",
             agentic["latency_seconds"],
+            "| assessor_calls=",
+            agentic["assessor_usage"]["calls"],
+            "| assessor_tokens=",
+            agentic["assessor_usage"]["total_tokens"],
+            "| assessor_latency=",
+            agentic["assessor_usage"]["latency_seconds"],
         )
 
         results.append(
@@ -362,9 +381,110 @@ def main():
         / f"agentic_vs_baseline_pilot_10q_{suffix}.json"
     )
 
+    baseline_latencies = [
+        r["baseline"]["latency_seconds"]
+        for r in results
+    ]
+
+    agentic_latencies = [
+        r["agentic"]["latency_seconds"]
+        for r in results
+    ]
+
+    assessor_usages = [
+        r["agentic"]["assessor_usage"]
+        for r in results
+    ]
+
+    baseline_avg_latency = (
+        sum(baseline_latencies) / len(baseline_latencies)
+    )
+
+    agentic_avg_latency = (
+        sum(agentic_latencies) / len(agentic_latencies)
+    )
+
+    total_assessor_calls = sum(
+        u["calls"]
+        for u in assessor_usages
+    )
+
+    total_input_tokens = sum(
+        u["input_tokens"]
+        for u in assessor_usages
+    )
+
+    total_output_tokens = sum(
+        u["output_tokens"]
+        for u in assessor_usages
+    )
+
+    total_assessor_tokens = sum(
+        u["total_tokens"]
+        for u in assessor_usages
+    )
+
+    total_assessor_latency = sum(
+        u["latency_seconds"]
+        for u in assessor_usages
+    )
+
+    efficiency_summary = {
+        "questions": len(results),
+        "baseline_average_latency_seconds": round(
+            baseline_avg_latency,
+            3,
+        ),
+        "agentic_average_latency_seconds": round(
+            agentic_avg_latency,
+            3,
+        ),
+        "agentic_latency_overhead_seconds": round(
+            agentic_avg_latency - baseline_avg_latency,
+            3,
+        ),
+        "assessor": {
+            "total_calls": total_assessor_calls,
+            "average_calls_per_question": round(
+                total_assessor_calls / len(results),
+                3,
+            ),
+            "total_input_tokens": total_input_tokens,
+            "total_output_tokens": total_output_tokens,
+            "total_tokens": total_assessor_tokens,
+            "average_tokens_per_question": round(
+                total_assessor_tokens / len(results),
+                1,
+            ),
+            "total_latency_seconds": round(
+                total_assessor_latency,
+                3,
+            ),
+            "average_latency_seconds_per_question": round(
+                total_assessor_latency / len(results),
+                3,
+            ),
+        },
+    }
+
     output.write_text(
         json.dumps(
             results,
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    efficiency_output = output.with_name(
+        output.stem
+        + "_efficiency_summary.json"
+    )
+
+    efficiency_output.write_text(
+        json.dumps(
+            efficiency_summary,
             ensure_ascii=False,
             indent=2,
         )
@@ -377,6 +497,59 @@ def main():
     print("=" * 70)
 
     print("Saved:", output)
+
+    print("Saved:", efficiency_output)
+
+    print(
+        "Baseline mean latency:",
+        efficiency_summary[
+            "baseline_average_latency_seconds"
+        ],
+    )
+
+    print(
+        "Agentic mean latency:",
+        efficiency_summary[
+            "agentic_average_latency_seconds"
+        ],
+    )
+
+    print(
+        "Agentic latency overhead:",
+        efficiency_summary[
+            "agentic_latency_overhead_seconds"
+        ],
+    )
+
+    print(
+        "Assessor calls:",
+        efficiency_summary[
+            "assessor"
+        ]["total_calls"],
+    )
+
+    print(
+        "Assessor total tokens:",
+        efficiency_summary[
+            "assessor"
+        ]["total_tokens"],
+    )
+
+    print(
+        "Assessor mean tokens/question:",
+        efficiency_summary[
+            "assessor"
+        ]["average_tokens_per_question"],
+    )
+
+    print(
+        "Assessor mean latency/question:",
+        efficiency_summary[
+            "assessor"
+        ][
+            "average_latency_seconds_per_question"
+        ],
+    )
 
     print(
         "Agentic ANSWER_READY:",

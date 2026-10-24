@@ -21,7 +21,7 @@ agents:
   price: stub
   policy: real
   # How many policy passages to retrieve (passed to P5's agent).
-  policy_top_k: 3
+  policy_top_k: 10
 
 data_preparation:
   chunking:
