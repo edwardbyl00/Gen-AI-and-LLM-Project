@@ -12,7 +12,7 @@ import json
 from datetime import date
 from pathlib import Path
 
-from agents.supervisor.router import load_settings, make_client
+from agents.supervisor.router import load_settings, make_client, record_usage
 
 PROMPT_FILE = Path(__file__).parent / "prompts" / "synthesis_v1.md"
 
@@ -99,7 +99,7 @@ def check_citations(cited, passages):
     return valid, events
 
 
-def synthesise(bundle, client=None):
+def synthesise(bundle, client=None, usage_log=None):
     """Write the answer for one bundle. Returns a dict with the answer,
     the cited sources (built by code) and any events."""
     settings = load_settings()
@@ -120,7 +120,9 @@ def synthesise(bundle, client=None):
         if settings.get(key) is not None:
             request[api_key] = settings[key]
 
-    message = client.chat.completions.create(**request).choices[0].message
+    response = client.chat.completions.create(**request)
+    record_usage(usage_log, "synthesis", response)
+    message = response.choices[0].message
     if message.content is None:
         raise SynthesisReplyError(f"No content in reply (refusal: {getattr(message, 'refusal', None)})")
     reply = json.loads(message.content)

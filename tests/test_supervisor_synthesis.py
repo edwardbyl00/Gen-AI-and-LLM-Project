@@ -83,7 +83,7 @@ def test_format_answer_lists_sources_with_dates():
 
 
 def test_pipeline_uses_fallback_when_synthesis_fails():
-    route = lambda q, today=None: ({"route": "none", "false_belief": False,
+    route = lambda q, **kwargs: ({"route": "none", "false_belief": False,
                                     "answerable": False, "reason": "r"}, [])
     def broken(bundle):
         raise RuntimeError("down")

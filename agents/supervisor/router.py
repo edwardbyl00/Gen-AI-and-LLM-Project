@@ -21,6 +21,18 @@ CONFIG_FILE = PROJECT_ROOT / "config.yaml"
 class RouterReplyError(Exception):
     """The model replied, but with no usable content (e.g. a refusal)."""
 
+
+def record_usage(usage_log, step, response):
+    """Add one call's token counts to usage_log (a list), if one is given."""
+    if usage_log is None:
+        return
+    usage = getattr(response, "usage", None)
+    usage_log.append({
+        "step": step,
+        "input_tokens": getattr(usage, "prompt_tokens", None),
+        "output_tokens": getattr(usage, "completion_tokens", None),
+    })
+
 # The exact shape the model must reply in. With "strict": True the API
 # refuses to return anything that does not match (structured output).
 ROUTING_SCHEMA = {
@@ -77,7 +89,7 @@ def make_client(timeout=None):
 # Request a response matching ROUTING_SCHEMA, include optional temperature
 # and seed settings when configured, and parse the JSON into a dictionary
 # containing route, false_belief, answerable, and reason.
-def route_question(question, client=None, today=None):
+def route_question(question, client=None, today=None, usage_log=None):
     """Classify one question. Returns a dict with route, false_belief,
     answerable and reason."""
     settings = load_settings()
@@ -101,6 +113,7 @@ def route_question(question, client=None, today=None):
         request["max_completion_tokens"] = settings["max_output_tokens"]
 
     response = client.chat.completions.create(**request)
+    record_usage(usage_log, "router", response)
     message = response.choices[0].message
     if message.content is None:
         refusal = getattr(message, "refusal", None)

@@ -11,7 +11,7 @@ from agents.supervisor.pipeline import handle_question
 @pytest.fixture(autouse=True)
 def no_real_synthesis(monkeypatch):
     """Every test here uses a fake synthesis step, so no API calls."""
-    fake = lambda bundle: {"answer": "fake", "declined": False,
+    fake = lambda bundle, **kwargs: {"answer": "fake", "declined": False,
                            "cited": [], "sources": [], "events": []}
     monkeypatch.setattr(pipeline, "synthesise", fake)
 
@@ -19,7 +19,7 @@ def no_real_synthesis(monkeypatch):
 def fake_route(route, false_belief=False, answerable=True):
     record = {"route": route, "false_belief": false_belief,
               "answerable": answerable, "reason": "r"}
-    return lambda question, today=None: (record, [])
+    return lambda question, **kwargs: (record, [])
 
 
 class Spy:
@@ -87,3 +87,14 @@ def test_stubs_follow_the_contract_shape():
     keys = {"town", "flat_type", "period_start", "period_end", "median_price",
             "min_price", "max_price", "n_deals", "data_as_of"}
     assert keys <= set(price_stub("q", "2026-10-19"))
+
+
+def test_token_usage_is_collected_per_call():
+    from types import SimpleNamespace
+    from agents.supervisor.router import record_usage
+    log = []
+    record_usage(log, "router", SimpleNamespace(usage=SimpleNamespace(prompt_tokens=900, completion_tokens=40)))
+    record_usage(None, "router", None)  # no log given: nothing happens
+    assert log == [{"step": "router", "input_tokens": 900, "output_tokens": 40}]
+    bundle = handle_question("q", today="2026-10-22", route_fn=fake_route("none"))
+    assert bundle["usage"] == []  # fakes make no model calls
