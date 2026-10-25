@@ -26,17 +26,17 @@ def load_agent_settings():
 
 # ---------- price agent (P1) ----------
 
-def price_real(question, query_date):
+def price_real(question, query_date, usage_log=None):
     """Call P1's real price agent using the approach selected in config.yaml."""
     # Lazy import keeps stub mode usable without price dependencies or data.
     from agents.price import run_price_agent
 
-    return run_price_agent(question, query_date)
+    return run_price_agent(question, query_date, usage_log=usage_log)
 
 
 # ---------- policy agent (P5, built on P4's index) ----------
 
-def policy_stub(question, query_date, top_k=3):
+def policy_stub(question, query_date, top_k=3, usage_log=None):
     """Return one sample passage in P5's shape; top_k is ignored by this stub."""
     return {
         "question": question, "query_date": query_date,
@@ -52,7 +52,7 @@ def policy_stub(question, query_date, top_k=3):
     }
 
 
-def policy_real(question, query_date, top_k=3):
+def policy_real(question, query_date, top_k=3, usage_log=None):
     """Call P5's agentic policy agent: hybrid (BM25 + dense) retrieval, an
     automatic re-query, then an LLM evidence check with one self-correction
     pass before deciding whether there's enough to answer from."""
@@ -86,6 +86,20 @@ def policy_real(question, query_date, top_k=3):
     result["reason"] = agent_result.get("reason")
     result["trace"] = agent_result.get("trace", [])
 
+    # run_policy_agent() tracks its own LLM-assessor usage separately
+    # (it can make more than one call: an initial assessment, and a
+    # second one after a self-correction re-query) rather than taking a
+    # usage_log the way router/synthesis/price do. Fold it into the
+    # shared log here so it isn't silently left out of token totals.
+    assessor_usage = agent_result.get("assessor_usage") or {}
+    if usage_log is not None and assessor_usage.get("calls"):
+        usage_log.append({
+            "step": "policy_assessor",
+            "input_tokens": assessor_usage.get("input_tokens"),
+            "output_tokens": assessor_usage.get("output_tokens"),
+            "calls": assessor_usage.get("calls"),
+        })
+
     # If the agent decided the evidence was too weak, don't let synthesis
     # answer from it anyway -- treat it the same as "nothing retrieved".
     if result["decision"] != "ANSWER_READY":
@@ -112,4 +126,5 @@ def get_policy_agent(settings=None):
     settings = settings if settings is not None else load_agent_settings()
     top_k = settings.get("policy_top_k", 3)
     agent = policy_real if settings.get("policy") == "real" else policy_stub
-    return lambda question, query_date: agent(question, query_date, top_k=top_k)
+    return lambda question, query_date, usage_log=None: agent(
+        question, query_date, top_k=top_k, usage_log=usage_log)

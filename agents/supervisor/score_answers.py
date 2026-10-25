@@ -33,13 +33,13 @@ from datetime import datetime
 from agents.supervisor.adapters import load_agent_settings
 from agents.supervisor.evaluate import load_labels, to_bool
 from agents.supervisor.pipeline import handle_question
-from agents.supervisor.router import PROJECT_ROOT
+from agents.supervisor.router import PROJECT_ROOT, estimate_cost_usd
 from agents.supervisor.synthesis import format_answer
 
 ANSWERS_DIR = PROJECT_ROOT / "evaluation" / "answers"
 COLUMNS = ["question_id", "question", "kind", "label_check_premise", "label_premise_false", "label_answerable",
            "route", "answer", "model_says_declined", "n_cited", "agent_errors",
-           "stub_agents", "input_tokens", "output_tokens", "seconds",
+           "stub_agents", "input_tokens", "output_tokens", "cost_usd", "seconds",
            "grade_declined", "grade_myth_accepted"]
 
 
@@ -66,6 +66,7 @@ def answer_all(rows, answer_fn=handle_question):
             "stub_agents": ", ".join(s["step"] for s in bundle["steps"] if s.get("stub")),
             "input_tokens": sum(u["input_tokens"] or 0 for u in usage),
             "output_tokens": sum(u["output_tokens"] or 0 for u in usage),
+            "cost_usd": estimate_cost_usd(usage),
             "seconds": round(time.perf_counter() - start, 2),
             # Pre-filled guesses for the grader to check.
             "grade_declined": result["declined"],
@@ -140,7 +141,11 @@ if __name__ == "__main__":
                   "data, so these scores are for testing the script only.")
         rows = load_labels(path)
         print(f"Answering {len(rows)} questions (routing, selected agents and synthesis) ...")
-        print(f"Saved grading sheet: {save_sheet(answer_all(rows))}")
+        lines = answer_all(rows)
+        total_cost = sum(l["cost_usd"] for l in lines)
+        print(f"Saved grading sheet: {save_sheet(lines)}")
+        print(f"Estimated cost: ${total_cost:.4f} (router/synthesis/agents at "
+              "config.yaml's llm.pricing rate; see Docs/p2_supervisor_code.md)")
         print("Next: fill in grade_declined and grade_myth_accepted, then run 'score'.")
     else:
         with open(path, newline="", encoding="utf-8") as f:

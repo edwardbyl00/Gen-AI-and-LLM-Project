@@ -11,9 +11,37 @@ diff already shows the what. Mark whether it's still uncommitted.
 
 ---
 
+## 2026-10-25 — Updated P2 guide and shared usage/cost tracking
+
+**Status:** included in this commit
+
+- Documented the current supervisor interfaces: price is always real, policy
+  remains configurable, and selected agents accept `usage_log`.
+- Shared usage now includes price filter/SQL calls and aggregated policy
+  assessor calls. The pipeline returns estimated `cost_usd`; answer exports
+  include it and print a run total using `llm.pricing` configuration.
+- Kept the high-level flow and added pricing decision branches as an
+  integration reference. Specialist pricing and data-preparation guides
+  remain outside this documentation pass.
+- Clarified the nine v2 label columns, manual grading, legacy-label limits,
+  UTF-8 CSV import, export coverage and comparisons across saved runs.
+- Fixed the project README's link to the removed process guide.
+
+**Why:** align P2 documentation with code and avoid presenting incomplete
+usage totals, changed labels or old stub runs as comparable current results.
+
+**Verified:** 157 local tests passed; documentation links and diff checks
+passed. No paid evaluations were rerun for this documentation pass. The
+existing v2 routing CSV is included with the other working-tree changes.
+
+Historical entries below describe the state at their recorded change.
+Their verification counts are historical, not a new validation of this tree.
+
+---
+
 ## 2026-10-25 — Router flags premises to check, not false beliefs
 
-**Status:** uncommitted (working tree)
+**Status:** committed in `78dbc0d`; labels subsequently cleaned in `e6c5552`
 
 Replaced the routing field `false_belief` with `check_premise`, and added
 router prompt `supervisor_v2.md` and synthesis prompt `synthesis_v2.md`
@@ -29,9 +57,9 @@ router prompt `supervisor_v2.md` and synthesis prompt `synthesis_v2.md`
   the sources are silent.
 - **Labels:** `practice_routing.csv` now has `check_premise` and
   `premise_false` (is the claim actually false?), with a
-  `premise_rationale`. The previous audited labels are kept as
-  `false_belief_v1`, the teammates' originals as `original_label`.
-  Drafted labels: 12 premises, 5 known false, 1 known true, 6 to verify.
+  `premise_rationale` at that stage. Later cleanup moved label history to
+  `data/labels/history/practice_routing_label_history.csv`; the active file
+  now has nine columns. Drafted labels: 12 premises, 5 known false, 1 known true, 6 to verify.
 - **Scores:** `evaluate.py` reports premise detection, myths among them and
   false alarms; myth acceptance in `score_answers.py` uses rows where
   `premise_false` is TRUE. Older answer sheets with `label_false_belief`
@@ -51,7 +79,7 @@ measure different things, so compare v1 and v2 on `route` and
 
 ## 2026-10-25 — Connected the real price agent
 
-**Status:** uncommitted (working tree)
+**Status:** committed in `7fb40fc`; later price-stub retirement and usage updates are documented above
 
 Imported `agents/price/`, `scripts/clean_prices.py`, the cleaned transaction
 CSV and pricing tests from `origin/price-agent` at `4f4a027`. Preserved the
@@ -78,12 +106,12 @@ transactions, matching an independent count of the supplied CSV. Dataset:
 
 ## 2026-10-25 — Connected the real policy agent; policy retrieval is no longer a stub
 
-**Status:** uncommitted (working tree)
+**Status:** committed in `f9e2fae`
 
 The policy side of the pipeline went from "returns one fake passage" to
 "real hybrid retrieval over the real HDB/CPF corpus, with an LLM evidence
-check." Full narrative and how-it-works detail: `Docs/p2_supervisor_code.md`
-section 4 (`adapters.py`) and section 9.
+check." Current integration details are in the agent configuration section
+of [the supervisor guide](p2_supervisor_code.md#agent-configuration-and-integration).
 
 **What changed:**
 - Pulled in from a teammate's branch (`kay`) — not written here:
@@ -151,7 +179,7 @@ got a correctly-cited answer from real retrieved passages.
 
 ## 2026-10-24/25 — Wrote up the supervisor documentation
 
-**Status:** uncommitted (working tree)
+**Status:** documented in `f9e2fae`, with later revisions
 
 Rewrote `Docs/p2_supervisor_code.md` from scratch in plain English (the
 previous version, along with `PROJECT_PROCESS.md`, `p2_supervisor_contract.md`
@@ -182,7 +210,7 @@ tracking, `score_answers.py`) landed.
 
 ## Undated — cost tracking and answer scoring (already in progress before this log started)
 
-**Status:** uncommitted (working tree, predates this changelog)
+**Status:** historical work already present before this changelog; see Git history
 
 These were already sitting as uncommitted changes when this log was
 started, and are documented here for completeness rather than invented

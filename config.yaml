@@ -14,6 +14,12 @@ llm:
   # Cap on reply length. Left null until tested: some models count hidden
   # "thinking" tokens towards it, and too low a cap cuts the reply off.
   max_output_tokens: null
+  # USD per 1M tokens for the model above, from OpenAI's pricing page.
+  # Not read from the API -- there's no endpoint for it -- so update this
+  # by hand if the model or its price changes.
+  pricing:
+    input_per_1m: 2.50
+    output_per_1m: 15.00
 
 judge:
   model: gpt-5.4-2026-03-05

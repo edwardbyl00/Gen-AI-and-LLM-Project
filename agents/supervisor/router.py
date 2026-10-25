@@ -33,6 +33,25 @@ def record_usage(usage_log, step, response):
         "output_tokens": getattr(usage, "completion_tokens", None),
     })
 
+
+def estimate_cost_usd(usage_log, pricing=None):
+    """Estimate the USD cost of every call in a usage_log.
+
+    pricing defaults to config.yaml's llm.pricing (input_per_1m,
+    output_per_1m). This is an estimate, not a bill: it prices every call
+    at the one model configured for this project, and misses anything a
+    call didn't report (e.g. a step whose usage was never recorded).
+    """
+    if pricing is None:
+        pricing = load_settings().get("pricing") or {}
+    input_rate = pricing.get("input_per_1m", 0)
+    output_rate = pricing.get("output_per_1m", 0)
+    total = 0.0
+    for call in usage_log or []:
+        total += (call.get("input_tokens") or 0) / 1_000_000 * input_rate
+        total += (call.get("output_tokens") or 0) / 1_000_000 * output_rate
+    return round(total, 6)
+
 # The exact shape the model must reply in. With "strict": True the API
 # refuses to return anything that does not match (structured output).
 ROUTING_SCHEMA = {

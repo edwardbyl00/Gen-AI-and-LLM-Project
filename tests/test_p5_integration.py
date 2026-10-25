@@ -55,6 +55,7 @@ def test_policy_top_k_comes_from_config(monkeypatch):
         question,
         query_date,
         top_k=3,
+        usage_log=None,
     ):
         captured["question"] = question
         captured["query_date"] = query_date

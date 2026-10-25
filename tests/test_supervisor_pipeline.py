@@ -27,7 +27,7 @@ class Spy:
     def __init__(self, result=None, error=None):
         self.calls, self.result, self.error = [], result or {"ok": True}, error
 
-    def __call__(self, question, query_date):
+    def __call__(self, question, query_date, usage_log=None):
         self.calls.append((question, query_date))
         if self.error:
             raise self.error
@@ -99,3 +99,13 @@ def test_token_usage_is_collected_per_call():
     assert log == [{"step": "router", "input_tokens": 900, "output_tokens": 40}]
     bundle = handle_question("q", today="2026-10-22", route_fn=fake_route("none"))
     assert bundle["usage"] == []  # fakes make no model calls
+    assert bundle["cost_usd"] == 0  # nothing used, so nothing costed
+
+
+def test_cost_is_estimated_from_usage_and_pricing():
+    from agents.supervisor.router import estimate_cost_usd
+    usage = [{"step": "router", "input_tokens": 1_000_000, "output_tokens": 0},
+              {"step": "synthesis", "input_tokens": 0, "output_tokens": 1_000_000},
+              {"step": "price_filters", "input_tokens": None, "output_tokens": None}]
+    cost = estimate_cost_usd(usage, pricing={"input_per_1m": 2.50, "output_per_1m": 15.00})
+    assert cost == 17.50  # $2.50 for 1M input + $15.00 for 1M output + $0 for the unrecorded call

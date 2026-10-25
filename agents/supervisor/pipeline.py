@@ -14,6 +14,7 @@ from datetime import date
 
 from agents.supervisor.adapters import get_policy_agent, get_price_agent
 from agents.supervisor.checks import safe_route
+from agents.supervisor.router import estimate_cost_usd
 from agents.supervisor.synthesis import FALLBACK_ANSWER, format_answer, synthesise
 
 # Tuple order determines execution order and the order of entries in the step log.
@@ -57,7 +58,7 @@ def handle_question(question, today=None, route_fn=safe_route,
     for name in AGENTS_FOR_ROUTE[routing["route"]]:
         start = time.perf_counter()
         try:
-            results[name] = agents[name](question, today)
+            results[name] = agents[name](question, today, usage_log=usage)
             steps.append({"step": f"{name}_agent", "seconds": _since(start),
                           "stub": bool(results[name].get("stub"))})
         except Exception as error:
@@ -91,6 +92,8 @@ def handle_question(question, today=None, route_fn=safe_route,
                             "cited": [], "sources": [], "events": []}
         steps.append({"step": "synthesis", "seconds": _since(start),
                       "error": f"{type(error).__name__}: {error}"})
+    # Computed last: usage keeps growing until synthesis finishes above.
+    bundle["cost_usd"] = estimate_cost_usd(usage)
     return bundle
 
 

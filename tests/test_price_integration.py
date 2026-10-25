@@ -21,7 +21,7 @@ def test_real_adapter_forwards_question_and_date(monkeypatch):
     calls = []
     result = {"town": "TOA PAYOH", "n_deals": 12}
 
-    def fake(question, query_date):
+    def fake(question, query_date, usage_log=None):
         calls.append((question, query_date))
         return result
 

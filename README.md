@@ -1,8 +1,12 @@
-# AskGov SG
+# AskGov SG — Gen AI and LLM Project
 
-AskGov SG is a Singapore housing advisory assistant that combines policy retrieval with a multi-agent workflow for HDB/CPF policy and housing-related questions.
+AskGov SG routes HDB/CPF housing questions to policy retrieval, resale-price analysis, or both, then synthesizes an answer with policy sources. Pricing always uses the real agent; policy is currently configured as real.
 
-This README includes the reproducible setup for the final P5 Agentic RAG evaluation.
+Start with the [P2 supervisor code guide](Docs/p2_supervisor_code.md) for the high-level flow, detailed decision branches, bundle, token/cost tracking and evaluation commands. See the [price-agent guide](agents/price/README.md) for P1 details and the [maintenance guide](Docs/MAINTENANCE.md) for team setup and Git conventions.
+
+The supervisor uses v2 prompts: routing flags `check_premise`, while synthesis checks the claim against retrieved evidence. Saved evaluations live under `evaluation/results/` and `evaluation/answers/`; individual pipeline calls do not automatically create a history file.
+
+This README also includes the reproducible setup for the final P5 Agentic RAG evaluation below.
 
 ## Environment
 

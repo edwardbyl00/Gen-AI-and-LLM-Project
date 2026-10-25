@@ -2,6 +2,8 @@
 
 The supervisor takes a question, selects the evidence it needs, and writes an answer with sources.
 
+Scope: P2 routing, orchestration, synthesis, agent adapters and evaluation. Reviewed against the local code on 25 October 2026; specialist implementation details remain in their own guides.
+
 Start with `handle_question()` in [pipeline.py](../agents/supervisor/pipeline.py). The routing and synthesis prompts define the decision rules; the tables below explain the returned fields.
 
 ## 1. High-level flow
@@ -28,7 +30,7 @@ The route selects price, policy, both or neither. For `both`, price runs first, 
 | **3. Write answer** | [synthesis.py](../agents/supervisor/synthesis.py): `build_context()` prepares evidence; `synthesise()` asks the model to write the answer |
 | **4. Check and format** | [synthesis.py](../agents/supervisor/synthesis.py): `check_citations()` validates passage numbers; `synthesise()` builds sources; `format_answer()` formats the display |
 
-Token tracking runs alongside the flow: `record_usage()` in `router.py` logs routing/synthesis tokens in `bundle["usage"]`.
+Token tracking runs alongside the flow: routing, pricing, policy assessment and synthesis contribute to `bundle["usage"]`. After synthesis, the pipeline calculates `bundle["cost_usd"]` using configured rates.
 
 For example, **“Can I use CPF for a resale flat?”** should route to `policy`. The policy agent searches for relevant passages. Synthesis receives those passages and writes the answer. Code attaches the sources using passage metadata.
 
@@ -85,6 +87,34 @@ flowchart TD
 ```
 
 Currently, the price call is `price_real()` and the policy call is `policy_real()`. A policy abstention is a successful call with empty evidence, so it follows the success branch above.
+
+### Detailed flow: pricing integration
+
+`adapters.price_real()` calls `agents.price.run_price_agent()` with the question, shared date and usage log. Config selects approach A by default. This chart explains the evidence returned to the supervisor; the [price guide](../agents/price/README.md) owns the specialist details.
+
+```mermaid
+flowchart TD
+    START["price_real() calls run_price_agent()"] --> MODE{Configured approach?}
+    MODE -->|A - default| EXTRACT["extract_filters()<br/>Model extracts town, flat type and period"]
+    EXTRACT --> PERIOD["resolve_period()<br/>Resolve vague dates or requested range"]
+    PERIOD --> PLACE{Unmatched place and town ALL?}
+    PLACE -->|Yes| EMPTY[Return zero deals, null prices and note]
+    PLACE -->|No| STATS["summarise()<br/>Filter transactions and calculate statistics"]
+    STATS --> FOUND{Matching deals?}
+    FOUND -->|No| EMPTY
+    FOUND -->|Yes| FACTS[Return statistics, period and data date]
+    MODE -->|B| SQL["price_agent_sql()<br/>Model writes SQL; code checks and runs it"]
+    SQL --> SQLRESULT{Query result?}
+    SQLRESULT -->|Unsafe query or no rows| EMPTY
+    SQLRESULT -->|Matching rows| FACTS
+    MODE -->|Other| ERROR[Raise configuration error]
+    EMPTY --> BUNDLE[Store in bundle.price_result]
+    FACTS --> BUNDLE
+```
+
+Approach A uses the latest configured 12 complete data months for vague or missing periods. An entirely out-of-range period produces no matching deals; it does not forecast a price. Import, data-loading or model errors follow the pipeline's agent-error branch.
+
+`price_result` includes town, flat type, period, median/mean/min/max prices, deal count, data date, extracted filters and a note. Synthesis receives the statistics and note; filters remain available in the bundle for inspection. A zero-deal result is a successful agent call, distinct from `price_result=None` after a failure. Price facts currently have no numbered source entries of their own; the formatted source list is built from policy passage citations.
 
 ### Detailed flow: policy evidence decisions
 
@@ -148,7 +178,7 @@ All files below are in `agents/supervisor/`.
 | [pipeline.py](../agents/supervisor/pipeline.py) | `handle_question()` | Runs the stages and returns the results, errors, timing and token usage |
 | [router.py](../agents/supervisor/router.py) | `route_question()` | Reads the prompt/settings and asks the model to classify the question |
 | [checks.py](../agents/supervisor/checks.py) | `safe_route()` | Validates routing output, retries failures and repairs known contradictions |
-| [adapters.py](../agents/supervisor/adapters.py) | `get_price_agent()`, `get_policy_agent()` | Selects stub/real agents and adapts their outputs for the pipeline |
+| [adapters.py](../agents/supervisor/adapters.py) | `get_price_agent()`, `get_policy_agent()` | Connects the always-real price agent and selectable real/stub policy agent |
 | [synthesis.py](../agents/supervisor/synthesis.py) | `synthesise()`, `format_answer()` | Writes the answer, checks citation numbers and formats sources |
 | [evaluate.py](../agents/supervisor/evaluate.py) | `run()`, `score()` | Compares routing predictions with labelled questions |
 | [score_answers.py](../agents/supervisor/score_answers.py) | `answer_all()`, `score_sheet()` | Generates answer grading sheets and scores reviewed grades |
@@ -171,7 +201,7 @@ A grant amount needs policy evidence. A historical resale price needs transactio
 `safe_route()` follows this sequence:
 
 1. Call the router.
-2. If a retryable error occurs or the record is malformed, try once more. After two unsuccessful attempts, return `SAFE_FALLBACK`: `none`, no false-belief flag, not answerable.
+2. If a retryable error occurs or the record is malformed, try once more. After two unsuccessful attempts, return `SAFE_FALLBACK`: `route=none`, `check_premise=False`, `answerable=False`.
 3. Repair known contradictions and return `(record, events)`.
 
 | Contradiction | Repair |
@@ -183,16 +213,22 @@ The first repair runs before the second. If both contradictions occur, the resul
 
 Retries cover malformed replies, refusals, connection/timeouts, rate limits and server errors. Setup errors such as a wrong key or invalid model propagate to the caller. Events record malformed attempts and repairs.
 
-### Agent status and policy integration
+### Agent configuration and integration
 
 Current [config.yaml](../config.yaml) settings:
 
 ```yaml
 agents:
-  price: real
   policy: real
   policy_top_k: 10
+
+price_agent:
+  approach: A
+  default_months: 12
+  cleaned_data: data/cleaned/hdb_resale_prices.csv.gz
 ```
+
+There is no price stub or `agents.price` switch: `get_price_agent()` always returns `price_real()`. Only policy can be switched to `stub`.
 
 - **Price:** `price_real()` calls `run_price_agent()` in [agents/price/__init__.py](../agents/price/__init__.py). The default approach A extracts town, flat type and period with the model, then calculates statistics from `data/cleaned/hdb_resale_prices.csv.gz`. `price_agent.approach: B` selects the SQL alternative. See the [price guide](../agents/price/README.md).
 - **Policy:** calls `run_policy_agent()` in [src/policy_agent.py](../src/policy_agent.py), with keyword + embedding search, an automatic re-query when needed, and an LLM evidence check with one possible self-correction pass.
@@ -210,7 +246,7 @@ These read `data_preparation.embedding` and `data_preparation.vector_store` sett
 
 ### The bundle, errors and token tracking
 
-A **bundle** is the dictionary returned by `handle_question()`:
+A **bundle** is the dictionary created inside `handle_question()` in [pipeline.py](../agents/supervisor/pipeline.py). It collects the results of one question, is passed to synthesis, and is returned to the caller. It lives in memory unless a caller exports it:
 
 | Key | Contents |
 | --- | --- |
@@ -219,22 +255,34 @@ A **bundle** is the dictionary returned by `handle_question()`:
 | `price_result`, `policy_result` | Agent output, or `None` if skipped/failed |
 | `agent_errors` | Failures keyed by agent name |
 | `steps` | Stage timings, events, errors and stub flags |
-| `usage` | Router/synthesis input and output token counts per returned model response |
+| `usage` | Router, price, policy-assessor and synthesis input/output token counts |
+| `cost_usd` | Estimated cost of recorded usage, added after synthesis |
 | `answer` | Answer text, `declined`, valid `cited` numbers, `sources` and citation events |
 
 With default `strict=False`, agent errors are recorded and processing continues; synthesis errors produce a fallback answer. With `strict=True`, those errors are raised. The pipeline CLI uses strict mode. Routing errors that escape `safe_route()` propagate in either mode.
 
-Token tracking uses the same list through routing and synthesis:
+Token tracking shares one list through the configured stages:
 
 ```text
 pipeline: usage = []
-    -> router: record_usage(usage, "router", response)
-    -> synthesis: record_usage(usage, "synthesis", response)
-    -> returned as bundle["usage"]
-    -> score_answers.py sums tokens per question for its CSV
+    -> router: record_usage(..., "router", response)
+    -> price adapter: forwards usage_log to filters or SQL call
+    -> policy adapter: appends aggregated policy_assessor usage
+    -> synthesis: record_usage(..., "synthesis", response)
+    -> estimate_cost_usd(usage) after synthesis
+    -> bundle["usage"] and bundle["cost_usd"] returned to caller
+    -> score_answers.py exports totals and estimated cost per question
 ```
 
-`record_usage()` lives in `router.py`. Missing usage metadata produces `None` counts. These totals do not calculate money spent and do not include the policy agent's assessor calls. The policy agent returns separate `assessor_usage`, which the current adapter does not forward.
+Router/synthesis use `record_usage()` in `router.py`. Pricing logs `price_filters` or `price_sql`. Policy adds one `policy_assessor` entry with aggregated tokens and a `calls` count, so one entry may represent two assessments. An unselected agent contributes no usage. Injected agent functions must accept `usage_log`; custom model functions must populate it to be counted.
+
+`estimate_cost_usd()` in `router.py` applies `llm.pricing.input_per_1m` and `output_per_1m` from `config.yaml`:
+
+```text
+estimated USD = (input tokens × input rate + output tokens × output rate) / 1,000,000
+```
+
+This documents the configured calculation, not verified current API prices or an invoice. All recorded calls use the same configured rates; cache discounts and local embedding/compute costs are not calculated. Missing usage counts or rates are treated as zero, so incomplete logs can understate cost. Counts are available for responses returned to the application; exceptions and unreported SDK retries may not be captured.
 
 ### What the citation check guarantees
 
@@ -268,6 +316,7 @@ from agents.supervisor.synthesis import format_answer
 bundle = handle_question("Can I use CPF for a resale flat?")
 print(format_answer(bundle["answer"]))
 print(bundle["usage"])
+print(bundle["cost_usd"])
 ```
 
 Model settings live under `llm` in `config.yaml`. Optional request settings set to `null` are omitted. See [MAINTENANCE.md](MAINTENANCE.md) for environment setup and the team's Git workflow.
@@ -278,9 +327,27 @@ Model settings live under `llm` in `config.yaml`. Optional request settings set 
 
 Add rows to [practice_routing.csv](../data/labels/practice_routing.csv) for tuning. Reserve [routing_labels.csv](../data/labels/routing_labels.csv) for held-out evaluation.
 
-Each row needs `question_id`, `question`, `route`, `check_premise` and `answerable`, plus `premise_false` (TRUE/FALSE) on rows where `check_premise` is TRUE: is the claim actually false? Leave it blank while unverified; blank rows are left out of the myth score. Decide it from the sources or the question's author, never from memory. Follow the existing format for `kind`, `rationale` and `labelled_by`. Use stable IDs such as `PR_P2_05`, and `TRUE`/`FALSE` labels.
+The practice CSV uses these nine columns. Keep every header, even if optional cells are blank.
 
-Label the actual question: a forecast may be unanswerable even when historical facts provide useful context. Keep prompt examples out of practice and held-out sets.
+| Column | What to fill |
+| --- | --- |
+| `question_id` | Required unique, stable ID such as `PR_P2_55` |
+| `question` | Required question text; quote CSV cells containing commas |
+| `kind` | Optional grouping tag; leave blank if unused |
+| `route` | Required expected `price`, `policy`, `both` or `none` |
+| `check_premise` | Required TRUE/FALSE: is there a specific claim to check? |
+| `premise_false` | TRUE/FALSE after verifying a flagged claim; blank if unverified or not applicable |
+| `answerable` | Required TRUE/FALSE: can the actual question be answered from the intended sources? |
+| `rationale` | Optional explanation of the expected routing labels |
+| `labelled_by` | Optional author initials |
+
+`kind`, `rationale` and `labelled_by` are not automatically filled. Keep the `kind` header because the routing exporter accesses it. The router receives the question, not your expected labels or rationale; its output `reason` explains its own prediction.
+
+`check_premise` is not a truth judgement. A normal question such as “What happens to my CPF when I sell?” does not by itself assert a false rule. User age/income and service availability do not count as premises under v2. Verify `premise_false` using sources, never infer it just because the router flagged a claim. Unverified rows are excluded from myth acceptance, so report that denominator with the score.
+
+Label the actual question: a forecast may be unanswerable even when historical facts provide context. Keep prompt examples out of practice and held-out sets. Label history is stored separately in [practice_routing_label_history.csv](../data/labels/history/practice_routing_label_history.csv).
+
+The held-out `routing_labels.csv` still has the old `false_belief` header and no questions. Before using it with the current evaluator, adopt the practice file's v2 headers and add independently reviewed questions.
 
 ### Check routing
 
@@ -312,9 +379,24 @@ This makes live router calls and reports field accuracy, all-three accuracy, pre
 | Honesty | Unanswerable questions whose answers decline / all unanswerable questions | Higher |
 | Over-refusal | Answerable questions whose answers decline / all answerable questions | Lower |
 
-Required blank grades stop scoring. Pre-filled grades still need human review. Scoring a reviewed sheet makes no model calls; generating answers does. Both agents currently use real evidence; if either is switched to a stub, treat that run as a plumbing check.
+Required blank grades stop scoring. Pre-filled grades still need human review. Scoring a reviewed sheet makes no model calls; generating answers does. Price always uses real evidence; policy can still be switched to a stub. Older answer sheets with `label_false_belief` remain scoreable as historical runs, but the current label loader requires `check_premise`. A category with no applicable questions has no rate.
 
 If scores worsen, inspect routing, retrieved evidence, agent failures, synthesis and labels before deciding what to change. Keep saved runs for comparison.
+
+### Exports and comparing runs
+
+| Entry point | What is saved |
+| --- | --- |
+| `pipeline` CLI / `handle_question()` | No automatic file history; CLI prints the answer/routing/timing, Python returns the bundle |
+| `evaluate` | `evaluation/results/routing_<prompt>_<timestamp>.csv`: question, expected/predicted routing fields, correctness, model reason, event count and seconds |
+| `score_answers run` | `evaluation/answers/answers_<timestamp>.csv`: question/labels, route, answer with sources, citation count, errors, stub flags, total tokens, estimated USD, seconds and grading columns |
+| `score_answers score` | Prints metrics from reviewed grades; no new report file |
+
+The answer CSV is a summary, not the full bundle: it does not export all retrieved passages, agent traces or per-stage usage. Exports are UTF-8; in Excel use Data → From Text/CSV and choose UTF-8 if curly punctuation appears garbled. No dashboard is implemented in this supervisor scope.
+
+Record the code revision, prompts, label revision, agent modes and configured rates alongside each evaluated run. Output filenames contain minute-level timestamps; repeating the same export within a minute can overwrite its earlier file.
+
+Compare v1 `false_belief` and v2 `check_premise` as different tasks. Route/answerable comparisons also need matching questions and labels; raw all-three accuracy across changed schemas is not directly comparable. Keep older stub-price answer runs as historical results and generate new answers to assess real pricing. Review label disagreements before attributing them to the prompt. A successful integration test does not establish factual answer accuracy.
 
 ## 5. Change a prompt
 
@@ -340,6 +422,8 @@ Prompts are read at call time and `{today}` is replaced with the shared date. Co
 | `No module named 'agents'` | Run from the project root |
 | Price data or import failure | Install dependencies and check `price_agent.cleaned_data`; rebuild with `python -m scripts.clean_prices` if the original raw CSV is available |
 | Policy import or retrieval failure | Check dependencies, policy modules, embeddings and Chroma store |
-| `Ungraded row` | Complete the required grade columns in that row |
+| `Ungraded row` | Review `grade_declined` and complete myth grades for known-false premise rows |
+| `KeyError: check_premise` | Migrate old input labels to the v2 practice CSV headers |
+| Unexpected price-stub warning from answer runner | The current warning still checks the removed `agents.price` setting; price actually always uses `price_real()` |
 
 The router cannot inspect the corpus, so it does not judge whether a claim is true: it only flags claims to check, and synthesis verifies them against retrieved evidence (rule A1). Real policy retrieval is connected, but a successful run alone does not establish answer accuracy.
