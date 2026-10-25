@@ -3,7 +3,7 @@
 import pytest
 
 from agents.supervisor.adapters import (get_policy_agent, get_price_agent,
-                                        policy_stub, price_stub)
+                                        policy_stub, price_real)
 from agents.supervisor import pipeline
 from agents.supervisor.pipeline import handle_question
 
@@ -77,16 +77,17 @@ def test_step_log_records_router_and_agents():
     assert [s["step"] for s in bundle["steps"]] == ["router", "price_agent", "policy_agent", "synthesis"]
 
 
-def test_config_picks_stubs_by_default():
-    assert get_price_agent({"price": "stub"}) is price_stub
+def test_config_picks_policy_stub_by_default():
     result = get_policy_agent({"policy": "stub", "policy_top_k": 3})("q", "2026-10-19")
     assert result["stub"] is True and "url" in result["evidence"][0]
 
 
-def test_stubs_follow_the_contract_shape():
-    keys = {"town", "flat_type", "period_start", "period_end", "median_price",
-            "min_price", "max_price", "n_deals", "data_as_of"}
-    assert keys <= set(price_stub("q", "2026-10-19"))
+def test_price_agent_is_always_real():
+    # There's no price stub anymore: get_price_agent() always returns
+    # price_real, regardless of what's in settings (see test_price_
+    # integration.py for the real adapter's actual behaviour).
+    assert get_price_agent() is price_real
+    assert get_price_agent({"price": "stub"}) is price_real
 
 
 def test_token_usage_is_collected_per_call():

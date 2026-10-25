@@ -128,7 +128,7 @@ if __name__ == "__main__":
             print(f"WARNING: {', '.join(stubs)} agent(s) are stubs. Answers will use fake "
                   "data, so these scores are for testing the script only.")
         rows = load_labels(path)
-        print(f"Answering {len(rows)} questions (two model calls each) ...")
+        print(f"Answering {len(rows)} questions (routing, selected agents and synthesis) ...")
         print(f"Saved grading sheet: {save_sheet(answer_all(rows))}")
         print("Next: fill in grade_declined and grade_myth_accepted, then run 'score'.")
     else:

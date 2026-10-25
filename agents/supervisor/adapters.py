@@ -4,9 +4,10 @@ Each adapter returns the shape pipeline.py and synthesis.py expect (see
 Docs/p2_supervisor_code.md). If an agent's own output changes, only its
 adapter changes.
 
-Which version is used ("stub" or "real") is set in config.yaml under
-"agents". A stub returns fake data, clearly marked, so the pipeline can be
-built, tested, or run without the real agent or its dependencies.
+The price agent is always real now; there's no price stub. The policy
+agent can still be run as a stub (set agents.policy to "stub" in
+config.yaml) -- it returns fake data, clearly marked, so the pipeline can
+be built, tested, or run without the real policy dependencies.
 """
 
 import sys
@@ -25,23 +26,12 @@ def load_agent_settings():
 
 # ---------- price agent (P1) ----------
 
-def price_stub(question, query_date):
-    """Return fixed sample prices, regardless of the question, for local testing."""
-    return {
-        "town": "STUB", "flat_type": "STUB",
-        "period_start": "2025-10", "period_end": "2026-09",
-        "median_price": 500000, "min_price": 400000, "max_price": 600000,
-        "n_deals": 100, "data_as_of": query_date,
-        "stub": True,
-    }
-
-
 def price_real(question, query_date):
-    """Call P1's price agent. Not available yet."""
-    raise NotImplementedError(
-        "P1's price agent is not in this branch yet. "
-        "Set agents.price to 'stub' in config.yaml."
-    )
+    """Call P1's real price agent using the approach selected in config.yaml."""
+    # Lazy import keeps stub mode usable without price dependencies or data.
+    from agents.price import run_price_agent
+
+    return run_price_agent(question, query_date)
 
 
 # ---------- policy agent (P5, built on P4's index) ----------
@@ -111,10 +101,10 @@ def policy_real(question, query_date, top_k=3):
 # ---------- choose stub or real from config.yaml ----------
 
 def get_price_agent(settings=None):
-    """Select the real price agent only when explicitly configured as 'real'."""
-    # An explicitly supplied empty dict also selects defaults without reading disk.
-    settings = settings if settings is not None else load_agent_settings()
-    return price_real if settings.get("price") == "real" else price_stub
+    """Return the price agent. There's no stub anymore, so this always
+    returns price_real; settings is accepted only to keep the same call
+    shape as get_policy_agent()."""
+    return price_real
 
 
 def get_policy_agent(settings=None):

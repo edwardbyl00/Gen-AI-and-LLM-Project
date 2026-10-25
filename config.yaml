@@ -16,12 +16,20 @@ llm:
   max_output_tokens: null
 
 agents:
-  # "stub" = fake data in the agreed shape, so the pipeline runs before the
-  # real agents exist. Switch each to "real" once that agent is merged.
-  price: stub
+  # The price agent has no stub anymore; it always runs for real.
+  # Policy can still be run as "stub" (fake data in the agreed shape) to
+  # build/test/run the pipeline without the real policy dependencies.
   policy: real
   # How many policy passages to retrieve (passed to P5's agent).
   policy_top_k: 10
+
+price_agent:
+  raw_data: data/raw/ResaleflatpricesbasedonregistrationdatefromJan2017onwards.csv
+  cleaned_data: data/cleaned/hdb_resale_prices.csv.gz
+  # Vague or missing periods use the latest 12 complete months.
+  default_months: 12
+  # A: extract filters, then calculate in Python. B: text-to-SQL.
+  approach: A
 
 data_preparation:
   chunking:

@@ -4,7 +4,7 @@ write the answer.
 Produces a "bundle" holding the routing record, the agents' results, the
 final answer and a step log.
 
-Usage (two real model calls, routing and synthesis; agents follow config.yaml):
+Usage (routing, synthesis and selected agents make model calls as configured):
     python -m agents.supervisor.pipeline "Can I use CPF for a resale flat?"
 """
 

@@ -11,6 +11,33 @@ diff already shows the what. Mark whether it's still uncommitted.
 
 ---
 
+## 2026-10-25 — Connected the real price agent
+
+**Status:** uncommitted (working tree)
+
+Imported `agents/price/`, `scripts/clean_prices.py`, the cleaned transaction
+CSV and pricing tests from `origin/price-agent` at `4f4a027`. Preserved the
+existing policy integration and configuration. The teammate's UI, baseline
+and comparison harness were not included in this integration.
+
+- `price_real()` now calls `run_price_agent()`; `agents.price` is `real`.
+- Added the price settings with approach A (filter extraction + Python
+  statistics) as the default; approach B (SQL) remains selectable.
+- Synthesis now receives `mean_price` and the price agent's `note`, including
+  explanations for missing data or resolved periods.
+- Upgraded local pandas from 2.2.2 to 3.1.0 and pinned it in requirements:
+  the old version crashed under Python 3.14 in date conversion tests.
+- Updated the supervisor guide and added adapter, real-data, missing-data
+  context and SQL-selection tests. Price-token tracking is not yet wired
+  into the supervisor's shared usage log.
+
+**Verified:** 153 tests passed without paid model calls. A separate live
+pipeline smoke test answered the Toa Payoh 4-room 2024 question with 299
+transactions, matching an independent count of the supplied CSV. Dataset:
+242,955 transactions, January 2017 to October 2026.
+
+---
+
 ## 2026-10-25 — Connected the real policy agent; policy retrieval is no longer a stub
 
 **Status:** uncommitted (working tree)

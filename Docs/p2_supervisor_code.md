@@ -15,7 +15,7 @@ flowchart TD
     F --> O[Answer with sources]
 ```
 
-The route selects price, policy, both or neither. For `both`, price runs first, then policy; for `none`, evidence gathering is skipped. Currently price uses fake sample data and policy uses real retrieval.
+The route selects price, policy, both or neither. For `both`, price runs first, then policy; for `none`, evidence gathering is skipped. Both price and policy now use real evidence.
 
 ### Code behind each stage
 
@@ -24,7 +24,7 @@ The route selects price, policy, both or neither. For `both`, price runs first, 
 | Stage | Scripts and key functions |
 | --- | --- |
 | **1. Route and check** | [router.py](../agents/supervisor/router.py): `route_question()` classifies; [checks.py](../agents/supervisor/checks.py): `safe_route()` validates, retries and repairs using `is_well_formed()` and `fix_combinations()` |
-| **2. Gather evidence** | [adapters.py](../agents/supervisor/adapters.py): `get_price_agent()` / `get_policy_agent()` select implementations; `price_stub()` / `policy_real()` provide results. Policy calls [policy_agent.py](../src/policy_agent.py): `run_policy_agent()`, which uses `retrieve_policy_evidence()` and `assess_evidence()` |
+| **2. Gather evidence** | [adapters.py](../agents/supervisor/adapters.py): `get_price_agent()` / `get_policy_agent()` select implementations; `price_real()` / `policy_real()` provide results. Price calls `agents.price.run_price_agent()`. Policy calls [policy_agent.py](../src/policy_agent.py): `run_policy_agent()`, which uses `retrieve_policy_evidence()` and `assess_evidence()` |
 | **3. Write answer** | [synthesis.py](../agents/supervisor/synthesis.py): `build_context()` prepares evidence; `synthesise()` asks the model to write the answer |
 | **4. Check and format** | [synthesis.py](../agents/supervisor/synthesis.py): `check_citations()` validates passage numbers; `synthesise()` builds sources; `format_answer()` formats the display |
 
@@ -32,7 +32,7 @@ Token tracking runs alongside the flow: `record_usage()` in `router.py` logs rou
 
 For example, **“Can I use CPF for a resale flat?”** should route to `policy`. The policy agent searches for relevant passages. Synthesis receives those passages and writes the answer. Code attaches the sources using passage metadata.
 
-Routing and synthesis each call the model. The real policy agent can make additional model calls to assess evidence, and routing retries can add calls too.
+Routing and synthesis each call the model. The real price agent calls the model to extract filters (or write SQL); the policy agent can call the model to assess evidence. Routing retries can add calls too.
 
 ### Detailed flow: routing checks
 
@@ -84,7 +84,7 @@ flowchart TD
     NEXT -->|No| BUNDLE[Build bundle and run synthesis]
 ```
 
-Currently, the price call is `price_stub()` and the policy call is `policy_real()`. A policy abstention is a successful call with empty evidence, so it follows the success branch above.
+Currently, the price call is `price_real()` and the policy call is `policy_real()`. A policy abstention is a successful call with empty evidence, so it follows the success branch above.
 
 ### Detailed flow: policy evidence decisions
 
@@ -189,12 +189,12 @@ Current [config.yaml](../config.yaml) settings:
 
 ```yaml
 agents:
-  price: stub
+  price: real
   policy: real
   policy_top_k: 10
 ```
 
-- **Price:** returns fixed fake numbers. `price_real()` raises `NotImplementedError`.
+- **Price:** `price_real()` calls `run_price_agent()` in [agents/price/__init__.py](../agents/price/__init__.py). The default approach A extracts town, flat type and period with the model, then calculates statistics from `data/cleaned/hdb_resale_prices.csv.gz`. `price_agent.approach: B` selects the SQL alternative. See the [price guide](../agents/price/README.md).
 - **Policy:** calls `run_policy_agent()` in [src/policy_agent.py](../src/policy_agent.py), with keyword + embedding search, an automatic re-query when needed, and an LLM evidence check with one possible self-correction pass.
 
 The policy adapter takes the agent's nested `retrieval` result and exposes `evidence` at the top level. It also retains `decision`, `reason` and `trace` in `bundle["policy_result"]`. If the decision is not `ANSWER_READY`, it empties the evidence so synthesis receives no policy passages.
@@ -312,7 +312,7 @@ This makes live router calls and reports field accuracy, all-three accuracy, myt
 | Honesty | Unanswerable questions whose answers decline / all unanswerable questions | Higher |
 | Over-refusal | Answerable questions whose answers decline / all answerable questions | Lower |
 
-Required blank grades stop scoring. Pre-filled grades still need human review. Scoring a reviewed sheet makes no model calls; generating answers does. Stub warnings matter: the price agent still supplies fake evidence.
+Required blank grades stop scoring. Pre-filled grades still need human review. Scoring a reviewed sheet makes no model calls; generating answers does. Both agents currently use real evidence; if either is switched to a stub, treat that run as a plumbing check.
 
 If scores worsen, inspect routing, retrieved evidence, agent failures, synthesis and labels before deciding what to change. Keep saved runs for comparison.
 
@@ -338,7 +338,7 @@ Prompts are read at call time and `{today}` is replaced with the shared date. Co
 | `No API key found` / authentication error | Check the key in local `.env` |
 | Unsupported temperature/seed | Set the optional setting to `null` |
 | `No module named 'agents'` | Run from the project root |
-| Real price agent raises `NotImplementedError` | Keep `agents.price: stub` until implemented |
+| Price data or import failure | Install dependencies and check `price_agent.cleaned_data`; rebuild with `python -m scripts.clean_prices` if the original raw CSV is available |
 | Policy import or retrieval failure | Check dependencies, policy modules, embeddings and Chroma store |
 | `Ungraded row` | Complete the required grade columns in that row |
 

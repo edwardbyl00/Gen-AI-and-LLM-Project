@@ -66,7 +66,7 @@ def build_context(bundle):
         if price.get("stub"):
             lines.append("[STUB DATA: not real prices]")
         for key in ("town", "flat_type", "period_start", "period_end", "median_price",
-                    "min_price", "max_price", "n_deals", "data_as_of"):
+                    "mean_price", "min_price", "max_price", "n_deals", "data_as_of", "note"):
             lines.append(f"- {key}: {price.get(key)}")
     else:
         lines.append("- none provided")

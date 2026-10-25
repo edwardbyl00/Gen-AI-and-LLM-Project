@@ -16,3 +16,6 @@ chromadb==1.5.9
 numpy==2.5.3
 torch==2.14.1
 transformers==5.20.2
+
+# Price agent: Python 3.14-compatible table filtering and statistics.
+pandas==3.1.0

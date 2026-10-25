@@ -5,7 +5,6 @@ from types import SimpleNamespace
 
 import pytest
 
-from agents.supervisor.adapters import policy_stub, price_stub
 from agents.supervisor.pipeline import handle_question
 from agents.supervisor.synthesis import (FALLBACK_ANSWER, SynthesisReplyError,
                                          build_context, check_citations,
@@ -18,11 +17,20 @@ def passage(n, url=True):
             "effective_date": "2025-04-01" if n == 1 else None}
 
 
+def fake_price_result(query_date):
+    """A price-shaped dict with the stub flag set, just to exercise
+    synthesis's price handling here without a real price agent call."""
+    return {"town": "STUB", "flat_type": "STUB",
+            "period_start": "2025-10", "period_end": "2026-09",
+            "median_price": 500000, "min_price": 400000, "max_price": 600000,
+            "n_deals": 100, "data_as_of": query_date, "stub": True}
+
+
 def bundle(route="both", false_belief=False, answerable=True, passages=2, price=True):
     return {"question": "q?", "today": "2026-10-22",
             "routing": {"route": route, "false_belief": false_belief,
                         "answerable": answerable, "reason": "r"},
-            "price_result": price_stub("q", "2026-10-22") if price else None,
+            "price_result": fake_price_result("2026-10-22") if price else None,
             "policy_result": {"evidence": [passage(i + 1) for i in range(passages)]},
             "agent_errors": {}}
 
