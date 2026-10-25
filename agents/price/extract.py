@@ -43,10 +43,11 @@ def filter_schema(towns, flat_types):
                 "period_start": month,
                 "period_end": month,
                 "last_n_months": {"type": ["integer", "null"]},
+                "unmatched_place": {"type": ["string", "null"]},
                 "period_words": {"type": ["string", "null"]},
             },
             "required": ["town", "flat_type", "period_start", "period_end",
-                         "last_n_months", "period_words"],
+                         "last_n_months", "unmatched_place", "period_words"],
             "additionalProperties": False,
         },
     }
@@ -63,7 +64,7 @@ def build_prompt(today, data_start, data_end, towns, flat_types):
 
 
 def extract_filters(question, query_date, table, client=None, usage_log=None):
-    """Ask the LLM for the filters. Returns a dict with the five fields."""
+    """Ask the LLM for the filters. Returns a dict with the seven fields."""
     settings = load_settings()
     client = client or make_client(settings.get("timeout_seconds"))
     towns = sorted(table["town"].unique())

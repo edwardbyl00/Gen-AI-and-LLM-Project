@@ -1,0 +1,6 @@
+question_id,question,kind,route,false_belief,answerable,rationale,labelled_by
+PR_P1_01,how much 4rm flats in amk going for these days ah,numbers,price,FALSE,TRUE,Messy wording: abbreviations (4rm; amk) and a vague time word. R2: the price agent turns 'these days' into an exact period.,P1
+PR_P1_02,Is 550k too much for a 3 room in Bedok? also can I use my CPF for the downpayment,both,both,FALSE,TRUE,Compares a price with the market (answerable; not affordability) plus a CPF usage rule. Two questions in one message.,P1
+PR_P1_03,"since hdb stopped selling resale flats in the city centre after 2020, whats the priciest one sold before that",myth,price,TRUE,TRUE,False premise: resale deals in CENTRAL AREA continue after 2020 (1174 deals in the data). The price part (maximum before 2021) is still answerable.,P1
+PR_P1_04,what will a 5 room in punggol cost when my bto is ready in 2029,unanswerable,price,FALSE,FALSE,Forecast (R4): the system declines to predict but can show recent Punggol 5-room prices as context. Mentions BTO but asks about resale.,P1
+PR_P1_05,"cheapest exec flat sold in woodlands in the past 6 months, and how long is the MOP if i buy it",both,both,FALSE,TRUE,Minimum price from resale deals (last 6 full months) plus the Minimum Occupation Period rule. 'exec' means EXECUTIVE.,P1

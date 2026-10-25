@@ -30,6 +30,8 @@ price_agent:
   cleaned_data: data/cleaned/hdb_resale_prices.csv.gz
   # What "recently", "lately" or no time words mean: the latest N full months.
   default_months: 12
+  # Which price agent the pipeline uses: "A" = filter tool, "B" = text-to-SQL.
+  approach: A
 
 data_preparation:
   chunking:

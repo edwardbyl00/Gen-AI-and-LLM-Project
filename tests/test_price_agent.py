@@ -35,7 +35,8 @@ def table():
 def fake_extract(**filters):
     """Return a stand-in for the LLM that always gives these filters."""
     base = {"town": None, "flat_type": None, "period_start": None,
-            "period_end": None, "last_n_months": None, "period_words": None}
+            "period_end": None, "last_n_months": None, "unmatched_place": None,
+            "period_words": None}
     base.update(filters)
     return lambda question, query_date, table, client=None, usage_log=None: base
 
@@ -185,7 +186,8 @@ class FakeClient:
 
 def test_extract_filters_sends_schema_and_parses_reply(table):
     reply = {"town": "TAMPINES", "flat_type": "4 ROOM", "period_start": None,
-             "period_end": None, "last_n_months": None, "period_words": "recently"}
+             "period_end": None, "last_n_months": None, "unmatched_place": None,
+             "period_words": "recently"}
     client = FakeClient(reply)
     out = extract_filters("4rm Tampines lately?", "2026-10-25", table, client=client)
     assert out == reply
@@ -198,3 +200,12 @@ def test_extract_filters_sends_schema_and_parses_reply(table):
 def test_filter_schema_allows_null_town():
     schema = filter_schema(["TAMPINES"], ["4 ROOM"])
     assert None in schema["schema"]["properties"]["town"]["enum"]
+
+
+def test_unmatched_place_reports_no_deals_instead_of_all_towns(table):
+    result = price_agent("5-room in Tengah?", "2026-10-25",
+                         extract_fn=fake_extract(flat_type="5 ROOM", unmatched_place="Tengah"),
+                         table=table)
+    assert result["town"] == "TENGAH"
+    assert result["n_deals"] == 0 and result["median_price"] is None
+    assert "not one of the HDB towns" in result["note"]

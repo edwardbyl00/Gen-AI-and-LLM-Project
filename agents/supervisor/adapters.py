@@ -36,11 +36,11 @@ def price_stub(question, query_date):
 
 
 def price_real(question, query_date):
-    """Call P1's price_agent() from agents/price/."""
+    """Call P1's price agent from agents/price/ (approach set in config.yaml)."""
     # Import only when the real agent is called, so stub mode still runs
     # before the price data has been built.
-    from agents.price import price_agent
-    return price_agent(question, query_date)
+    from agents.price import run_price_agent
+    return run_price_agent(question, query_date)
 
 
 # ---------- policy agent (P5, built on P4's index) ----------

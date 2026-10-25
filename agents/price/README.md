@@ -10,7 +10,15 @@ from agents.price import price_agent
 price_agent("What did 4-room flats in Tampines sell for recently?", "2026-10-25")
 ```
 
-Returns the fields agreed in `Docs/p2_supervisor_contract.md` (A4):
+The pipeline calls `run_price_agent()`, which uses the approach set in
+`config.yaml` (`price_agent.approach`):
+
+| Approach | File | How it works |
+|---|---|---|
+| A: filter tool (default) | `agent.py`, `extract.py` | The LLM fills in a fixed form (town, flat type, period). Code does the rest. |
+| B: text-to-SQL | `sql_agent.py` | The LLM writes a SQL query that selects the deals. Code checks it is a safe read-only SELECT, runs it, and calculates the figures. |
+
+Both return the fields agreed in `Docs/p2_supervisor_contract.md` (A4):
 `town`, `flat_type`, `period_start`, `period_end`, `median_price`,
 `min_price`, `max_price`, `n_deals`, `data_as_of`, plus:
 
@@ -40,13 +48,24 @@ Returns the fields agreed in `Docs/p2_supervisor_contract.md` (A4):
 | `agent.py` | `price_agent()`: the entry point |
 | `extract.py` | Approach A: LLM fills in town, flat type and period |
 | `data.py` | Loads the table, period rules, price calculations (no LLM) |
-| `prompts/price_filters_v1.md` | Prompt for the filter extraction |
+| `sql_agent.py` | Approach B: text-to-SQL, with safety checks |
+| `prompts/price_filters_v1.md` | Prompt for approach A |
+| `prompts/price_sql_v1.md` | Prompt for approach B |
 
 ## Rebuild the price data
 
 1. Download the CSV from data.gov.sg into `data/raw/` (file name in `config.yaml`).
 2. Run `python -m scripts.clean_prices` from the project root.
 
+## Comparing A, B and the plain chatbot
+
+1. `python -m evaluation.build_price_ground_truth` computes the correct
+   answers for the 20 questions in `evaluation/price_questions_P1.csv`
+   straight from the table (not with the agent's own code).
+2. `python -m evaluation.evaluate_price_agents` runs approach A, approach B
+   and the plain chatbot on them (needs the API key) and scores filters,
+   figures, no-data handling, time and tokens.
+
 ## Tests
 
-`pytest tests/test_price_agent.py` (no API key needed).
+`pytest tests/test_price_agent.py tests/test_price_sql_and_eval.py` (no API key needed).

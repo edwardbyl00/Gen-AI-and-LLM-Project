@@ -51,6 +51,21 @@ def price_agent(question, query_date=None, client=None, extract_fn=None,
         table, filters.get("period_start"), filters.get("period_end"),
         default_months, query_date, filters.get("last_n_months"))
 
+    # A place the LLM could not match to any town: say so, never fall back to
+    # an all-Singapore figure that the user did not ask for.
+    unmatched = (filters.get("unmatched_place") or "").strip()
+    if unmatched and town == ALL:
+        return {
+            "town": unmatched.upper(), "flat_type": flat_type,
+            "period_start": start, "period_end": end,
+            "median_price": None, "mean_price": None, "min_price": None,
+            "max_price": None, "n_deals": 0,
+            "data_as_of": table["month"].max(), "approach": APPROACH,
+            "filters": filters,
+            "note": (f"{unmatched} is not one of the HDB towns in the resale data, "
+                     "so there are no resale deals to report."),
+        }
+
     result = {
         "town": town,
         "flat_type": flat_type,

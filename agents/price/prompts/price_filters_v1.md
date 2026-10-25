@@ -9,6 +9,9 @@ Fill in these fields:
   "CBD" or "city centre" to CENTRAL AREA. If the question names a place that is not in the list
   (an estate, street or MRT station), use the town it belongs to only if you are sure; otherwise null.
   If several towns are named, use the first one.
+- unmatched_place: if the question names a place you could not match to a town in the list
+  (for example a new estate with no resale flats yet), write the place as the user wrote it;
+  otherwise null. Never use it for a place you did match.
 - flat_type: one of the flat types listed below, exactly as written, or null if none is named.
   "4-room", "4rm" and "four room" all mean 4 ROOM. "Exec" means EXECUTIVE.
 - period_start and period_end: months written as YYYY-MM, or null.
@@ -16,6 +19,9 @@ Fill in these fields:
   - "Last year" means the whole of the year before today's year.
   - "Since 2022" means period_start 2022-01 and period_end null.
   - A specific month such as "March 2025" means 2025-03 to 2025-03.
+  - A quarter: "Q1 2026" means 2026-01 to 2026-03, Q2 is April to June, Q3 July to September,
+    Q4 October to December.
+  - "Between 2019 and 2021" means 2019-01 to 2021-12.
   - "The last N months" or "the past N months" (for example "last six complete months"): set
     last_n_months to N and leave period_start and period_end null. The system counts back from the
     latest full month of data. Otherwise last_n_months is null.
