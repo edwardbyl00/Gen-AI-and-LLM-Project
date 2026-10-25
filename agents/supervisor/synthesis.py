@@ -1,7 +1,7 @@
 """Synthesis: turn the pipeline's bundle into the final answer.
 
-Rules: Docs/routing_spec.md section 7, written as A1 to A8 in
-prompts/synthesis_v1.md.
+Answer rules A1-A8: agents/supervisor/prompts/synthesis_v1.md
+Code walkthrough: Docs/p2_supervisor_code.md
 
 The model writes the answer text and lists the passage numbers it cited.
 The code, not the model, builds the source list (titles, dates, links),

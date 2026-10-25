@@ -1,9 +1,10 @@
 """Safety checks on the router's output.
 
-Implements section 4 of Docs/routing_spec.md:
 - fix known contradictions (invalid combinations),
 - retry once if the reply cannot be read, then use the safest fallback,
 - report every fix as an event, so evaluation can count them.
+
+Code walkthrough: Docs/p2_supervisor_code.md
 """
 
 import json

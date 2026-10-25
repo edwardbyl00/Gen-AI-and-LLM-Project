@@ -1,7 +1,7 @@
 """Supervisor router: turns a user question into a routing record.
 
-Rules: Docs/routing_spec.md
-Output fields: Docs/p2_supervisor_contract.md (section A1)
+Rules R1-R5: agents/supervisor/prompts/supervisor_v1.md
+Code walkthrough: Docs/p2_supervisor_code.md
 """
 
 import json

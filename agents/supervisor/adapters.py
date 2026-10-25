@@ -1,11 +1,12 @@
 """Adapters between the supervisor and the price and policy agents.
 
-Each adapter returns the shape agreed in Docs/p2_supervisor_contract.md
-(section A4). If an agent's own output changes, only its adapter changes.
+Each adapter returns the shape pipeline.py and synthesis.py expect (see
+Docs/p2_supervisor_code.md). If an agent's own output changes, only its
+adapter changes.
 
 Which version is used ("stub" or "real") is set in config.yaml under
-"agents". Stubs return fake data, clearly marked, so the pipeline can be
-built and tested before the real agents exist.
+"agents". A stub returns fake data, clearly marked, so the pipeline can be
+built, tested, or run without the real agent or its dependencies.
 """
 
 import sys
@@ -62,7 +63,9 @@ def policy_stub(question, query_date, top_k=3):
 
 
 def policy_real(question, query_date, top_k=3):
-    """Call P5's retrieve_policy_evidence() from src/policy_retriever.py."""
+    """Call P5's agentic policy agent: hybrid (BM25 + dense) retrieval, an
+    automatic re-query, then an LLM evidence check with one self-correction
+    pass before deciding whether there's enough to answer from."""
     src = str(PROJECT_ROOT / "src")
     if src not in sys.path:
         # P5's modules import each other by bare name (e.g. hybrid_search),
@@ -70,14 +73,34 @@ def policy_real(question, query_date, top_k=3):
         sys.path.insert(0, src)
     try:
         # Import only when the real agent is called, so stub mode can run
-        # before P5's code and its dependencies are installed.
-        from policy_retriever import retrieve_policy_evidence
+        # without P5's code or its dependencies (rank-bm25, chromadb,
+        # torch, transformers) installed.
+        from policy_agent import run_policy_agent
     except ImportError as error:
         raise ImportError(
-            "P5's policy agent (src/policy_retriever.py) is not in this "
-            "branch yet. Merge it, or set agents.policy to 'stub'."
+            "Could not import P5's policy agent (src/policy_agent.py). "
+            "Check that its dependencies are installed (pip install -r "
+            "requirements.txt), or set agents.policy to 'stub'."
         ) from error
-    result = retrieve_policy_evidence(question, query_date=query_date, top_k=top_k)
+
+    agent_result = run_policy_agent(
+        question, query_date=query_date, top_k=top_k,
+        use_dense=True, use_llm_assessor=True,
+    )
+
+    # Keep the pipeline's expected top-level shape (an "evidence" key),
+    # with the agent's own decision/reason/trace alongside it for the step
+    # log, rather than nested under a separate "retrieval" key.
+    result = dict(agent_result.get("retrieval", {}))
+    result["decision"] = agent_result.get("decision")
+    result["reason"] = agent_result.get("reason")
+    result["trace"] = agent_result.get("trace", [])
+
+    # If the agent decided the evidence was too weak, don't let synthesis
+    # answer from it anyway -- treat it the same as "nothing retrieved".
+    if result["decision"] != "ANSWER_READY":
+        result["evidence"] = []
+
     # Synthesis needs url and effective_date on every item to cite sources.
     for item in result.get("evidence", []):
         item.setdefault("url", None)
