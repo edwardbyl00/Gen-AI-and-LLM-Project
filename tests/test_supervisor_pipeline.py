@@ -16,8 +16,8 @@ def no_real_synthesis(monkeypatch):
     monkeypatch.setattr(pipeline, "synthesise", fake)
 
 
-def fake_route(route, false_belief=False, answerable=True):
-    record = {"route": route, "false_belief": false_belief,
+def fake_route(route, check_premise=False, answerable=True):
+    record = {"route": route, "check_premise": check_premise,
               "answerable": answerable, "reason": "r"}
     return lambda question, **kwargs: (record, [])
 

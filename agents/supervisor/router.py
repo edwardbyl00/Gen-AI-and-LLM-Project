@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-PROMPT_FILE = Path(__file__).parent / "prompts" / "supervisor_v1.md"
+PROMPT_FILE = Path(__file__).parent / "prompts" / "supervisor_v2.md"
 CONFIG_FILE = PROJECT_ROOT / "config.yaml"
 
 
@@ -42,11 +42,11 @@ ROUTING_SCHEMA = {
         "type": "object",
         "properties": {
             "route": {"type": "string", "enum": ["price", "policy", "both", "none"]},
-            "false_belief": {"type": "boolean"},
+            "check_premise": {"type": "boolean"},
             "answerable": {"type": "boolean"},
             "reason": {"type": "string"},
         },
-        "required": ["route", "false_belief", "answerable", "reason"],
+        "required": ["route", "check_premise", "answerable", "reason"],
         "additionalProperties": False,
     },
 }
@@ -88,9 +88,9 @@ def make_client(timeout=None):
 # Use the supplied client and date, or create a client and use today's date.
 # Request a response matching ROUTING_SCHEMA, include optional temperature
 # and seed settings when configured, and parse the JSON into a dictionary
-# containing route, false_belief, answerable, and reason.
+# containing route, check_premise, answerable, and reason.
 def route_question(question, client=None, today=None, usage_log=None):
-    """Classify one question. Returns a dict with route, false_belief,
+    """Classify one question. Returns a dict with route, check_premise,
     answerable and reason."""
     settings = load_settings()
     today = today or date.today().isoformat()

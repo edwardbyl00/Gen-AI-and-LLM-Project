@@ -11,6 +11,44 @@ diff already shows the what. Mark whether it's still uncommitted.
 
 ---
 
+## 2026-10-25 — Router flags premises to check, not false beliefs
+
+**Status:** uncommitted (working tree)
+
+Replaced the routing field `false_belief` with `check_premise`, and added
+router prompt `supervisor_v2.md` and synthesis prompt `synthesis_v2.md`
+(both v1 files kept for comparison).
+
+- **What the flag means now:** the question states or assumes a specific
+  claim about HDB/CPF rules, schemes, amounts, timelines or procedures, or
+  about resale prices. The router no longer decides whether the claim is
+  true. Facts about the user's own situation and the status of a service
+  do not count.
+- **Synthesis A1:** checks the claim against the evidence; corrects it if
+  contradicted, simply answers if supported, says it could not confirm if
+  the sources are silent.
+- **Labels:** `practice_routing.csv` now has `check_premise` and
+  `premise_false` (is the claim actually false?), with a
+  `premise_rationale`. The previous audited labels are kept as
+  `false_belief_v1`, the teammates' originals as `original_label`.
+  Drafted labels: 12 premises, 5 known false, 1 known true, 6 to verify.
+- **Scores:** `evaluate.py` reports premise detection, myths among them and
+  false alarms; myth acceptance in `score_answers.py` uses rows where
+  `premise_false` is TRUE. Older answer sheets with `label_false_belief`
+  still score.
+
+**Why:** the router cannot see the sources, so asking it whether a claim
+is *false* made it rely on the model's memory, the failure the project is
+built to avoid. The label audit on 25 Oct also showed that "user makes a
+claim" was the natural labelling test. Now the router only detects claims
+(a reading task), and synthesis verifies them against dated evidence.
+
+**Note for comparisons:** v1's `false_belief` and v2's `check_premise`
+measure different things, so compare v1 and v2 on `route` and
+`answerable`, and report premise detection for v2 only.
+
+---
+
 ## 2026-10-25 — Connected the real price agent
 
 **Status:** uncommitted (working tree)

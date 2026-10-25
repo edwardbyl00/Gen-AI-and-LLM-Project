@@ -6,7 +6,8 @@ from agents.supervisor.score_answers import answer_all, score_sheet
 
 
 def line(qid, myth, answerable, declined, accepted):
-    return {"question_id": qid, "label_false_belief": str(myth),
+    return {"question_id": qid, "label_check_premise": str(myth),
+            "label_premise_false": str(myth),
             "label_answerable": str(answerable),
             "grade_declined": str(declined), "grade_myth_accepted": accepted}
 
@@ -33,7 +34,7 @@ def test_ungraded_sheet_cannot_be_scored():
 
 def test_answer_all_builds_a_prefilled_sheet():
     rows = [{"question_id": "q1", "question": "Q?", "kind": "myth",
-             "false_belief": True, "answerable": True}]
+             "check_premise": True, "premise_false": True, "answerable": True}]
     fake = lambda q: {
         "routing": {"route": "both"},
         "answer": {"answer": "A [1].", "declined": False, "cited": [1],
@@ -48,3 +49,15 @@ def test_answer_all_builds_a_prefilled_sheet():
     assert (sheet["input_tokens"], sheet["output_tokens"]) == (2400, 240)
     assert sheet["stub_agents"] == "price_agent"
     assert "Sources:" in sheet["answer"]
+
+
+def test_old_sheets_with_false_belief_column_still_score():
+    old = [{"question_id": "m1", "label_false_belief": "True", "label_answerable": "True",
+            "grade_declined": "False", "grade_myth_accepted": "False"}]
+    assert score_sheet(old)["myth_acceptance"]["total"] == 1
+
+
+def test_true_premise_is_not_a_myth():
+    sheet = [{"question_id": "t", "label_check_premise": "True", "label_premise_false": "False",
+              "label_answerable": "True", "grade_declined": "False", "grade_myth_accepted": "n/a"}]
+    assert score_sheet(sheet)["myth_acceptance"]["total"] == 0
