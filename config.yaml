@@ -23,6 +23,14 @@ agents:
   # How many policy passages to retrieve (passed to P5's agent).
   policy_top_k: 3
 
+price_agent:
+  # P1. Raw file from data.gov.sg goes in data/raw/ (git-ignored);
+  # run "python -m scripts.clean_prices" to build the cleaned file.
+  raw_data: data/raw/ResaleflatpricesbasedonregistrationdatefromJan2017onwards.csv
+  cleaned_data: data/cleaned/hdb_resale_prices.csv.gz
+  # What "recently", "lately" or no time words mean: the latest N full months.
+  default_months: 12
+
 data_preparation:
   chunking:
     input: data/cleaned/deduplicated_documents.jsonl

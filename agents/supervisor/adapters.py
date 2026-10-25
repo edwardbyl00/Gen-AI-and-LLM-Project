@@ -36,11 +36,11 @@ def price_stub(question, query_date):
 
 
 def price_real(question, query_date):
-    """Call P1's price agent. Not available yet."""
-    raise NotImplementedError(
-        "P1's price agent is not in this branch yet. "
-        "Set agents.price to 'stub' in config.yaml."
-    )
+    """Call P1's price_agent() from agents/price/."""
+    # Import only when the real agent is called, so stub mode still runs
+    # before the price data has been built.
+    from agents.price import price_agent
+    return price_agent(question, query_date)
 
 
 # ---------- policy agent (P5, built on P4's index) ----------
