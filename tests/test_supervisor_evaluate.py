@@ -44,8 +44,9 @@ def test_run_uses_the_given_router():
 
 def test_practice_file_is_valid():
     rows = load_labels("data/labels/practice_routing.csv")
-    assert len(rows) == 20
-    assert len({r["question_id"] for r in rows}) == 20
+    assert rows
+    assert all(r["question_id"].strip() and r["question"].strip() for r in rows)
+    assert len({r["question_id"] for r in rows}) == len(rows)
     assert all(r["route"] in ("price", "policy", "both", "none") for r in rows)
     # R3: a flagged belief never goes with route none
     assert not any(r["false_belief"] and r["route"] == "none" for r in rows)

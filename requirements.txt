@@ -5,3 +5,17 @@ pyyaml==6.0.1
 python-dotenv==1.0.1
 pytest==8.4.2
 httpx==0.28.1
+
+# Policy retrieval (P5): BM25 keyword search, Chroma vector store, and the
+# BGE embedding model used for dense retrieval.
+# torch/transformers/numpy versions chosen for this project's Python 3.14
+# venv -- P5's own pins (torch 2.5.1, numpy 2.0.2) predate 3.14 and have no
+# wheel for it, so pip resolved the nearest compatible versions instead.
+rank-bm25==0.2.2
+chromadb==1.5.9
+numpy==2.5.3
+torch==2.14.1
+transformers==5.20.2
+
+# Price agent: Python 3.14-compatible table filtering and statistics.
+pandas==3.1.0

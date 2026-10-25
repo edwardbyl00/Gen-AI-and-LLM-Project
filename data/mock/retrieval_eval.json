@@ -1,0 +1,32 @@
+[
+  {
+    "id": "Q01",
+    "question": "Can I use CPF Ordinary Account savings to buy a home?",
+    "query_date": "2026-06-01",
+    "expected_document_id": "C01"
+  },
+  {
+    "id": "Q02",
+    "question": "Can I use OA savings for my flat?",
+    "query_date": "2026-06-01",
+    "expected_document_id": "C01"
+  },
+  {
+    "id": "Q03",
+    "question": "What is the Minimum Occupation Period?",
+    "query_date": "2026-06-01",
+    "expected_document_id": "H06"
+  },
+  {
+    "id": "Q04",
+    "question": "What CPF housing rule applied in 2025?",
+    "query_date": "2025-06-01",
+    "expected_document_id": "OLD01"
+  },
+  {
+    "id": "Q05",
+    "question": "What CPF housing rule applies in 2026?",
+    "query_date": "2026-06-01",
+    "expected_document_id": "NEW01"
+  }
+]
