@@ -10,7 +10,7 @@ from agents.supervisor.checks import SAFE_FALLBACK, safe_route
 
 def good(**changes):
     """A valid record, with optional changes for a test."""
-    record = {"route": "policy", "false_belief": False,
+    record = {"route": "policy", "check_premise": False,
               "answerable": True, "reason": "A rules question."}
     record.update(changes)
     return record
@@ -38,9 +38,9 @@ def test_valid_record_passes_unchanged():
     assert events == []
 
 
-def test_none_with_false_belief_becomes_policy():
+def test_none_with_check_premise_becomes_policy():
     record, events = safe_route("q", router=scripted(
-        good(route="none", false_belief=True, answerable=False)))
+        good(route="none", check_premise=True, answerable=False)))
     assert record["route"] == "policy"
     assert [e["code"] for e in events] == ["invalid_combo"]
 
@@ -56,7 +56,7 @@ def test_none_with_answerable_becomes_not_answerable():
 def test_both_contradictions_fix_the_belief_first():
     # Once the route becomes policy, the second rule no longer applies.
     record, events = safe_route("q", router=scripted(
-        good(route="none", false_belief=True, answerable=True)))
+        good(route="none", check_premise=True, answerable=True)))
     assert record["route"] == "policy"
     assert record["answerable"] is True
     assert len(events) == 1

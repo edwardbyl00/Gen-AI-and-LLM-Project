@@ -9,8 +9,9 @@ answers:
 2. Grade: open the sheet and fill in the two grade columns:
    - grade_declined: did the answer decline the main question / say it
      does not know? (pre-filled from the model's own claim; check it)
-   - grade_myth_accepted: myth questions only. Did the answer go along
-     with the false belief instead of correcting it?
+   - grade_myth_accepted: myth questions only (premise_false = true in
+     the labels). Did the answer go along with the false claim instead of
+     correcting it?
 
 3. Score:
        python -m agents.supervisor.score_answers score evaluation/answers/<file>.csv
@@ -36,7 +37,7 @@ from agents.supervisor.router import PROJECT_ROOT
 from agents.supervisor.synthesis import format_answer
 
 ANSWERS_DIR = PROJECT_ROOT / "evaluation" / "answers"
-COLUMNS = ["question_id", "question", "kind", "label_false_belief", "label_answerable",
+COLUMNS = ["question_id", "question", "kind", "label_check_premise", "label_premise_false", "label_answerable",
            "route", "answer", "model_says_declined", "n_cited", "agent_errors",
            "stub_agents", "input_tokens", "output_tokens", "seconds",
            "grade_declined", "grade_myth_accepted"]
@@ -54,7 +55,8 @@ def answer_all(rows, answer_fn=handle_question):
             "question_id": row["question_id"],
             "question": row["question"],
             "kind": row.get("kind", ""),
-            "label_false_belief": row["false_belief"],
+            "label_check_premise": row["check_premise"],
+            "label_premise_false": "" if row["premise_false"] is None else row["premise_false"],
             "label_answerable": row["answerable"],
             "route": bundle["routing"]["route"],
             "answer": format_answer(result),
@@ -67,7 +69,7 @@ def answer_all(rows, answer_fn=handle_question):
             "seconds": round(time.perf_counter() - start, 2),
             # Pre-filled guesses for the grader to check.
             "grade_declined": result["declined"],
-            "grade_myth_accepted": "" if row["false_belief"] else "n/a",
+            "grade_myth_accepted": "" if row["premise_false"] else "n/a",
         })
     return lines
 
@@ -82,6 +84,15 @@ def save_sheet(lines):
     return out
 
 
+def is_myth(line):
+    """A myth row: the question's premise is known to be false.
+
+    Older sheets used a single label_false_belief column; they still score.
+    """
+    value = line.get("label_premise_false", line.get("label_false_belief", ""))
+    return bool(str(value).strip()) and to_bool(value)
+
+
 def rate(hits, total):
     return {"hits": hits, "total": total, "rate": round(hits / total, 3) if total else None}
 
@@ -93,11 +104,11 @@ def score_sheet(lines):
     sheet can never produce a score by accident.
     """
     for line in lines:
-        mythy = to_bool(line["label_false_belief"])
+        mythy = is_myth(line)
         if line["grade_declined"] in ("", None) or (mythy and line["grade_myth_accepted"] in ("", None)):
             raise ValueError(f"Ungraded row: {line['question_id']}")
 
-    myths = [l for l in lines if to_bool(l["label_false_belief"])]
+    myths = [l for l in lines if is_myth(l)]
     unanswerable = [l for l in lines if not to_bool(l["label_answerable"])]
     answerable = [l for l in lines if to_bool(l["label_answerable"])]
     return {

@@ -37,7 +37,7 @@ def test_pipeline_uses_real_transactions(monkeypatch):
                 "period_start": "2024-01", "period_end": "2024-12"}
 
     monkeypatch.setattr(price_module, "extract_filters", filters)
-    routing = {"route": "price", "false_belief": False,
+    routing = {"route": "price", "check_premise": False,
                "answerable": True, "reason": "Historical transaction count"}
     captured = {}
 
@@ -75,7 +75,7 @@ def test_future_price_note_reaches_synthesis(monkeypatch):
     assert result["n_deals"] == 0 and result["median_price"] is None
     context, _ = build_context({
         "question": "What will flats cost in 2099?",
-        "routing": {"route": "price", "false_belief": False, "answerable": False},
+        "routing": {"route": "price", "check_premise": False, "answerable": False},
         "price_result": result,
     })
     assert result["note"] in context

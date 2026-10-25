@@ -14,7 +14,7 @@ from pathlib import Path
 
 from agents.supervisor.router import load_settings, make_client, record_usage
 
-PROMPT_FILE = Path(__file__).parent / "prompts" / "synthesis_v1.md"
+PROMPT_FILE = Path(__file__).parent / "prompts" / "synthesis_v2.md"
 
 SYNTHESIS_SCHEMA = {
     "name": "answer",
@@ -55,8 +55,8 @@ def build_context(bundle):
         "",
         "Routing note:",
         f"- sources searched: {routing['route']}",
-        f"- possible false belief: {yes_no(routing['false_belief'])}"
-        + (" (a suspicion only; check it against the sources)" if routing["false_belief"] else ""),
+        f"- claim in the question to check: {yes_no(routing['check_premise'])}"
+        + (" (check it against the sources; it may be true or false)" if routing["check_premise"] else ""),
         f"- answerable: {yes_no(routing['answerable'])}",
     ]
 

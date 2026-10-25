@@ -50,7 +50,7 @@ flowchart TD
     RETRY -->|Yes| AGAIN[Start attempt 2]
     AGAIN --> CALL
     RETRY -->|No| FALLBACK[Return SAFE_FALLBACK and events]
-    VALID -->|Yes| MYTH{Route none and false_belief true?}
+    VALID -->|Yes| MYTH{Route none and check_premise true?}
     MYTH -->|Yes| POLICY[Set route to policy and log fix]
     MYTH -->|No| ANSWERABLE{Route none and answerable true?}
     POLICY --> ANSWERABLE
@@ -162,7 +162,7 @@ The router returns four fields:
 | Field | Meaning |
 | --- | --- |
 | `route` | `price`, `policy`, `both` or `none` |
-| `false_belief` | The question may contain an incorrect premise; evidence must confirm it |
+| `check_premise` | The question states or assumes a claim about rules or prices that must be checked against evidence (it may be true or false; the router does not decide). Facts about the user's own situation do not count |
 | `answerable` | Whether the actual question can be answered from the available sources |
 | `reason` | The model's explanation for its decision |
 
@@ -176,7 +176,7 @@ A grant amount needs policy evidence. A historical resale price needs transactio
 
 | Contradiction | Repair |
 | --- | --- |
-| `route=none`, `false_belief=True` | Set `route=policy` so evidence can be checked |
+| `route=none`, `check_premise=True` | Set `route=policy` so evidence can be checked |
 | `route=none`, `answerable=True` | Set `answerable=False` |
 
 The first repair runs before the second. If both contradictions occur, the result is `policy` and remains answerable.
@@ -278,7 +278,7 @@ Model settings live under `llm` in `config.yaml`. Optional request settings set 
 
 Add rows to [practice_routing.csv](../data/labels/practice_routing.csv) for tuning. Reserve [routing_labels.csv](../data/labels/routing_labels.csv) for held-out evaluation.
 
-Each row needs `question_id`, `question`, `route`, `false_belief` and `answerable`. Follow the existing format for `kind`, `rationale` and `labelled_by`. Use stable IDs such as `PR_P2_05`, and `TRUE`/`FALSE` labels.
+Each row needs `question_id`, `question`, `route`, `check_premise` and `answerable`, plus `premise_false` (TRUE/FALSE) on rows where `check_premise` is TRUE: is the claim actually false? Leave it blank while unverified; blank rows are left out of the myth score. Decide it from the sources or the question's author, never from memory. Follow the existing format for `kind`, `rationale` and `labelled_by`. Use stable IDs such as `PR_P2_05`, and `TRUE`/`FALSE` labels.
 
 Label the actual question: a forecast may be unanswerable even when historical facts provide useful context. Keep prompt examples out of practice and held-out sets.
 
@@ -288,7 +288,7 @@ Label the actual question: a forecast may be unanswerable even when historical f
 python -m agents.supervisor.evaluate data/labels/practice_routing.csv
 ```
 
-This makes live router calls and reports field accuracy, all-three accuracy, myth detection, false alarms, repairs/retries, a route confusion table and misses. Results go to `evaluation/results/`.
+This makes live router calls and reports field accuracy, all-three accuracy, premise detection (and how many of those were myths), false alarms, repairs/retries, a route confusion table and misses. Results go to `evaluation/results/`.
 
 ### Check final answers
 
@@ -298,7 +298,7 @@ This makes live router calls and reports field accuracy, all-three accuracy, myt
    python -m agents.supervisor.score_answers run data/labels/practice_routing.csv
    ```
 
-2. Open the printed CSV path under `evaluation/answers/`. Read each answer and review `grade_declined`, which is pre-filled from the model's own claim. Fill `grade_myth_accepted` for false-belief questions; leave `n/a` for other rows. Extra columns such as `grader_notes` are allowed.
+2. Open the printed CSV path under `evaluation/answers/`. Read each answer and review `grade_declined`, which is pre-filled from the model's own claim. Fill `grade_myth_accepted` for myth questions (`premise_false` TRUE); leave `n/a` for other rows. Extra columns such as `grader_notes` are allowed.
 
 3. Save the reviewed file, then score it:
 
@@ -320,8 +320,8 @@ If scores worsen, inspect routing, retrieved evidence, agent failures, synthesis
 
 | Prompt | Used by |
 | --- | --- |
-| [supervisor_v1.md](../agents/supervisor/prompts/supervisor_v1.md) | Router: rules R1–R5 and routing examples |
-| [synthesis_v1.md](../agents/supervisor/prompts/synthesis_v1.md) | Synthesis: answer rules A1–A8 |
+| [supervisor_v2.md](../agents/supervisor/prompts/supervisor_v2.md) | Router: rules R1–R5 and routing examples (v1 kept for comparison) |
+| [synthesis_v2.md](../agents/supervisor/prompts/synthesis_v2.md) | Synthesis: answer rules A1–A8 (v1 kept for comparison) |
 
 1. Decide which routing or answer rule needs to change and update its explanation alongside the prompt.
 2. Copy the prompt to a new version, edit it, and update `PROMPT_FILE` in `router.py` or `synthesis.py`. Keep old versions for comparison.
@@ -342,4 +342,4 @@ Prompts are read at call time and `{today}` is replaced with the shared date. Co
 | Policy import or retrieval failure | Check dependencies, policy modules, embeddings and Chroma store |
 | `Ungraded row` | Complete the required grade columns in that row |
 
-The router cannot inspect the corpus when it flags a false belief. Treat that flag as a suspicion; retrieved evidence must support any correction. Real policy retrieval is connected, but a successful run alone does not establish answer accuracy.
+The router cannot inspect the corpus, so it does not judge whether a claim is true: it only flags claims to check, and synthesis verifies them against retrieved evidence (rule A1). Real policy retrieval is connected, but a successful run alone does not establish answer accuracy.

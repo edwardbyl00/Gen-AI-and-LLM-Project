@@ -1,55 +1,55 @@
-question_id,question,kind,route,false_belief,answerable,rationale,labelled_by
-PR_P2_01,Can I rent out my whole HDB flat after buying it?,rules,policy,FALSE,TRUE,Rule on renting out a flat; no prices needed.,P2
-PR_P2_02,Can PRs use their CPF to pay for an HDB resale flat?,rules,policy,FALSE,TRUE,CPF usage rule for a specific group.,P2
-PR_P2_03,What documents do I need for an HDB resale application?,rules,policy,FALSE,TRUE,Procedure question.,P2
-PR_P2_04,How much is the Proximity Housing Grant?,rules,policy,FALSE,TRUE,TRAP: an amount written in a rule is policy not price.,P2
-PR_P2_05,What was the median price of a 5-room flat in Punggol in 2025?,numbers,price,FALSE,TRUE,Statistic from resale transactions.,P2
-PR_P2_06,How many 4-room resale flats were sold in Toa Payoh last year?,numbers,price,FALSE,TRUE,Count of deals from resale transactions.,P2
-PR_P2_07,What have executive flats in Pasir Ris been going for lately?,numbers,price,FALSE,TRUE,TRAP: vague time word does not make it unanswerable (R2).,P2
-PR_P2_08,What is the most expensive 3-room flat sold in Queenstown since 2022?,numbers,price,FALSE,TRUE,Maximum from resale transactions.,P2
-PR_P2_09,"What is the resale levy, and what did 5-room flats in Bedok sell for in 2024?",both,both,FALSE,TRUE,Rule plus resale prices.,P2
-PR_P2_10,"Can I use my CPF OA for a 3-room resale in Clementi, and roughly how much would it cost?",both,both,FALSE,TRUE,CPF rule plus typical price.,P2
-PR_P2_11,Can I afford a 4-room flat in Sengkang on a household income of $7000?,unanswerable,both,FALSE,FALSE,TRAP: personal finances (R1); affordability rules plus typical prices as context.,P2
-PR_P2_12,"Now that the MOP is only 3 years, when can I sell a flat I bought in 2023?",myth,policy,TRUE,TRUE,MOP is not 3 years; policy corrects it.,P2
-PR_P2_13,"My single sister will have to buy a BTO, so what do resale 2-room flats in Jurong East cost for comparison?",myth,both,TRUE,TRUE,TRAP: myth with no signal word (assumes singles cannot buy resale); policy corrects it (R3).,P2
-PR_P2_14,"Since resale prices in Bishan have fallen every year since 2020, is now a good time to buy?",myth,price,TRUE,FALSE,TRAP: myth about prices is corrected by price data (R3); timing advice is not answerable. VERIFY the price trend with P1's data.,P2
-PR_P2_15,"Since I'm 36 and single, can I buy a 3-room resale flat?",rules,policy,FALSE,TRUE,TRAP: 'since' describes the user not the rules; not a myth.,P2
-PR_P2_16,"Given that grants are only for BTO flats, how much cash do I need for a 4-room resale in Yishun?",myth,both,TRUE,TRUE,Grants exist for resale flats; policy corrects it and price answers the cost.,P2
-PR_P2_17,Will resale prices in Tampines drop after the new MRT line opens?,unanswerable,price,FALSE,FALSE,Forecast (R4); recent Tampines prices are like-for-like context.,P2
-PR_P2_18,What is the launch price of a 4-room BTO flat in the next Bayshore launch?,unanswerable,none,FALSE,FALSE,TRAP: BTO prices are not in our data (R5); resale prices are not substituted.,P2
-PR_P2_19,Will the CPF housing grant amounts be increased next year?,unanswerable,policy,FALSE,FALSE,Future rule change (R4); current amounts as context unless an official change is announced.,P2
-PR_P2_20,What's the best way to invest my CPF Special Account savings?,out_of_scope,none,FALSE,FALSE,TRAP: mentions CPF but is investment advice not housing.,P2
-PR_P2_21,How is the weather today?,,none,FALSE,FALSE,,
-PR_P2_22,What are the type of grants for a person earning 80k a year?,,policy,FALSE,TRUE,,
-PR_P2_23,I am 18 and finally able to bto without being married. What is needed on my end to apply for a bto?,,policy,TRUE,TRUE,,
-PR_P2_24,What is an HFE letter? How and When do I need to apply for it?,,policy,FALSE,TRUE,,
-PR_P2_25,What is the income Ceiling for a single to buy a HDB flat,,policy,TRUE,TRUE,,
-PR_P2_26,How much CPF Special Account (SA) money can I use?,,policy,TRUE,TRUE,,
-PR_P2_27,How much CPF Ordinary Account (OA) money can I use?,,policy,FALSE,TRUE,,
-PR_P2_28,What would be the monthly payment I need to pay every month if I purchase the BTO flat in Tengah,,both,TRUE,FALSE,,
-PR_P2_29,What happens to my CPF when I sell the flat?,,policy,TRUE,TRUE,,
-PR_P2_54,What is the maximum loan I can get?,,policy,FALSE,TRUE,,
-PR_P2_30,"I am planning for my first HDB purchase and would like guidance on eligibility checks, available grants and long-term suitability. Specifically, I am searching for a unit within 1km of Opera Estate Primary School.",,both,FALSE,TRUE,,
-PR_P2_31,"My brother transferred his HDB flat to me without selling it, but I need to pay for his CPF refund. Can I take an HDB loan? Can I still use the HDB grant given in HFE?",,policy,TRUE,TRUE,,
-PR_P2_32,What happens to an HDB after the 99-year lease expires?,,policy,TRUE,TRUE,,
-PR_P2_33,How do you get a valuation done?,,policy,FALSE,TRUE,,
-PR_P2_34,Does a major transformation project bump up the resale price of flats nearby?,,both,FALSE,FALSE,,
-PR_P2_35,What is the best strategy to maximise returns from an HDB flat?,,both,FALSE,FALSE,,
-PR_P2_36,"If I am over 70 years old and just sold my private property, can I appeal to HDB to waive the 30-month waiting period before buying a 5-room unit directly from them?",,policy,FALSE,FALSE,,
-PR_P2_37,Is there any way to buy before the 15-month wait-out period?,,policy,TRUE,TRUE,,
-PR_P2_38,How long do PR holders need to wait before they can buy a resale HDB?,,policy,TRUE,TRUE,,
-PR_P2_39,What do I need to participate in a sales exercise?,,policy,FALSE,TRUE,,
-PR_P2_40,When should I apply for an HFE letter if I wish to participate in a sales exercise?,,policy,FALSE,TRUE,,
-PR_P2_41,Where can I find information on the upcoming sales exercises?,,policy,FALSE,TRUE,,
-PR_P2_42,How do I work out a budget to finance the flat purchase?,,policy,FALSE,FALSE,,
-PR_P2_43,I have an approved HFE letter. Can I apply for any new flats in this sales exercise?,,policy,FALSE,TRUE,,
-PR_P2_44,The HFE letter application e-Service is unavailable. How can I apply for HFE and participate in this sales exercise?,,policy,TRUE,TRUE,,
-PR_P2_45,How do I apply for a flat in this sales exercise?,,policy,FALSE,TRUE,,
-PR_P2_46,I am interested in more than 1 town or flat type. Can I submit more than 1 application in a sales exercise?,,policy,FALSE,TRUE,,
-PR_P2_47,How do I find the number of applications received in this sales exercise? How do I check if I have submitted my flat application?,,policy,FALSE,TRUE,,
-PR_P2_48,How do I find out if I meet the proximity condition of 4 km to qualify for the Family Care Scheme (FCS) (Proximity)?,,policy,FALSE,TRUE,,
-PR_P2_49,How do I opt for Deferred Income Assessment in the application form?,,policy,FALSE,TRUE,,
-PR_P2_50,What are priority schemes and how do I apply for them?,,policy,FALSE,TRUE,,
-PR_P2_51,How do I make changes after submitting a flat application?,,policy,FALSE,TRUE,,
-PR_P2_52,When will I be notified of the ballot results? How will I be notified?,,policy,FALSE,TRUE,,
-PR_P2_53,How do I cancel my flat application?,,policy,FALSE,TRUE,,
+question_id,question,kind,route,check_premise,premise_false,answerable,rationale,premise_rationale,false_belief_v1,original_label,labelled_by
+PR_P2_01,Can I rent out my whole HDB flat after buying it?,rules,policy,FALSE,,TRUE,Rule on renting out a flat; no prices needed.,Only asks; assumes no specific fact.,FALSE,,P2
+PR_P2_02,Can PRs use their CPF to pay for an HDB resale flat?,rules,policy,FALSE,,TRUE,CPF usage rule for a specific group.,Only asks; assumes no specific fact.,FALSE,,P2
+PR_P2_03,What documents do I need for an HDB resale application?,rules,policy,FALSE,,TRUE,Procedure question.,Only asks; assumes no specific fact.,FALSE,,P2
+PR_P2_04,How much is the Proximity Housing Grant?,rules,policy,FALSE,,TRUE,TRAP: an amount written in a rule is policy not price.,Only asks; assumes no specific fact.,FALSE,,P2
+PR_P2_05,What was the median price of a 5-room flat in Punggol in 2025?,numbers,price,FALSE,,TRUE,Statistic from resale transactions.,Only asks; assumes no specific fact.,FALSE,,P2
+PR_P2_06,How many 4-room resale flats were sold in Toa Payoh last year?,numbers,price,FALSE,,TRUE,Count of deals from resale transactions.,Only asks; assumes no specific fact.,FALSE,,P2
+PR_P2_07,What have executive flats in Pasir Ris been going for lately?,numbers,price,FALSE,,TRUE,TRAP: vague time word does not make it unanswerable (R2).,Only asks; assumes no specific fact.,FALSE,,P2
+PR_P2_08,What is the most expensive 3-room flat sold in Queenstown since 2022?,numbers,price,FALSE,,TRUE,Maximum from resale transactions.,Only asks; assumes no specific fact.,FALSE,,P2
+PR_P2_09,"What is the resale levy, and what did 5-room flats in Bedok sell for in 2024?",both,both,FALSE,,TRUE,Rule plus resale prices.,Only asks; assumes no specific fact.,FALSE,,P2
+PR_P2_10,"Can I use my CPF OA for a 3-room resale in Clementi, and roughly how much would it cost?",both,both,FALSE,,TRUE,CPF rule plus typical price.,Only asks; assumes no specific fact.,FALSE,,P2
+PR_P2_11,Can I afford a 4-room flat in Sengkang on a household income of $7000?,unanswerable,both,FALSE,,FALSE,TRAP: personal finances (R1); affordability rules plus typical prices as context.,Income is the user's own situation; not a claim about the rules.,FALSE,,P2
+PR_P2_12,"Now that the MOP is only 3 years, when can I sell a flat I bought in 2023?",myth,policy,TRUE,TRUE,TRUE,MOP is not 3 years; policy corrects it.,Assumes the MOP is 3 years; it is not.,TRUE,TRUE,P2
+PR_P2_13,"My single sister will have to buy a BTO, so what do resale 2-room flats in Jurong East cost for comparison?",myth,both,TRUE,TRUE,TRUE,TRAP: myth with no signal word (assumes singles cannot buy resale); policy corrects it (R3).,"Assumes singles must buy BTO, i.e. cannot buy resale; singles can buy resale under HDB's conditions. VERIFY wording with policy pages.",TRUE,TRUE,P2
+PR_P2_14,"Since resale prices in Bishan have fallen every year since 2020, is now a good time to buy?",myth,price,TRUE,TRUE,FALSE,TRAP: myth about prices is corrected by price data (R3); timing advice is not answerable. VERIFY the price trend with P1's data.,Assumes Bishan resale prices fell every year since 2020. VERIFY against the price data.,TRUE,TRUE,P2
+PR_P2_15,"Since I'm 36 and single, can I buy a 3-room resale flat?",rules,policy,FALSE,,TRUE,TRAP: 'since' describes the user not the rules; not a myth.,Facts stated are about the user's own situation; not a claim about the rules.,FALSE,,P2
+PR_P2_16,"Given that grants are only for BTO flats, how much cash do I need for a 4-room resale in Yishun?",myth,both,TRUE,TRUE,TRUE,Grants exist for resale flats; policy corrects it and price answers the cost.,Assumes grants are only for BTO flats; resale grants exist.,TRUE,TRUE,P2
+PR_P2_17,Will resale prices in Tampines drop after the new MRT line opens?,unanswerable,price,FALSE,,FALSE,Forecast (R4); recent Tampines prices are like-for-like context.,Assumes an MRT line is opening; not a claim about HDB/CPF rules or resale prices.,FALSE,,P2
+PR_P2_18,What is the launch price of a 4-room BTO flat in the next Bayshore launch?,unanswerable,none,FALSE,,FALSE,TRAP: BTO prices are not in our data (R5); resale prices are not substituted.,Only asks; assumes no specific fact.,FALSE,,P2
+PR_P2_19,Will the CPF housing grant amounts be increased next year?,unanswerable,policy,FALSE,,FALSE,Future rule change (R4); current amounts as context unless an official change is announced.,Only asks; assumes no specific fact.,FALSE,,P2
+PR_P2_20,What's the best way to invest my CPF Special Account savings?,out_of_scope,none,FALSE,,FALSE,TRAP: mentions CPF but is investment advice not housing.,Only asks; assumes no specific fact.,FALSE,,P2
+PR_P2_21,How is the weather today?,,none,FALSE,,FALSE,,Only asks; assumes no specific fact.,FALSE,,
+PR_P2_22,What are the type of grants for a person earning 80k a year?,,policy,FALSE,,TRUE,,Only asks; assumes no specific fact.,FALSE,,
+PR_P2_23,I am 18 and finally able to bto without being married. What is needed on my end to apply for a bto?,,policy,TRUE,TRUE,TRUE,User claimed that he/she can apple fro bto without married,Assumes an unmarried 18-year-old can buy a BTO; that is not the rule.,TRUE,TRUE,P2
+PR_P2_24,What is an HFE letter? How and When do I need to apply for it?,,policy,FALSE,,TRUE,,Only asks; assumes no specific fact.,FALSE,,
+PR_P2_25,What is the income Ceiling for a single to buy a HDB flat,,policy,FALSE,,TRUE,User is only asking a question,Only asks; assumes no specific fact.,FALSE,TRUE,P2
+PR_P2_26,How much CPF Special Account (SA) money can I use?,,policy,TRUE,,TRUE,User is only asking a question,Assumes Special Account savings can be used for housing. VERIFY: likely false.,FALSE,TRUE,P2
+PR_P2_27,How much CPF Ordinary Account (OA) money can I use?,,policy,TRUE,FALSE,TRUE,,Assumes Ordinary Account savings can be used for housing; true. VERIFY with CPF pages.,FALSE,,
+PR_P2_28,What would be the monthly payment I need to pay every month if I purchase the BTO flat in Tengah,,both,FALSE,,FALSE,User is only asking a question,Only asks; assumes no specific fact.,FALSE,TRUE,P2
+PR_P2_29,What happens to my CPF when I sell the flat?,,policy,FALSE,,TRUE,User is only asking a question,Only asks; assumes no specific fact.,FALSE,TRUE,P2
+PR_P2_54,What is the maximum loan I can get?,,policy,FALSE,,TRUE,,Only asks; assumes no specific fact.,FALSE,,
+PR_P2_30,"I am planning for my first HDB purchase and would like guidance on eligibility checks, available grants and long-term suitability. Specifically, I am searching for a unit within 1km of Opera Estate Primary School.",,both,FALSE,,TRUE,,Only asks; assumes no specific fact.,FALSE,,
+PR_P2_31,"My brother transferred his HDB flat to me without selling it, but I need to pay for his CPF refund. Can I take an HDB loan? Can I still use the HDB grant given in HFE?",,policy,TRUE,,TRUE,User claim that there is a need to pay for his brother CPF refund,Assumes taking over a sibling's flat requires paying his CPF refund. VERIFY with the author or CPF/HDB pages.,TRUE,TRUE,P2
+PR_P2_32,What happens to an HDB after the 99-year lease expires?,,policy,FALSE,,TRUE,User is only asking a question,Only asks; assumes no specific fact.,FALSE,TRUE,P2
+PR_P2_33,How do you get a valuation done?,,policy,FALSE,,TRUE,,Only asks; assumes no specific fact.,FALSE,,
+PR_P2_34,Does a major transformation project bump up the resale price of flats nearby?,,both,FALSE,,FALSE,,Only asks; assumes no specific fact.,FALSE,,
+PR_P2_35,What is the best strategy to maximise returns from an HDB flat?,,both,FALSE,,FALSE,,Only asks; assumes no specific fact.,FALSE,,
+PR_P2_36,"If I am over 70 years old and just sold my private property, can I appeal to HDB to waive the 30-month waiting period before buying a 5-room unit directly from them?",,policy,TRUE,,FALSE,,Assumes a 30-month wait applies before buying a new 5-room flat after selling private property. VERIFY.,FALSE,,
+PR_P2_37,Is there any way to buy before the 15-month wait-out period?,,policy,TRUE,,TRUE,User is only asking a question,Assumes a 15-month wait-out period applies. VERIFY whether it is current.,TRUE,TRUE,P2
+PR_P2_38,How long do PR holders need to wait before they can buy a resale HDB?,,policy,TRUE,,TRUE,User claim there thre is a 15 month wait out period,"Assumes PRs must wait before buying resale. VERIFY: a minimum PR status period may apply, which would make it true.",TRUE,TRUE,P2
+PR_P2_39,What do I need to participate in a sales exercise?,,policy,FALSE,,TRUE,,Only asks; assumes no specific fact.,FALSE,,
+PR_P2_40,When should I apply for an HFE letter if I wish to participate in a sales exercise?,,policy,FALSE,,TRUE,,Only asks; assumes no specific fact.,FALSE,,
+PR_P2_41,Where can I find information on the upcoming sales exercises?,,policy,FALSE,,TRUE,,Only asks; assumes no specific fact.,FALSE,,
+PR_P2_42,How do I work out a budget to finance the flat purchase?,,policy,FALSE,,FALSE,,Only asks; assumes no specific fact.,FALSE,,
+PR_P2_43,I have an approved HFE letter. Can I apply for any new flats in this sales exercise?,,policy,FALSE,,TRUE,,Facts stated are about the user's own situation; not a claim about the rules.,FALSE,,
+PR_P2_44,The HFE letter application e-Service is unavailable. How can I apply for HFE and participate in this sales exercise?,,policy,FALSE,,TRUE,User claim that the HFE application e-service is unavailable,"States a website is unavailable: a service status, not a claim about the rules.",TRUE,TRUE,P2
+PR_P2_45,How do I apply for a flat in this sales exercise?,,policy,FALSE,,TRUE,,Only asks; assumes no specific fact.,FALSE,,
+PR_P2_46,I am interested in more than 1 town or flat type. Can I submit more than 1 application in a sales exercise?,,policy,FALSE,,TRUE,,Only asks; assumes no specific fact.,FALSE,,
+PR_P2_47,How do I find the number of applications received in this sales exercise? How do I check if I have submitted my flat application?,,policy,FALSE,,TRUE,,Only asks; assumes no specific fact.,FALSE,,
+PR_P2_48,How do I find out if I meet the proximity condition of 4 km to qualify for the Family Care Scheme (FCS) (Proximity)?,,policy,TRUE,,TRUE,,Assumes the FCS (Proximity) condition is 4 km. VERIFY: likely true.,FALSE,,
+PR_P2_49,How do I opt for Deferred Income Assessment in the application form?,,policy,FALSE,,TRUE,,Only asks; assumes no specific fact.,FALSE,,
+PR_P2_50,What are priority schemes and how do I apply for them?,,policy,FALSE,,TRUE,,Only asks; assumes no specific fact.,FALSE,,
+PR_P2_51,How do I make changes after submitting a flat application?,,policy,FALSE,,TRUE,,Only asks; assumes no specific fact.,FALSE,,
+PR_P2_52,When will I be notified of the ballot results? How will I be notified?,,policy,FALSE,,TRUE,,Only asks; assumes no specific fact.,FALSE,,
+PR_P2_53,How do I cancel my flat application?,,policy,FALSE,,TRUE,,Only asks; assumes no specific fact.,FALSE,,
