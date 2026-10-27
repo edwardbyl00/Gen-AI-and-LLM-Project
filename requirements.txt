@@ -19,3 +19,6 @@ transformers==5.20.2
 
 # Price agent: Python 3.14-compatible table filtering and statistics.
 pandas==3.1.0
+
+# Agent graph (P3): runs the supervisor pipeline as a LangGraph graph.
+langgraph==1.2.16

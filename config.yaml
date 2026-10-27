@@ -18,6 +18,14 @@ llm:
 judge:
   model: gpt-5.4-2026-03-05
 
+self_check:
+  # P3's self check loop (agents/graph/self_check.py). A weak answer is
+  # sent back at most this many times; the diagram says once.
+  max_retries: 1
+  # true: after the free code checks pass, one more model call reviews the
+  # answer against the synthesis rules A1-A8. false: code checks only.
+  llm_check: true
+
 agents:
   # The price agent has no stub anymore; it always runs for real.
   # Policy can still be run as "stub" (fake data in the agreed shape) to
