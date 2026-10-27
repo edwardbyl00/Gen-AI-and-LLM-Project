@@ -1,0 +1,446 @@
+question_id,question,kind,label_false_belief,label_answerable,route,answer,model_says_declined,n_cited,agent_errors,stub_agents,input_tokens,output_tokens,seconds,grade_declined,grade_myth_accepted
+PR_P2_01,Can I rent out my whole HDB flat after buying it?,rules,False,True,policy,"Yes, but not immediately. After buying an HDB resale flat, you must physically and continuously occupy it for a 5-year Minimum Occupation Period (MOP) from the resale completion date before you can rent out the whole flat, and this is subject to HDB’s approval and any conditions HDB may impose [1].
+
+There are important exceptions. If your household is a Singapore Permanent Resident household, you are not allowed to rent out the whole flat even after meeting the 5-year MOP [1]. Also, under the Standard, Plus and Prime framework, renting out the whole flat is allowed after MOP only for Standard flats; it is not allowed for Plus or Prime flats [2].
+
+So the short answer is: whole-flat rental is possible only after MOP for eligible flats and households, with HDB approval [1][2]. Please check the linked HDB page for the latest position, as rules can change.
+
+Sources:
+[1] Terms and Conditions - Sale and Purchase of An HDB Resale Flat: https://www.hdb.gov.sg/e-resale/resale-purchase-of-an-hdb-resale-flat
+[2] Standard, Plus, and Prime Housing Framework: https://www.hdb.gov.sg/buying-a-flat/bto-sbf-and-open-booking-of-flats/finding-a-new-flat/standard-plus-and-prime-housing-framework",False,2,,,2456,273,10.73,False,n/a
+PR_P2_02,Can PRs use their CPF to pay for an HDB resale flat?,rules,False,True,policy,"Yes. CPF rules say you may use your CPF Ordinary Account savings for an HDB resale flat to pay the purchase price, repay the housing loan or monthly instalments, and pay stamp duty, legal fees and other related costs. [6]
+
+For a resale flat, you may use CPF savings to pay the balance purchase price. [5]
+
+But CPF use is subject to limits. If the flat’s remaining lease cannot cover the youngest buyer up to age 95, the amount of CPF that can be used is pro-rated. Once the allowed CPF amount is used up, the rest of the purchase price and/or monthly instalments must be paid in cash. [2]
+
+If you are taking an HDB housing loan, each buyer may retain up to $20,000 in their CPF OA, and the remaining OA balance must generally be used for the flat purchase before the HDB loan can be granted. [1][3]
+
+The CPF withdrawal limit for an HDB resale flat with an HDB loan depends on whether you can set aside the Basic Retirement Sum. [4]
+
+I couldn’t find anything in the official sources I have that says this rule is different for Permanent Residents specifically, so please check the linked HDB/CPF pages for the latest position.
+
+Sources:
+[6] CPFB | T&C for use of CPF under CPF Housing Scheme: https://www.cpf.gov.sg/member/tnc/t-c-for-use-of-cpf-under-cpf-housing-scheme
+[5] Mode of Financing for a Resale Flat: https://www.hdb.gov.sg/buying-a-flat/resale-flats/process-for-buying-a-resale-flat/resale-flat-planning/mode-of-financing
+[2] Mode of Financing for a Resale Flat: https://www.hdb.gov.sg/buying-a-flat/resale-flats/process-for-buying-a-resale-flat/resale-flat-planning/mode-of-financing
+[1] Housing Loan from HDB: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb
+[3] Mode of Financing for a Resale Flat: https://www.hdb.gov.sg/buying-a-flat/resale-flats/process-for-buying-a-resale-flat/resale-flat-planning/mode-of-financing
+[4] CPFB | T&C for use of CPF under CPF Housing Scheme: https://www.cpf.gov.sg/member/tnc/t-c-for-use-of-cpf-under-cpf-housing-scheme",False,6,,,3496,348,13.81,False,n/a
+PR_P2_03,What documents do I need for an HDB resale application?,rules,False,True,policy,"You must submit your resale application together with the necessary supporting documents via My Flat Dashboard after exercising the OTP. You must also have a valid HFE letter when submitting your portion of the application. HDB will process your application based on that HFE letter. [3]
+
+The exact list of documents required will be shown in My Flat Dashboard when you submit your resale application, and the details you provide must match your HFE letter. Incomplete documents may cause the application to be rejected, and both parties may have to restart the process and pay the application fees again. [2]
+
+HDB says you may be required to submit these documents, if applicable: Identity Card or Passport (for non-citizens), marriage certificate, child’s birth certificate, late spouse’s death certificate, deed of separation, divorce certificate, Decree Nisi/Interim Judgment, certificate making Decree Absolute/Interim Judgment Absolute, Power of Attorney, and Lasting Power of Attorney. [2]
+
+If you are taking an HDB housing loan, you must provide the reference number of the approved HFE letter. If you are taking a loan from a financial institution, you must submit the FI’s Letter of Offer. [4]
+
+If you are using a Power of Attorney, HDB also requires specific POA documents to be submitted. Check the official HDB page for the latest list before filing. [1]
+
+Sources:
+[3] Application Process for a Resale Flat Purchase: https://www.hdb.gov.sg/buying-a-flat/resale-flats/process-for-buying-a-resale-flat/resale-flat-application/application-process
+[2] Application Process for a Resale Flat Purchase: https://www.hdb.gov.sg/buying-a-flat/resale-flats/process-for-buying-a-resale-flat/resale-flat-application/application-process
+[4] Application Process for a Resale Flat Purchase: https://www.hdb.gov.sg/buying-a-flat/resale-flats/process-for-buying-a-resale-flat/resale-flat-application/application-process
+[1] Application Process for a Resale Flat Purchase: https://www.hdb.gov.sg/buying-a-flat/resale-flats/process-for-buying-a-resale-flat/resale-flat-application/application-process",False,4,,,3165,368,10.0,False,n/a
+PR_P2_04,How much is the Proximity Housing Grant?,rules,False,True,policy,"The Proximity Housing Grant depends on whether you are applying as a family or a single.
+
+For families buying a resale flat:
+- $30,000 if you live with your parents or child [1]
+- $20,000 if you live near your parents or child, within 4km [1]
+
+For singles buying a resale flat:
+- $15,000 if you live with your parents or child [2]
+- $10,000 if you live near your parents or child, within 4km [2]
+
+The HDB pages also say you may receive other housing grants if you meet the eligibility conditions. Check the official page for the latest position, as grant rules can change. [1][2]
+
+Sources:
+[1] Proximity Housing Grant for Families Buying Resale Flats: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/proximity-housing-grant
+[2] Proximity Housing Grant for Singles Buying Resale Flats: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/proximity-housing-grant",False,2,,,2549,230,6.4,False,n/a
+PR_P2_05,What was the median price of a 5-room flat in Punggol in 2025?,numbers,False,True,price,"I couldn't find this in the official sources I have. The price data provided does not include Punggol 5-room flats in 2025.
+
+The only price fact I have is for STUB, STUB flats, from 2025-10 to 2026-09: median price $500,000, based on 100 resale deals. This does not answer your question about Punggol in 2025.",True,0,,price_agent,2049,155,4.91,True,n/a
+PR_P2_06,How many 4-room resale flats were sold in Toa Payoh last year?,numbers,False,True,price,"I couldn’t find this for Toa Payoh in the official sources I have. The only price fact provided is for town “STUB”, flat type “STUB”, covering 2025-10 to 2026-09, with 100 deals as of 2026-10-25. That does not tell me how many 4-room resale flats were sold in Toa Payoh last year.",True,0,,price_agent,2043,156,3.43,True,n/a
+PR_P2_07,What have executive flats in Pasir Ris been going for lately?,numbers,False,True,price,"I couldn't find official price facts for **executive flats in Pasir Ris** in the sources I have.
+
+The only price fact provided is for **STUB, STUB** from **2025-10 to 2026-09**: median **$500,000**, with prices ranging from **$400,000 to $600,000**, based on **100 deals** (data as of **2026-10-25**).
+
+Because this is not for Pasir Ris executive flats, I can't use it to answer your question.",True,0,,price_agent,2035,197,4.01,True,n/a
+PR_P2_08,What is the most expensive 3-room flat sold in Queenstown since 2022?,numbers,False,True,price,"I couldn't find this in the official sources I have. The price data provided does not cover Queenstown 3-room flats since 2022. It only shows STUB town, STUB flat type, for 2025-10 to 2026-09, with a maximum price of 600000 across 100 deals.
+
+So I can’t identify the most expensive 3-room flat sold in Queenstown since 2022 from this data.",True,0,,price_agent,2045,164,4.17,True,n/a
+PR_P2_09,"What is the resale levy, and what did 5-room flats in Bedok sell for in 2024?",both,False,True,both,"I couldn't find this in the official sources I have. There are no policy passages here explaining what the resale levy is, so I don't know from the materials provided.
+
+I also can't answer the Bedok 5-room part from the price facts given. The only price fact provided is for STUB flats in STUB town, covering 2025-10 to 2026-09, with 100 deals and prices from $400,000 to $600,000, median $500,000. It does not cover Bedok, 5-room flats, or the year 2024.
+
+If you want, send the official passage on resale levy and the Bedok 5-room 2024 price facts, and I can summarise them.",True,0,,price_agent,2055,232,11.86,True,n/a
+PR_P2_10,"Can I use my CPF OA for a 3-room resale in Clementi, and roughly how much would it cost?",both,False,True,both,"I couldn't find any official CPF or HDB rule in the sources I have about whether you can use your CPF OA for this purchase, so I don't know from the materials provided.
+
+For resale prices, I only have this transaction summary: in STUB, for STUB flats, from 2025-10 to 2026-09, the median resale price was $500,000, with prices ranging from $400,000 to $600,000 across 100 deals (data as of 2026-10-25).
+
+I couldn't find a price fact specifically for Clementi 3-room resale flats, so I can't give an official rough price for that exact flat type and town from the materials provided.",True,0,,price_agent,2057,220,16.3,True,n/a
+PR_P2_11,Can I afford a 4-room flat in Sengkang on a household income of $7000?,unanswerable,False,False,both,"I can’t tell you whether you can afford it from income alone. Affordability depends on things the official sources here do not give, such as the flat’s actual price, your loan amount, remaining lease, and your full financing plan. HDB also says the loan amount depends on the flat’s remaining lease, and monthly instalments for an HDB loan are up to 30% of the applicants’ monthly income. HDB suggests using its payment plan calculator to check the payments required before committing to a purchase.[4][5]
+
+As context, for resale Standard/Unclassified flats there is no income ceiling to buy, but the income ceiling still applies for CPF housing grants and an HDB housing loan.[1] For families buying a resale flat, the Family Grant income ceiling is $16,000 monthly household income.[2]
+
+I couldn’t find official resale price facts here for Sengkang 4-room flats. The only price fact provided is STUB town, STUB flat type, from 2025-10 to 2026-09: median $500,000, minimum $400,000, maximum $600,000, based on 100 deals, as of 2026-10-25. That is not Sengkang 4-room data, so I can’t use it to answer your question.
+
+Sources:
+[4] Housing Loan from HDB: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb
+[5] Housing Loan from HDB: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb
+[1] Couples and Families: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families
+[2] CPF Housing Grants for Families Buying Resale Flats: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/cpf-housing-grants",True,4,,price_agent,3328,374,15.64,True,n/a
+PR_P2_12,"Now that the MOP is only 3 years, when can I sell a flat I bought in 2023?",myth,True,True,policy,"I couldn't confirm the claim that the MOP is now only 3 years, because I was not given any official policy passage on MOP rules. I also couldn't find an official source here stating when a flat bought in 2023 can be sold.
+
+So I don't know the answer from the official sources I have. What is missing is the current HDB rule on the Minimum Occupation Period for the specific flat type and purchase scheme, and whether any rule changes apply to flats bought in 2023.
+
+If you want, send me the relevant HDB policy passage or ask again with the official rule text, and I can help interpret it.",True,0,,,1984,219,12.89,True,
+PR_P2_13,"My single sister will have to buy a BTO, so what do resale 2-room flats in Jurong East cost for comparison?",myth,True,True,price,"I couldn’t confirm the belief that your single sister “will have to buy a BTO”, because I was only given resale price data and no eligibility rules.
+
+For comparison, the resale price facts I have are for **STUB** **STUB** flats, not specifically **2-room flats in Jurong East**. From **2025-10 to 2026-09**, the **median resale price** was **$500,000**, with a **minimum of $400,000** and **maximum of $600,000**, based on **100 deals**. Data is as of **2026-10-25**.
+
+I couldn’t find official price facts here for **Jurong East 2-room resale flats**, so I don’t know that comparison figure from the sources I have.",True,0,,price_agent,2073,270,4.68,True,
+PR_P2_14,"Since resale prices in Bishan have fallen every year since 2020, is now a good time to buy?",myth,True,False,price,"I couldn’t confirm the claim that Bishan resale prices have fallen every year since 2020. The only price fact I have is for STUB flats in STUB, covering 2025-10 to 2026-09, with a median resale price of $500,000 across 100 deals, and a range from $400,000 to $600,000. That does not show Bishan’s year-by-year trend since 2020.
+
+I also can’t answer whether now is a good time to buy. That depends on future prices and personal finances, and I’m not able to forecast or give a buy/wait recommendation.
+
+For context only: the price fact I have is STUB, STUB flats, 2025-10 to 2026-09, median $500,000, based on 100 deals. If you want, I can help summarise official Bishan resale price data if you provide it.",True,0,,price_agent,2065,287,5.37,True,
+PR_P2_15,"Since I'm 36 and single, can I buy a 3-room resale flat?",rules,False,True,policy,"Yes. As a single buying a resale flat, you must be at least 35 years old if you are unmarried or divorced; at 36, you meet the age condition stated here [2].
+
+For flat type, a single buyer can buy a resale 2-room Prime flat, or a 2- to 5-room unclassified, Standard or Plus flat, excluding 3Gen flats [1]. That means a 3-room resale flat is allowed if it is an unclassified, Standard or Plus flat, and not a 3Gen flat [1].
+
+HDB also states that singles may buy a resale flat on the open market under the singles scheme [3].
+
+I couldn’t find any other eligibility conditions in the official sources I have here, so you should check the linked HDB page for the latest full rules before applying.
+
+Sources:
+[2] Singles: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles
+[1] CPF Housing Grant for Singles Buying Resale Flats: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/cpf-housing-grant
+[3] Singles: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles",False,3,,,2677,256,8.65,False,n/a
+PR_P2_16,"Given that grants are only for BTO flats, how much cash do I need for a 4-room resale in Yishun?",myth,True,True,both,"I couldn’t confirm your assumption that grants are only for BTO flats, because I don’t have any policy passages here on grant eligibility. I also can’t tell you how much cash you need, because that depends on rules and details that are missing from the official sources I have, such as resale grant rules, loan type, downpayment rules, and CPF usage limits.
+
+As price context only: for STUB 4-room resale flats, based on 100 deals from 2025-10 to 2026-09, the median resale price was $500,000, with prices ranging from $400,000 to $600,000.
+
+I couldn’t find official source passages here that state the required cash amount for a 4-room resale in Yishun.",True,0,,price_agent,2073,249,15.01,True,
+PR_P2_17,Will resale prices in Tampines drop after the new MRT line opens?,unanswerable,False,False,price,"I can’t answer whether resale prices in Tampines will drop after a new MRT line opens. Price movements cannot be confirmed or forecast from the official sources I have.
+
+As context, the price facts provided are not for Tampines. They are for STUB flats in STUB, covering 2025-10 to 2026-09, based on 100 resale deals. The median price was 500,000, with prices ranging from 400,000 to 600,000.
+
+I couldn’t find Tampines-specific resale price facts or any official passage about how a new MRT line would affect future resale prices.",True,0,,price_agent,2037,207,4.27,True,n/a
+PR_P2_18,What is the launch price of a 4-room BTO flat in the next Bayshore launch?,unanswerable,False,False,none,"I can’t answer the launch price of a 4-room BTO flat in the next Bayshore launch from the official sources I have, because no policy passages or price facts were provided. I also can’t confirm future launch prices without an official release.
+
+If you want, I can help check the official HDB launch details once they are available.",True,0,,,1966,152,3.69,True,n/a
+PR_P2_19,Will the CPF housing grant amounts be increased next year?,unanswerable,False,False,policy,"I can’t answer whether CPF housing grant amounts will be increased next year. The official sources I have here do not include any policy passage about future grant changes, and future changes cannot be confirmed without an announced update.
+
+I couldn't find this in the official sources I have. Please check the latest official CPF or HDB announcement pages for any confirmed changes.",True,0,,,1948,150,9.31,True,n/a
+PR_P2_20,What's the best way to invest my CPF Special Account savings?,out_of_scope,False,False,none,"I can’t answer what the “best” way is to invest your CPF Special Account savings. That depends on personal goals, risk tolerance and market uncertainty, and I don’t have any official CPF policy passages here to cite.
+
+I also couldn’t find any official sources in the material provided about what investments are allowed, the rules, or the current terms for CPF Special Account savings.
+
+If you want, ask a narrower question such as the official rules for using CPF savings for housing or the current CPF housing limits, and I can answer from the official passages if they are provided.",True,0,,,1950,194,4.67,True,n/a
+PR_P2_21,How is the weather today?,,False,False,none,"I can’t answer that from the official HDB/CPF sources I have, because no policy passages or price facts were provided and weather is outside those sources.",True,0,,,1938,95,2.84,True,n/a
+PR_P2_22,What are the type of grants for a person earning 80k a year?,,False,True,policy,"I couldn’t find enough in the official sources I have to tell you exactly which grants apply just from “earning 80k a year”. I would need your buying setup, because the income ceilings differ by grant type and whether you are buying alone, with family, or with other singles.[1][2][3]
+
+From the sources I have, these are the grant types and income ceilings:
+- Family Grant for resale flats: average gross monthly household income must not exceed $16,000, or $24,000 if buying with an extended or multi-generation family.[1]
+- Top-Up Grant: income ceiling is $8,000 if you bought a 2-room Flexi flat on a 99-year lease, or $16,000 if you were a recipient of a Singles Grant who bought an HDB resale flat, or bought a short-lease 2-room Flexi flat.[1]
+- Singles Grant for resale flats: income ceiling is $8,000 if buying on your own, or $16,000 if buying with your family or other singles.[2]
+- Enhanced CPF Housing Grant for Singles: income ceiling is $4,500 if buying on your own, $9,000 if buying with other singles or a resale flat with your parents, and $9,000 with a non-resident spouse (with half of average income not exceeding $4,500).[3]
+
+Please check the linked official HDB pages for the latest rules.
+
+Sources:
+[1] CPF Housing Grants for Families Buying Resale Flats: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/cpf-housing-grants
+[2] CPF Housing Grant for Singles Buying Resale Flats: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/cpf-housing-grant
+[3] Enhanced CPF Housing Grant for Singles: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/enhanced-cpf-housing-grant",True,3,,,2479,396,8.89,True,n/a
+PR_P2_23,I am 18 and finally able to bto without being married. What is needed on my end to apply for a bto?,,True,True,policy,"I couldn’t confirm the idea that an 18-year-old can apply for a BTO without being married from the official sources I have, because no policy passages were provided.
+
+I can’t answer your main question from the materials given. I don’t have any official rules here on who is eligible to apply for a BTO, whether a single person aged 18 can do so, or what documents or conditions are required.
+
+If you want, send me the relevant HDB eligibility passages or ask again with official policy text, and I can help summarise exactly what is needed on your end.",True,0,,,1990,236,14.15,True,
+PR_P2_24,What is an HFE letter? How and When do I need to apply for it?,,False,True,policy,"I couldn't find this in the official sources I have. There are no policy passages provided here about what an HFE letter is, or how and when to apply for it.
+
+If you want, send me the relevant HDB or CPF policy passages and I can summarise them clearly. Without those sources, I should not guess.",True,0,,,1962,140,11.72,True,n/a
+PR_P2_25,What is the income Ceiling for a single to buy a HDB flat,,True,True,policy,"For a single buyer, the income ceiling depends on the flat type and what you are applying for.
+
+- If you are buying a **new 2-room Flexi flat (99-year lease)** or a **2-room resale Prime flat**, the monthly household income ceiling is **$8,000**. This is based on the total income of all persons listed in the HFE letter application. [1][2]
+- For **resale Unclassified or Standard flats**, there is **no income ceiling**. [1][2]
+- For **resale Plus flats**, the income ceiling is **$16,000**. [1][2]
+- If you want an **HDB housing loan** as a single under the Single Singapore Citizen Scheme, your average gross monthly household income must not exceed **$8,000**. [3]
+- If you are applying for the **CPF Housing Grant for Singles** when buying a resale flat on your own, your average gross monthly household income must not exceed **$8,000**. If buying with your family or other singles, it is **$16,000**. [5]
+
+These rules can change, so please check the latest official HDB page before applying.
+
+Sources:
+[1] Singles: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles
+[2] Singles: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles
+[3] Housing Loan from HDB: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb
+[5] CPF Housing Grant for Singles Buying Resale Flats: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/cpf-housing-grant",False,4,,,2974,331,9.44,False,
+PR_P2_26,How much CPF Special Account (SA) money can I use?,,True,True,policy,"I can’t answer this from the official sources I have, because no policy passages were provided about using CPF Special Account (SA) money for housing. I don’t know the current rule.
+
+Please check the linked official CPF or HDB source for the latest position. If you want, ask again with the relevant policy text and I can help explain it.",True,0,,,1952,158,12.75,True,
+PR_P2_27,How much CPF Ordinary Account (OA) money can I use?,,False,True,policy,"How much CPF OA you can use depends on the property and loan details. There is no single fixed amount. CPF says the limit depends on the remaining lease, type of property, loan type, and whether it is your first or subsequent property [1][3].
+
+CPF also states the limit differs based on the flat’s valuation at the time of purchase, purchase price, type of property, loan type, and age of property [2]. If the flat’s remaining lease can last the youngest owner until age 95, CPF usage is capped at the lower of the purchase price and the valuation price at the time of purchase [2].
+
+If you are buying your second or subsequent property, you can use OA savings only after setting aside the Basic Retirement Sum or Full Retirement Sum, up to the CPF housing limit for the property [3].
+
+CPF savings used for stamp duty, legal fees and upgrading costs are not counted within the CPF housing limit [3].
+
+If you are taking an HDB loan, you may choose to retain up to $20,000 in your OA; if you are taking a bank loan, you may choose to retain any amount of your OA savings [4].
+
+For the exact amount, CPF says to use the CPF Housing Usage Calculator. Do check the linked official page for the latest position [1][3].
+
+Sources:
+[1] CPFB | How much CPF savings you can use for your home purchase: https://www.cpf.gov.sg/member/infohub/educational-resources/how-much-cpf-savings-you-can-use-for-your-home-purchase
+[2] CPFB | How much CPF savings you can use for your home purchase: https://www.cpf.gov.sg/member/infohub/educational-resources/how-much-cpf-savings-you-can-use-for-your-home-purchase
+[3] CPFB | How much CPF savings can I use for my property purchase?: https://www.cpf.gov.sg/service/article/how-much-cpf-savings-can-i-use-for-my-property-purchase
+[4] CPFB | Retain $20,000 in your OA if you are taking a housing loan: https://www.cpf.gov.sg/member/home-ownership/using-your-cpf-to-buy-a-home/retain-20000-in-your-oa-if-you-are-taking-a-housing-loan",False,4,,,2837,361,9.55,False,n/a
+PR_P2_28,What would be the monthly payment I need to pay every month if I purchase the BTO flat in Tengah,,True,False,both,"I can’t answer what your monthly payment would be. That depends on details not provided here, such as the flat’s purchase price, loan amount, loan type, interest rate and repayment period, and I couldn’t find any official policy passage in the sources I have to calculate it.
+
+The only data I have is resale price context, which is not a monthly payment estimate. For STUB town, STUB flats had a median resale price of $500,000 from 2025-10 to 2026-09, based on 100 deals. The minimum was $400,000 and the maximum was $600,000, as of 2026-10-25.
+
+If you want, you can ask a narrower question with the official BTO flat price or loan details, and I can check whether the official sources provided answer that.",True,0,,price_agent,2052,287,15.89,True,
+PR_P2_29,What happens to my CPF when I sell the flat?,,True,True,policy,"When you sell your flat, the sale proceeds are generally used first to pay off your outstanding housing loan, then to refund the CPF amount used for the property plus accrued interest, and then other sale expenses such as legal fees. This CPF refund is to restore your retirement savings. If you had pledged the property to make up your retirement sum, you must also refund the pledged amount. [1][4]
+
+In general, the CPF refund is the principal you used for the property plus accrued interest (“P+I”). If you want the exact amount, you can check your CPF Home ownership dashboard under the “What Happens If” section. [3]
+
+If you already made a voluntary refund, then: if you fully refunded all CPF used plus accrued interest, no further refund is needed; if you only partially refunded, you still need to refund the balance with interest. [4]
+
+If the sale proceeds, after paying the housing loan, are not enough to cover the required CPF refund, you do not need to top up the shortfall in cash as long as the property is sold at market value. However, any option monies received in cash from the buyer are treated as part of the selling price and must be refunded to the owners’ CPF accounts before completion. [4]
+
+If you are age 55 or above, the refund treatment differs, so check the official CPF page for the latest details. [2][3]
+
+Sources:
+[1] CPFB | Home buying guide for members below 55: https://www.cpf.gov.sg/member/home-ownership/home-buying-guide-for-members-below-55
+[4] CPFB | I have made a voluntary refund. Do I still need to refund to my CPF account when I sell my property?: https://www.cpf.gov.sg/service/article/i-have-made-a-voluntary-refund-do-i-still-need-to-refund-to-my-cpf-account-when-i-sell-my-property
+[3] CPFB | How much do I need to refund to my CPF account when selling/transferring my property?: https://www.cpf.gov.sg/service/article/how-much-do-i-need-to-refund-to-my-cpf-account-when-selling-transferring-my-property
+[2] CPFB | Home buying guide for members below 55: https://www.cpf.gov.sg/member/home-ownership/home-buying-guide-for-members-below-55",False,4,,,3464,370,10.09,False,
+PR_P2_29,What is the maximum loan I can get?,,False,True,policy,"I can’t tell you the maximum loan you can get from the official sources I have, because it depends on factors not fully given here, such as the flat type, whether you take an HDB loan or a bank loan, the remaining lease, loan tenure, and whether you have other housing loans.[1][2][3][5]
+
+What the sources do say is:
+- For an HDB loan, the Loan-to-Value (LTV) limit is up to 75% of the purchase price for a new flat, or up to 75% of the lower of the resale price or value for a resale flat.[1][5]
+- If the remaining lease does not cover the youngest applicant to age 95, the HDB loan limit is pro-rated down from 75%.[1][5]
+- For complete resale applications received by HDB on or after 20 August 2024, and flat applications for the October 2024 sales exercise onwards, HDB will provide a customised financial plan showing the applicable LTV limit.[1][5]
+- For bank loans, the LTV limit can be up to 75%, but it depends on loan tenure and the number of outstanding home loans, and banks may impose restrictions for shorter leases or if the repayment period exceeds 25 years.[2][3]
+
+One CPF example mentions a maximum loan of $470,000, but that is only an illustration, not a general rule.[4]
+
+Please check the linked official pages for the latest position.
+
+Sources:
+[1] Housing Loan from HDB: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb
+[2] Housing Loan from Financial Institutions: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-financial-institutions
+[3] CPFB | Home buying guide for members below 55: https://www.cpf.gov.sg/member/home-ownership/home-buying-guide-for-members-below-55
+[4] CPFB | Retain $20,000 in your OA if you are taking a housing loan: https://www.cpf.gov.sg/member/home-ownership/using-your-cpf-to-buy-a-home/retain-20000-in-your-oa-if-you-are-taking-a-housing-loan
+[5] Housing Loan from HDB: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-hdb",True,5,,,3187,406,9.98,True,n/a
+PR_P2_30,"I am planning for my first HDB purchase and would like guidance on eligibility checks, available grants and long-term suitability. Specifically, I am searching for a unit within 1km of Opera Estate Primary School.",,False,True,policy,"I can’t answer the full question about “long-term suitability” or help shortlist units within 1km of Opera Estate Primary School from the official sources I have, because the passages here do not include location search tools, school-distance checks, or any rule that defines whether a flat is suitable for your long-term needs. 
+
+What I can confirm is this: for a first HDB purchase, you should start by applying for an HDB Flat Eligibility (HFE) letter. It gives you an upfront assessment of your eligibility to buy a new or resale flat, and the CPF housing grants and HDB loan amount you may qualify for. HDB says to do this before starting your home search. [1][2][7]
+
+If you are buying a resale flat as a first-timer family, you may qualify for the Enhanced CPF Housing Grant (EHG). From 20 August 2024, first-timer families may qualify for up to $120,000; for resale flats, you must first qualify for the CPF Housing Grants for resale flats before you may be eligible for EHG. [3]
+
+For resale Family Grant amounts, first-timer households may get up to $80,000 depending on flat size and household type. [4][10] Singles aged 35 and above buying resale flats may qualify for the Singles Grant, subject to the listed household arrangements. [5]
+
+If buying resale to live with or near parents/child, PHG may also apply; for singles, this is $15,000 to live with them or $10,000 to live within 4km. [8] You must state any grant application in the resale application. [11]
+
+Please check the linked HDB pages for the latest conditions.
+
+Sources:
+[1] Overview of Resale Flat Planning for Buyers: https://www.hdb.gov.sg/buying-a-flat/resale-flats/process-for-buying-a-resale-flat/resale-flat-planning/overview
+[2] Proximity Housing Grant for Families Buying Resale Flats: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/proximity-housing-grant
+[3] Enhanced CPF Housing Grant for Families: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/enhanced-cpf-housing-grant
+[4] CPF Housing Grants for Families Buying Resale Flats: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/cpf-housing-grants
+[5] CPF Housing Grant for Singles Buying Resale Flats: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/cpf-housing-grant
+[7] Eligibility for Buying a Resale Flat: https://www.hdb.gov.sg/business-partners/estate-agents-and-salespersons/guide-for-estate-agents-buying-a-flat/eligibility
+[8] Proximity Housing Grant for Singles Buying Resale Flats: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/proximity-housing-grant
+[10] CPF Housing Grants for Families Buying Resale Flats: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families/cpf-housing-grants
+[11] Application Process for a Resale Flat Purchase: https://www.hdb.gov.sg/buying-a-flat/resale-flats/process-for-buying-a-resale-flat/resale-flat-application/application-process",True,9,,,5952,475,15.66,True,n/a
+PR_P2_31,"My brother transferred his HDB flat to me without selling it, but I need to pay for his CPF refund. Can I take an HDB loan? Can I still use the HDB grant given in HFE?",,True,True,policy,"I couldn't find this in the official sources I have. There are no policy passages provided on whether you can take an HDB housing loan for a flat transfer, whether you must pay the other party's CPF refund, or whether an HDB grant shown in your HFE can still be used in this situation.
+
+So I don't know the answer from the materials given. What is missing are the official rules on:
+- HDB flat transfers between family members
+- use of HDB housing loans for transfers
+- CPF refund requirements on transfer
+- whether HFE grants apply to transfers as they do for purchases
+
+Please check the latest HDB and CPF official pages for the current rules.",True,0,,,2014,222,15.8,True,
+PR_P2_32,What happens to an HDB after the 99-year lease expires?,,True,True,policy,"I couldn't find this in the official sources I have. No policy passages were provided about what happens when an HDB flat's 99-year lease expires, so I can't answer this from the dated sources alone.
+
+If you want, ask again with the relevant HDB policy passages or official source text, and I can summarise them clearly.",True,0,,,1954,147,9.94,True,
+PR_P2_33,How do you get a valuation done?,,False,True,policy,"To get a valuation done, the buyer must first have been granted an Option to Purchase (OTP). Only then can the buyer submit a Request for Value to HDB. This is needed if the purchase is financed with CPF savings or a housing loan from HDB or a bank/financial institution, unless the bank/financial institution advises otherwise. [1]
+
+The Request for Value must be submitted by the next working day after the Option Date, either by the buyer in the HDB Flat Portal or through the salesperson via the e-Resale System or Estate Agent Toolkit. A scanned copy of page 1 of the OTP must be attached, and there is a non-refundable $120 fee (including GST). [1]
+
+HDB will decide whether a valuation is needed. If it is, HDB will assign a private valuer from its Panel of Valuers to inspect the flat. The sellers must allow the valuer to enter and inspect the flat within 3 working days after the Request for Value is submitted. [1][2]
+
+The buyer can check the status in the HDB Flat Portal, and HDB will email the buyer when the value is available there. The valuation is valid for 3 months. Please check the linked HDB page for the latest process. [2]
+
+Sources:
+[1] Help - Resale Procedures: https://www.hdb.gov.sg/e-resale/resale-procedures
+[2] Help - Resale Procedures: https://www.hdb.gov.sg/e-resale/resale-procedures",False,2,,,2814,340,9.17,False,n/a
+PR_P2_34,Does a major transformation project bump up the resale price of flats nearby?,,False,False,price,"I can’t answer whether a major transformation project will bump up nearby resale prices. The official sources I have here only give past transaction figures, and they do not show whether the project caused any price change.
+
+As context, for STUB flats in STUB town, from 2025-10 to 2026-09, the median resale price was 500000, with prices ranging from 400000 to 600000, based on 100 deals. Data is as of 2026-10-25.
+
+If you want, I can help summarise past resale prices for a specific town and flat type, but I can’t turn that into a prediction.",True,0,,price_agent,2037,230,5.11,True,n/a
+PR_P2_35,What is the best strategy to maximise returns from an HDB flat?,,False,False,none,"I can’t answer what the “best strategy” is to maximise returns from an HDB flat. There are no official sources provided here, and in any case “best” depends on future prices and personal circumstances, which I can’t determine.
+
+I also don’t have any policy passages or resale price facts in this request, so I couldn’t find official rules or transaction data to give you as context.
+
+If you want, you can ask a narrower question based on official sources, such as HDB resale prices for a specific town and flat type, or a specific HDB/CPF rule.",True,0,,,1954,199,3.93,True,n/a
+PR_P2_36,"If I am over 70 years old and just sold my private property, can I appeal to HDB to waive the 30-month waiting period before buying a 5-room unit directly from them?",,False,False,policy,"I couldn't find this in the official sources I have. There are no policy passages provided here about the 30-month waiting period, appeals, age-based exceptions, or buying a 5-room flat directly from HDB, so I can't confirm whether HDB can waive it in your case.
+
+If you want, I can help check the relevant official HDB policy page or appeal guidance if those passages are provided.",True,0,,,2006,167,12.54,True,n/a
+PR_P2_37,Is there any way to buy before the 15-month wait-out period?,,True,True,policy,"I couldn't find this in the official sources I have. There are no policy passages provided here about the 15-month wait-out period, so I can't confirm whether there is any exception or alternative route.
+
+Please check the linked official HDB or CPF source for the latest rules. If you want, send me the relevant policy passages and I can summarise them.",True,0,,,1956,148,10.66,True,
+PR_P2_38,How long do PR holders need to wait before they can buy a resale HDB?,,True,True,policy,"PR holders do not need to wait after becoming eligible in some separate way; the rule is that the buyer and any PR member in the core family nucleus must have held Singapore Permanent Resident status for at least 3 years before applying for the HDB Flat Eligibility (HFE) letter for a resale flat. [1][2]
+
+The passages say this in two places: a Singapore Permanent Resident must have obtained PR status for at least 3 years before he can apply to be an owner or a member of the core family nucleus of a flat. [1] They also say the buyer and any member of the core family nucleus who are PRs must have obtained PR status for at least 3 years at the time of application for the HFE letter. [2]
+
+So, based on the official sources I have, the waiting period is 3 years of PR status before the HFE application for the resale purchase. [1][2]
+
+Please check the linked HDB page for the latest position, as rules can change.
+
+Sources:
+[1] Terms and Conditions - Sale and Purchase of An HDB Resale Flat: https://www.hdb.gov.sg/e-resale/resale-purchase-of-an-hdb-resale-flat
+[2] Terms and Conditions - Sale and Purchase of An HDB Resale Flat: https://www.hdb.gov.sg/e-resale/resale-purchase-of-an-hdb-resale-flat",False,2,,,2774,287,12.15,False,
+PR_P2_39,What do I need to participate in a sales exercise?,,False,True,policy,"I couldn't find this in the official sources I have. No policy passages were provided, so I can't confirm what you need to participate in a sales exercise.
+
+If you want, send the relevant HDB or CPF policy passages and I can answer from those official rules.",True,0,,,1948,127,10.08,True,n/a
+PR_P2_40,When should I apply for an HFE letter if I wish to participate in a sales exercise?,,False,True,policy,"Apply for your HFE letter early. To take part in an HDB sales exercise, all flat applicants must have a valid HFE letter, and HDB says to apply at least 1 month ahead of the sales exercise. [4]
+
+More generally, you must have a valid HFE letter when you apply to buy a flat from HDB. If you are buying a new flat, it must be valid at the point you apply. If you are buying a resale flat, it must be valid before you obtain the Option to Purchase and again when you submit the resale application. [2]
+
+HDB says processing takes up to a month after it receives the full set of required documents, and it may take longer before and during the month of a sales exercise because of high application volume. HDB will notify you by SMS and email when the outcome is ready. [1]
+
+So the practical answer is: plan and apply early, ideally at least 1 month before the sales exercise, and check the official HDB page for the latest position. [1][3][4]
+
+Sources:
+[1] Application for an HDB Flat Eligibility (HFE) Letter: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/application-for-an-hdb-flat-eligibility-hfe-letter?anchor=how-to-apply
+[2] Application for an HDB Flat Eligibility (HFE) Letter: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/application-for-an-hdb-flat-eligibility-hfe-letter?anchor=how-to-apply
+[3] Application for an HDB Flat Eligibility (HFE) Letter: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/application-for-an-hdb-flat-eligibility-hfe-letter?anchor=how-to-apply
+[4] Standard, Plus, and Prime Housing Framework: https://www.hdb.gov.sg/buying-a-flat/bto-sbf-and-open-booking-of-flats/finding-a-new-flat/standard-plus-and-prime-housing-framework",False,4,,,2680,308,7.26,False,n/a
+PR_P2_41,Where can I find information on the upcoming sales exercises?,,False,True,policy,"You can find information on upcoming sales exercises on the HDB Flat Portal.[1]
+
+HDB releases information about projects one launch ahead. For example, for projects launching in the October sales exercise, HDB will share information in the June sales exercise.[1] The HDB Flat Portal will show details such as flat types, number of units and the town map.[1] Prices and additional details are announced during the actual sales exercise.[1]
+
+If you want updates automatically, you can subscribe to HDB eAlerts for notifications on upcoming sales exercises.[1]
+
+Please check the linked official HDB page for the latest details.[1]
+
+Sources:
+[1] Standard, Plus, and Prime Housing Framework: https://www.hdb.gov.sg/buying-a-flat/bto-sbf-and-open-booking-of-flats/finding-a-new-flat/standard-plus-and-prime-housing-framework",False,1,,,2139,207,5.91,False,n/a
+PR_P2_42,How do I work out a budget to finance the flat purchase?,,False,False,both,"I can’t tell you what budget you personally should set, because that depends on your own finances and loan eligibility. But the official guidance says you should work out your budget before searching for a flat. [1][2]
+
+To plan your flat budget, HDB says to consider:
+- how much you need to pay using cash and CPF savings [1]
+- the amount of housing loan you may need [1]
+- any CPF housing grants you may be eligible for [1]
+- setting aside cash savings for renovation and other necessary expenses [2]
+
+The official sources say a flat purchase can be financed using a combination of cash, CPF Ordinary Account savings, grants and a housing loan from HDB or a financial institution regulated by MAS. [2][3][4]
+
+To work this out, HDB says you can use its calculators to estimate your finances, calculate your housing budget, work out a payment plan, and compare HDB and participating FI loan options. [1][2][4][5]
+
+If you plan to use an FI loan, HDB says to apply early for an In-Principle Approval for an indicative loan amount, and you must have a valid Letter of Offer before you can exercise the Option to Purchase for a resale flat. [4][5]
+
+If you are selling your current flat to buy another, CPF says your budget includes cash proceeds, cash savings, OA savings and any eligible housing grant. [6]
+
+Please check the linked HDB and CPF pages for the latest position.
+
+Sources:
+[1] Mode of Financing for a Resale Flat: https://www.hdb.gov.sg/buying-a-flat/resale-flats/process-for-buying-a-resale-flat/resale-flat-planning/mode-of-financing
+[2] Managing the Resale Flat Purchase: https://www.hdb.gov.sg/buying-a-flat/resale-flats/process-for-buying-a-resale-flat/resale-flat-planning/managing-the-flat-purchase
+[3] CPFB | Home buying guide for members below 55: https://www.cpf.gov.sg/member/home-ownership/home-buying-guide-for-members-below-55
+[4] Mode of Financing for a Resale Flat: https://www.hdb.gov.sg/buying-a-flat/resale-flats/process-for-buying-a-resale-flat/resale-flat-planning/mode-of-financing
+[5] Housing Loan from Financial Institutions: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/housing-loan/housing-loan-from-financial-institutions
+[6] CPFB | Home buying guide for members above 55: https://www.cpf.gov.sg/member/home-ownership/home-buying-guide-for-members-above-55",True,6,,price_agent,3350,420,10.27,True,n/a
+PR_P2_43,I have an approved HFE letter. Can I apply for any new flats in this sales exercise?,,False,True,policy,"Yes — if your HFE letter is still valid, you can apply for a new flat in the sales exercise. All flat applicants must have a valid HFE letter to participate in a sales exercise, including for Standard, Plus, and Prime flats.[1][2]
+
+Your flat application will be processed based on the HFE letter you submitted.[4] Also, the applicants and occupiers in your flat application must remain the same as those listed in your HFE letter application.[3]
+
+If there are changes to household details such as addition or removal of household members, applicant/occupier status, marital status, citizenship, or ownership of private property, your approved HFE letter may be invalidated and you may need to cancel it and apply for a fresh HFE letter before submitting the flat application.[3] If there is only a change in household income after approval, no action is required.[3]
+
+You may only be listed in 1 HFE letter application at a time, either as an applicant or occupier.[4]
+
+For the latest position, please check the linked HDB page before applying.
+
+Sources:
+[1] Standard, Plus, and Prime Housing Framework: https://www.hdb.gov.sg/buying-a-flat/bto-sbf-and-open-booking-of-flats/finding-a-new-flat/standard-plus-and-prime-housing-framework
+[2] Application for an HDB Flat Eligibility (HFE) Letter: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/application-for-an-hdb-flat-eligibility-hfe-letter?anchor=how-to-apply
+[3] Application for an HDB Flat Eligibility (HFE) Letter: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/application-for-an-hdb-flat-eligibility-hfe-letter?anchor=how-to-apply
+[4] Application for an HDB Flat Eligibility (HFE) Letter: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/application-for-an-hdb-flat-eligibility-hfe-letter?anchor=how-to-apply",False,4,,,3113,312,8.3,False,n/a
+PR_P2_44,The HFE letter application e-Service is unavailable. How can I apply for HFE and participate in this sales exercise?,,True,True,policy,"I couldn't find this in the official sources I have. There are no policy passages provided here about what to do if the HFE letter application e-Service is unavailable, so I can't confirm the application steps or how this affects participation in the sales exercise.
+
+Please check the linked official HDB page for the latest instructions, especially any notice on temporary service issues, alternative application arrangements, or deadline extensions.",True,0,,,1974,156,10.76,True,
+PR_P2_45,How do I apply for a flat in this sales exercise?,,False,True,policy,"I can’t fully answer how to apply in this specific sales exercise from the official sources I have, because they do not give the full step-by-step application process for this exercise. They mainly confirm the prerequisites and where applications are made. 
+
+What the sources do say is:
+- You must have a valid HDB Flat Eligibility (HFE) letter before you can apply for a Standard, Plus, or Prime flat in a sales exercise. All flat applicants need a valid HFE letter to participate. HDB says to apply for the HFE letter at least 1 month ahead of the sales exercise. [2]
+- HDB says HFE processing takes up to a month after all required documents are received, and it may take longer before and during a sales exercise because of high application volume. [1]
+- For a new flat, the application process includes applying online at HDB’s website during the sales launch or open booking, then booking a flat based on queue position and paying the option fee. [4]
+- Information on upcoming project launches is published on the HDB Flat Portal, while prices and additional details are announced during the sales exercise. [3]
+
+Please check the linked HDB page for the latest instructions for this exercise.
+
+Sources:
+[2] Standard, Plus, and Prime Housing Framework: https://www.hdb.gov.sg/buying-a-flat/bto-sbf-and-open-booking-of-flats/finding-a-new-flat/standard-plus-and-prime-housing-framework
+[1] Application for an HDB Flat Eligibility (HFE) Letter: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/application-for-an-hdb-flat-eligibility-hfe-letter?anchor=how-to-apply
+[4] CPFB | Home buying guide for members below 55: https://www.cpf.gov.sg/member/home-ownership/home-buying-guide-for-members-below-55
+[3] Standard, Plus, and Prime Housing Framework: https://www.hdb.gov.sg/buying-a-flat/bto-sbf-and-open-booking-of-flats/finding-a-new-flat/standard-plus-and-prime-housing-framework",True,4,,,2773,357,12.32,True,n/a
+PR_P2_46,I am interested in more than 1 town or flat type. Can I submit more than 1 application in a sales exercise?,,False,True,policy,"I couldn't find this in the official sources I have. No policy passages were provided, so I can't confirm whether you can submit more than 1 application in a sales exercise.
+
+Please check the linked official HDB page for the latest rule.",True,0,,,1978,118,9.83,True,n/a
+PR_P2_47,How do I find the number of applications received in this sales exercise? How do I check if I have submitted my flat application?,,False,True,policy,"I couldn't find this in the official sources I have. No policy passages were provided on how to view the number of applications in a sales exercise or how to check whether your flat application was submitted.
+
+If you want, ask again with the relevant HDB policy/source passages, and I can answer from those official instructions.",True,0,,,1978,134,10.79,True,n/a
+PR_P2_48,How do I find out if I meet the proximity condition of 4 km to qualify for the Family Care Scheme (FCS) (Proximity)?,,False,True,policy,"I couldn't find this in the official sources I have. No policy passages were provided on the Family Care Scheme (FCS) (Proximity), so I can't confirm how the 4 km proximity condition is checked or what official tool or method you should use.
+
+If you want, ask again with the relevant HDB or CPF policy text, and I can explain it from those official rules.",True,0,,,1986,154,11.99,True,n/a
+PR_P2_49,How do I opt for Deferred Income Assessment in the application form?,,False,True,policy,"I couldn't find this in the official sources I have. There are no policy passages provided here that explain how to opt for Deferred Income Assessment in the application form.
+
+If you want, I can help check the official HDB or CPF guidance if you share the relevant source text or passages.",True,0,,,1952,128,9.05,True,n/a
+PR_P2_50,What are priority schemes and how do I apply for them?,,False,True,policy,"I couldn't find this in the official sources I have. There are no policy passages provided here on what the priority schemes are or how to apply for them.
+
+If you want, send me the relevant HDB policy passages or ask a narrower question about a specific scheme, and I can summarise it from the official source.",True,0,,,1950,135,9.72,True,n/a
+PR_P2_51,How do I make changes after submitting a flat application?,,False,True,policy,"If you have already submitted your HFE letter application, you generally cannot edit it directly. You must cancel the HFE application and submit a fresh one if you need to make changes. [2]
+
+What you can do depends on the stage:
+- If you are still at Step 1 (draft), use the “Back” button to go to earlier pages and make changes. [1]
+- If you completed Step 1 and got the preliminary outcome, select “Return to Step 1” under “Next Steps” to restart Step 1 and make changes. [1]
+- If you are at Step 2, select “Return to Step 1” at the top of the page to go back and make changes. [1]
+- If you have completed Step 2, you cannot make changes after submission. To change details, cancel the HFE application and apply again. [2]
+- If you only need to update contact details after Step 2 or after receiving the HFE letter, submit a request through HDB’s e-Service. [1]
+- If you have already applied for a flat using the HFE letter, write to HDB via MyRequest@HDB with your HFE reference number and sales registration number or resale case number. [1]
+
+Changes to household details can affect eligibility and may invalidate the HFE letter. HDB may cancel the flat application in such cases. Check the official HDB page for the latest process. [3][4]
+
+Sources:
+[1] Application for an HDB Flat Eligibility (HFE) Letter: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/application-for-an-hdb-flat-eligibility-hfe-letter?anchor=how-to-apply
+[2] Application for an HDB Flat Eligibility (HFE) Letter: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/application-for-an-hdb-flat-eligibility-hfe-letter?anchor=how-to-apply
+[3] Application for an HDB Flat Eligibility (HFE) Letter: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/application-for-an-hdb-flat-eligibility-hfe-letter?anchor=how-to-apply
+[4] Couples and Families: https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families",False,4,,,3266,388,9.96,False,n/a
+PR_P2_52,When will I be notified of the ballot results? How will I be notified?,,False,True,policy,"I couldn't find this in the official sources I have. There are no policy passages provided here about when ballot results are released or how applicants are notified.
+
+If you want, I can answer this once you share the relevant HDB policy passage or official source.",True,0,,,1958,121,8.63,True,n/a
+PR_P2_53,How do I cancel my flat application?,,False,True,policy,"If you want to cancel your flat application, it depends on whether the resale application has already been submitted.
+
+If you have not submitted a resale application, you should cancel your HFE letter and then apply for a fresh HFE letter if you want to restart the buying process later. [2]
+
+If you have already submitted a resale application, write to HDB via MyRequest@HDB with your resale case number, and HDB will advise you further. [2]
+
+For a resale application, before HDB accepts it, either the seller or buyer can withdraw it at any time by giving HDB notice in writing. The administrative and valuation fees paid will not be refunded. [3]
+
+After HDB accepts the resale application, HDB will cancel it only if it receives written confirmation from both the seller and buyer. Both parties will also be liable to pay stamp, conveyancing and any other fees required by HDB or other authorities. [3]
+
+If the application is cancelled, the HFE letter used for that resale application will also be cancelled, and the buyer must apply for a new HFE letter to buy another flat. [1][4]
+
+HDB can also cancel a resale application in certain situations, such as withdrawal, insufficient funds, incorrect or suppressed information, ineligibility under policy, or if the transaction is aborted. Please check the linked HDB page for the latest position. [1]
+
+Sources:
+[1] Application Process for a Resale Flat Purchase: https://www.hdb.gov.sg/buying-a-flat/resale-flats/process-for-buying-a-resale-flat/resale-flat-application/application-process
+[2] Overview of Resale Flat Planning for Buyers: https://www.hdb.gov.sg/buying-a-flat/resale-flats/process-for-buying-a-resale-flat/resale-flat-planning/overview
+[3] Terms and Conditions - Sale and Purchase of An HDB Resale Flat: https://www.hdb.gov.sg/e-resale/resale-purchase-of-an-hdb-resale-flat
+[4] Terms and Conditions - Sale and Purchase of An HDB Resale Flat: https://www.hdb.gov.sg/e-resale/resale-purchase-of-an-hdb-resale-flat",False,4,,,3134,373,13.2,False,n/a

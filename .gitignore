@@ -228,6 +228,11 @@ __marimo__/
 # Local source documents (shared separately; never commit raw SingleFile HTML)
 data/raw/
 
+# Locally generated embedding vectors and metadata
+data/embeddings/
+# Locally generated persistent vector database
+data/vector_db/
+
 # macOS metadata
 .DS_Store
 

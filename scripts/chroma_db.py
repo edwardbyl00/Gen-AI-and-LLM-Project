@@ -201,7 +201,10 @@ def chroma_metadata(record: dict[str, Any]) -> dict[str, str | int | float | boo
 def collection_metadata(bundle: ArtifactBundle, manifest_reference: str) -> dict[str, str | int | float | bool]:
     return {
         "embedding_model": bundle.manifest["model_name"],
-        "model_revision": bundle.manifest.get("model_revision", "unrecorded"),
+        # The embedding model isn't pinned to a revision, so the manifest
+        # key is present but null; Chroma's metadata values reject None,
+        # and .get()'s default only fires when the key is absent.
+        "model_revision": bundle.manifest.get("model_revision") or "unrecorded",
         "embedding_dimension": int(bundle.embeddings.shape[1]),
         "embedding_normalization": bundle.manifest["normalization"],
         "dataset_fingerprint": bundle.manifest["input_sha256"],

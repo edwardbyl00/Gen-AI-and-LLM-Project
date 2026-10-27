@@ -16,7 +16,7 @@ from datetime import datetime
 from agents.supervisor import router
 from agents.supervisor.checks import safe_route
 
-FIELDS = ("route", "false_belief", "answerable")
+FIELDS = ("route", "check_premise", "answerable")
 ROUTES = ("price", "policy", "both", "none")
 RESULTS_DIR = router.PROJECT_ROOT / "evaluation" / "results"
 
@@ -33,11 +33,16 @@ def to_bool(text):
 
 def load_labels(path):
     """Read the labelled questions from a CSV file."""
-    with open(path, newline="", encoding="utf-8") as f:
+    with open(path, newline="", encoding="utf-8-sig") as f:
         rows = list(csv.DictReader(f))
     for row in rows:
-        row["false_belief"] = to_bool(row["false_belief"])
+        row["route"] = row["route"].strip().lower()
+        row["check_premise"] = to_bool(row["check_premise"])
         row["answerable"] = to_bool(row["answerable"])
+        # Only for rows with a premise: is the claim actually false?
+        # Blank means not applicable or not yet verified.
+        value = str(row.get("premise_false", "")).strip()
+        row["premise_false"] = to_bool(value) if value else None
     return rows
 
 
@@ -55,15 +60,18 @@ def run(rows, route_fn=safe_route):
 def score(rows, predictions):
     """Compare predictions with labels. Returns a summary dict."""
     pairs = list(zip(rows, predictions))
-    myths = [(r, p) for r, p in pairs if r["false_belief"]]
-    not_myths = [(r, p) for r, p in pairs if not r["false_belief"]]
+    premises = [(r, p) for r, p in pairs if r["check_premise"]]
+    no_premise = [(r, p) for r, p in pairs if not r["check_premise"]]
+    myths = [(r, p) for r, p in premises if r["premise_false"]]
     return {
         "n": len(pairs),
         "correct": {f: sum(p[f] == r[f] for r, p in pairs) for f in FIELDS},
         "all_three": sum(all(p[f] == r[f] for f in FIELDS) for r, p in pairs),
+        "premises": len(premises),
+        "premises_detected": sum(p["check_premise"] for _, p in premises),
+        "false_alarms": sum(p["check_premise"] for _, p in no_premise),
         "myths": len(myths),
-        "myths_detected": sum(p["false_belief"] for _, p in myths),
-        "false_alarms": sum(p["false_belief"] for _, p in not_myths),
+        "myths_detected": sum(p["check_premise"] for _, p in myths),
         "confusion": Counter((r["route"], p["route"]) for r, p in pairs),
         "events": sum(len(p["events"]) for _, p in pairs),
     }
@@ -80,11 +88,12 @@ def print_report(summary, missed):
     pct = lambda k: f"{k}/{n} ({100 * k / n:.0f}%)" if n else "0/0"
     print(f"\nPrompt: {router.PROMPT_FILE.name}   Model: {router.load_settings()['model']}")
     print(f"Route correct:        {pct(summary['correct']['route'])}")
-    print(f"False belief correct: {pct(summary['correct']['false_belief'])}")
+    print(f"Check premise correct: {pct(summary['correct']['check_premise'])}")
     print(f"Answerable correct:   {pct(summary['correct']['answerable'])}")
     print(f"All three correct:    {pct(summary['all_three'])}")
-    print(f"Myths detected:       {summary['myths_detected']}/{summary['myths']}")
-    print(f"False alarms:         {summary['false_alarms']} (flagged as myth, but not one)")
+    print(f"Premises detected:    {summary['premises_detected']}/{summary['premises']}")
+    print(f"  of which myths:     {summary['myths_detected']}/{summary['myths']} (premise known to be false)")
+    print(f"False alarms:         {summary['false_alarms']} (flagged a premise where there is none)")
     print(f"Safety check events:  {summary['events']}")
 
     print("\nRoute confusion (rows = label, columns = router):")

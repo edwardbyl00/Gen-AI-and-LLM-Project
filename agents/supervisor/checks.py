@@ -1,9 +1,10 @@
 """Safety checks on the router's output.
 
-Implements section 4 of Docs/routing_spec.md:
 - fix known contradictions (invalid combinations),
 - retry once if the reply cannot be read, then use the safest fallback,
 - report every fix as an event, so evaluation can count them.
+
+Code walkthrough: Docs/p2_supervisor_code.md
 """
 
 import json
@@ -13,11 +14,11 @@ import openai
 from agents.supervisor.router import RouterReplyError, route_question
 
 ALLOWED_ROUTES = {"price", "policy", "both", "none"}
-REQUIRED_FIELDS = ("route", "false_belief", "answerable", "reason")
+REQUIRED_FIELDS = ("route", "check_premise", "answerable", "reason")
 
 SAFE_FALLBACK = {
     "route": "none",
-    "false_belief": False,
+    "check_premise": False,
     "answerable": False,
     "reason": "Router output could not be read; using the safest fallback.",
 }
@@ -43,7 +44,7 @@ def is_well_formed(record):
         isinstance(record, dict)
         and all(field in record for field in REQUIRED_FIELDS)
         and record["route"] in ALLOWED_ROUTES
-        and isinstance(record["false_belief"], bool)
+        and isinstance(record["check_premise"], bool)
         and isinstance(record["answerable"], bool)
         and isinstance(record["reason"], str)
         and record["reason"].strip() != ""
@@ -55,10 +56,10 @@ def fix_combinations(record):
     fixed = dict(record)
     fixes = []
 
-    # Checked first: a flagged belief needs evidence, so it gets a lookup.
-    if fixed["route"] == "none" and fixed["false_belief"]:
+    # Checked first: a premise to check needs evidence, so it gets a lookup.
+    if fixed["route"] == "none" and fixed["check_premise"]:
         fixed["route"] = "policy"
-        fixes.append("route none with false_belief true: route set to policy")
+        fixes.append("route none with check_premise true: route set to policy")
 
     # Nothing looked up means nothing to answer from.
     if fixed["route"] == "none" and fixed["answerable"]:

@@ -1,302 +1,345 @@
-# P2 Supervisor: Code Guide
+# Supervisor code guide
 
-Owner: P2 (supervisor and synthesis integration)
+The supervisor takes a question, selects the evidence it needs, and writes an answer with sources.
 
-What the supervisor code does, how to run it, and how each part works.
-For *why* the rules are what they are, see `Docs/routing_spec.md`.
-For what the supervisor exchanges with other agents, see
-`Docs/p2_supervisor_contract.md`.
+Start with `handle_question()` in [pipeline.py](../agents/supervisor/pipeline.py). The routing and synthesis prompts define the decision rules; the tables below explain the returned fields.
 
----
-
-## 1. What it does
-
-The supervisor reads a user's question and decides where to look for the
-answer. It does **not** answer the question. It returns a **routing record**:
-
-```json
-{
-  "route": "both",
-  "false_belief": true,
-  "answerable": true,
-  "reason": "Assumes singles cannot buy resale flats, which is false (R3); the price part comes from resale transactions."
-}
-```
-
-| Field | Values | Meaning |
-| ----- | ------ | ------- |
-| `route` | `price` / `policy` / `both` / `none` | Which agents to call |
-| `false_belief` | `true` / `false` | The question rests on something untrue (the router's suspicion; synthesis checks it against evidence) |
-| `answerable` | `true` / `false` | Whether the actual question can be answered from our sources |
-| `reason` | one sentence | The deciding factor, citing a rule (R1 to R5) where one applies |
-
----
-
-## 2. Files
-
-```
-agents/supervisor/
-├── prompts/
-│   └── supervisor_v1.md   the instructions the model reads every call
-├── router.py              sends the prompt and question to the model
-└── checks.py              safety layer: retries, fixes, fallback
-tests/
-├── test_supervisor_router.py
-└── test_supervisor_checks.py
-config.yaml                model and limits (section "llm")
-.env                       API key (local only, never committed)
-```
-
-**Other code should call `safe_route()` from `checks.py`, never
-`route_question()` directly.** `safe_route()` applies every safety check.
-
----
-
-## 3. How a question flows through
+## 1. High-level flow
 
 ```mermaid
 flowchart TD
-    Q[User question] --> S["safe_route()"]
-    S --> R["route_question()"]
-    R --> P[Prompt file + today's date]
-    R --> C[config.yaml settings]
-    R --> M[(OpenAI model)]
-    M --> R
-    R --> W{Well formed?}
-    W -- no, 1st attempt --> R
-    W -- no, 2nd attempt --> F[Safe fallback record]
-    W -- yes --> X[Fix invalid combinations]
-    X --> O["(record, events)"]
-    F --> O
+    Q[Question] --> R["1. Route and check<br/>Decide which sources are needed;<br/>validate the routing decision"]
+    R --> A["2. Gather evidence<br/>Call selected agents for<br/>price facts or policy passages"]
+    A --> S["3. Write answer<br/>Use the gathered evidence<br/>to answer or explain missing information"]
+    S --> F["4. Check and format<br/>Validate cited passage numbers<br/>and attach the source list"]
+    F --> O[Answer with sources]
 ```
 
-1. `safe_route()` calls `route_question()`.
-2. `route_question()` reads the prompt and settings, calls the model with
-   structured output, and turns the reply into a dictionary.
-3. `safe_route()` checks the record. If it is unusable, it tries once more;
-   if that also fails, it returns the safe fallback.
-4. A usable record has its contradictions fixed (routing spec, section 4).
-5. It returns the record plus a list of **events** describing every retry
-   and fix, for the step log.
+The route selects price, policy, both or neither. For `both`, price runs first, then policy; for `none`, evidence gathering is skipped. Both price and policy now use real evidence.
 
----
+### Code behind each stage
 
-## 4. How to run it
+[`pipeline.py`](../agents/supervisor/pipeline.py): `handle_question()` runs the whole flow, collects the bundle and logs timing/errors.
 
-All commands run from the project folder, with the environment active:
+| Stage | Scripts and key functions |
+| --- | --- |
+| **1. Route and check** | [router.py](../agents/supervisor/router.py): `route_question()` classifies; [checks.py](../agents/supervisor/checks.py): `safe_route()` validates, retries and repairs using `is_well_formed()` and `fix_combinations()` |
+| **2. Gather evidence** | [adapters.py](../agents/supervisor/adapters.py): `get_price_agent()` / `get_policy_agent()` select implementations; `price_real()` / `policy_real()` provide results. Price calls `agents.price.run_price_agent()`. Policy calls [policy_agent.py](../src/policy_agent.py): `run_policy_agent()`, which uses `retrieve_policy_evidence()` and `assess_evidence()` |
+| **3. Write answer** | [synthesis.py](../agents/supervisor/synthesis.py): `build_context()` prepares evidence; `synthesise()` asks the model to write the answer |
+| **4. Check and format** | [synthesis.py](../agents/supervisor/synthesis.py): `check_citations()` validates passage numbers; `synthesise()` builds sources; `format_answer()` formats the display |
+
+Token tracking runs alongside the flow: `record_usage()` in `router.py` logs routing/synthesis tokens in `bundle["usage"]`.
+
+For example, **“Can I use CPF for a resale flat?”** should route to `policy`. The policy agent searches for relevant passages. Synthesis receives those passages and writes the answer. Code attaches the sources using passage metadata.
+
+Routing and synthesis each call the model. The real price agent calls the model to extract filters (or write SQL); the policy agent can call the model to assess evidence. Routing retries can add calls too.
+
+### Detailed flow: routing checks
+
+In `checks.py`, `safe_route()` allows two router attempts. Diamonds show conditions; labelled arrows show the if/else outcomes.
+
+```mermaid
+flowchart TD
+    START["safe_route(): start attempt 1"] --> CALL["router.py: route_question()"]
+    CALL --> RESULT{Call outcome?}
+    RESULT -->|Non-retryable error| ERR[Raise error to caller]
+    RESULT -->|Retryable error| LOG[Log malformed_output event]
+    RESULT -->|Record returned| VALID{"is_well_formed()?"}
+    VALID -->|No| LOG
+    LOG --> RETRY{Attempt 1?}
+    RETRY -->|Yes| AGAIN[Start attempt 2]
+    AGAIN --> CALL
+    RETRY -->|No| FALLBACK[Return SAFE_FALLBACK and events]
+    VALID -->|Yes| MYTH{Route none and check_premise true?}
+    MYTH -->|Yes| POLICY[Set route to policy and log fix]
+    MYTH -->|No| ANSWERABLE{Route none and answerable true?}
+    POLICY --> ANSWERABLE
+    ANSWERABLE -->|Yes| FIX[Set answerable false and log fix]
+    ANSWERABLE -->|No| DONE[Return checked record and events]
+    FIX --> DONE
+```
+
+### Detailed flow: agent selection and execution
+
+In `pipeline.py`, `AGENTS_FOR_ROUTE` creates an ordered list of agents. Each call goes through the same success/error branch.
+
+```mermaid
+flowchart TD
+    ROUTE{Checked route?} -->|price| PRICE[Select price only]
+    ROUTE -->|policy| POLICY[Select policy only]
+    ROUTE -->|both| BOTH[Select price then policy]
+    ROUTE -->|none| NONE[Select no agents]
+    PRICE --> NEXT{Selected agent remaining?}
+    POLICY --> NEXT
+    BOTH --> NEXT
+    NONE --> NEXT
+    NEXT -->|Yes| CALL[Call next selected agent via adapters.py]
+    CALL --> OK{Call succeeds?}
+    OK -->|Yes| SAVE[Store result and timing]
+    SAVE --> NEXT
+    OK -->|No| STRICT{strict=True?}
+    STRICT -->|Yes| ERR[Raise error to caller]
+    STRICT -->|No| LOG[Record error; result stays None]
+    LOG --> NEXT
+    NEXT -->|No| BUNDLE[Build bundle and run synthesis]
+```
+
+Currently, the price call is `price_real()` and the policy call is `policy_real()`. A policy abstention is a successful call with empty evidence, so it follows the success branch above.
+
+### Detailed flow: policy evidence decisions
+
+`adapters.policy_real()` calls `src/policy_agent.py: run_policy_agent()` with dense retrieval and LLM assessment enabled. The chart shows that configured path.
+
+```mermaid
+flowchart TD
+    SEARCH["retrieve_policy_evidence()<br/>Search; re-query if needed"] --> FOUND{Any evidence?}
+    FOUND -->|No| ABSTAIN[ABSTAIN]
+    FOUND -->|Yes| ASSESS["assess_evidence()"]
+    ASSESS --> ENOUGH{Evidence sufficient?}
+    ENOUGH -->|Yes| READY[ANSWER_READY]
+    ENOUGH -->|No| QUERIES{Suggested queries provided?}
+    QUERIES -->|No| ABSTAIN
+    QUERIES -->|Yes| EXTRA[Clean queries, retrieve extra passages<br/>and merge evidence]
+    EXTRA --> SECOND[Assess combined evidence once more]
+    SECOND --> ENOUGH2{Evidence sufficient now?}
+    ENOUGH2 -->|Yes| READY
+    ENOUGH2 -->|No| ABSTAIN
+    READY --> KEEP[Adapter returns selected evidence]
+    ABSTAIN --> EMPTY[Adapter returns empty evidence]
+```
+
+The self-correction stage happens at most once, although it can search several suggested queries. Retrieval/assessment exceptions follow the pipeline's agent-error branch.
+
+### Detailed flow: synthesis and citations
+
+In `synthesis.py`, missing evidence is described in model context. Answering or declining is a model decision guided by the prompt, rather than a Python if/else check on evidence alone.
+
+```mermaid
+flowchart TD
+    BUNDLE[Bundle] --> CONTEXT["build_context()<br/>Include facts, passages and missing-source notes"]
+    CONTEXT --> MODEL["synthesise(): model returns<br/>answer, cited and declined"]
+    MODEL --> OK{Synthesis succeeds?}
+    OK -->|No| STRICT{strict=True?}
+    STRICT -->|Yes| ERR[Raise error to caller]
+    STRICT -->|No| FALLBACK[Pipeline uses fallback answer<br/>declined true; no citations or sources]
+    OK -->|Yes| NEXT{More cited numbers?}
+    NEXT -->|Yes| VALID{Number within passage range?}
+    VALID -->|No| INVALID[Drop number; log invalid_citation]
+    INVALID --> NEXT
+    VALID -->|Yes| DUP{Already kept?}
+    DUP -->|Yes| SKIP[Skip duplicate]
+    DUP -->|No| KEEP[Keep number]
+    SKIP --> NEXT
+    KEEP --> NEXT
+    NEXT -->|No| SOURCES[Build source list from kept numbers]
+    SOURCES --> RETURN[Pipeline returns bundle with answer]
+    FALLBACK --> RETURN
+    RETURN --> FORMAT["Caller uses format_answer()<br/>to display answer and sources"]
+```
+
+Citation filtering changes the `cited` list and sources, not citation markers inside answer prose. The pipeline returns a bundle; its CLI calls `format_answer()` for display.
+
+## 2. What each file does
+
+All files below are in `agents/supervisor/`.
+
+| File | Main function | Purpose |
+| --- | --- | --- |
+| [pipeline.py](../agents/supervisor/pipeline.py) | `handle_question()` | Runs the stages and returns the results, errors, timing and token usage |
+| [router.py](../agents/supervisor/router.py) | `route_question()` | Reads the prompt/settings and asks the model to classify the question |
+| [checks.py](../agents/supervisor/checks.py) | `safe_route()` | Validates routing output, retries failures and repairs known contradictions |
+| [adapters.py](../agents/supervisor/adapters.py) | `get_price_agent()`, `get_policy_agent()` | Selects stub/real agents and adapts their outputs for the pipeline |
+| [synthesis.py](../agents/supervisor/synthesis.py) | `synthesise()`, `format_answer()` | Writes the answer, checks citation numbers and formats sources |
+| [evaluate.py](../agents/supervisor/evaluate.py) | `run()`, `score()` | Compares routing predictions with labelled questions |
+| [score_answers.py](../agents/supervisor/score_answers.py) | `answer_all()`, `score_sheet()` | Generates answer grading sheets and scores reviewed grades |
+
+Call `handle_question()` for a complete answer, or `safe_route()` for routing with checks. The router CLI calls `route_question()` directly and is useful for inspecting one raw classification.
+
+### Routing fields and safety checks
+
+The router returns four fields:
+
+| Field | Meaning |
+| --- | --- |
+| `route` | `price`, `policy`, `both` or `none` |
+| `check_premise` | The question states or assumes a claim about rules or prices that must be checked against evidence (it may be true or false; the router does not decide). Facts about the user's own situation do not count |
+| `answerable` | Whether the actual question can be answered from the available sources |
+| `reason` | The model's explanation for its decision |
+
+A grant amount needs policy evidence. A historical resale price needs transaction evidence. An unanswerable question can still route to an agent for related context.
+
+`safe_route()` follows this sequence:
+
+1. Call the router.
+2. If a retryable error occurs or the record is malformed, try once more. After two unsuccessful attempts, return `SAFE_FALLBACK`: `none`, no false-belief flag, not answerable.
+3. Repair known contradictions and return `(record, events)`.
+
+| Contradiction | Repair |
+| --- | --- |
+| `route=none`, `check_premise=True` | Set `route=policy` so evidence can be checked |
+| `route=none`, `answerable=True` | Set `answerable=False` |
+
+The first repair runs before the second. If both contradictions occur, the result is `policy` and remains answerable.
+
+Retries cover malformed replies, refusals, connection/timeouts, rate limits and server errors. Setup errors such as a wrong key or invalid model propagate to the caller. Events record malformed attempts and repairs.
+
+### Agent status and policy integration
+
+Current [config.yaml](../config.yaml) settings:
+
+```yaml
+agents:
+  price: real
+  policy: real
+  policy_top_k: 10
+```
+
+- **Price:** `price_real()` calls `run_price_agent()` in [agents/price/__init__.py](../agents/price/__init__.py). The default approach A extracts town, flat type and period with the model, then calculates statistics from `data/cleaned/hdb_resale_prices.csv.gz`. `price_agent.approach: B` selects the SQL alternative. See the [price guide](../agents/price/README.md).
+- **Policy:** calls `run_policy_agent()` in [src/policy_agent.py](../src/policy_agent.py), with keyword + embedding search, an automatic re-query when needed, and an LLM evidence check with one possible self-correction pass.
+
+The policy adapter takes the agent's nested `retrieval` result and exposes `evidence` at the top level. It also retains `decision`, `reason` and `trace` in `bundle["policy_result"]`. If the decision is not `ANSWER_READY`, it empties the evidence so synthesis receives no policy passages.
+
+A real policy run needs the chunk corpus, embeddings and local Chroma store. For a fresh clone or changed corpus, build these from the project root:
+
+```bash
+python -m scripts.generate_embeddings
+python -m scripts.build_chroma_db
+```
+
+These read `data_preparation.embedding` and `data_preparation.vector_store` settings. Embeddings and the database are gitignored and must be generated locally. Reuse them for routine questions; rebuild them when the corpus changes. Embedding generation may download the configured model.
+
+### The bundle, errors and token tracking
+
+A **bundle** is the dictionary returned by `handle_question()`:
+
+| Key | Contents |
+| --- | --- |
+| `question`, `today` | Original question and date shared by the stages |
+| `routing` | Checked routing decision |
+| `price_result`, `policy_result` | Agent output, or `None` if skipped/failed |
+| `agent_errors` | Failures keyed by agent name |
+| `steps` | Stage timings, events, errors and stub flags |
+| `usage` | Router/synthesis input and output token counts per returned model response |
+| `answer` | Answer text, `declined`, valid `cited` numbers, `sources` and citation events |
+
+With default `strict=False`, agent errors are recorded and processing continues; synthesis errors produce a fallback answer. With `strict=True`, those errors are raised. The pipeline CLI uses strict mode. Routing errors that escape `safe_route()` propagate in either mode.
+
+Token tracking uses the same list through routing and synthesis:
+
+```text
+pipeline: usage = []
+    -> router: record_usage(usage, "router", response)
+    -> synthesis: record_usage(usage, "synthesis", response)
+    -> returned as bundle["usage"]
+    -> score_answers.py sums tokens per question for its CSV
+```
+
+`record_usage()` lives in `router.py`. Missing usage metadata produces `None` counts. These totals do not calculate money spent and do not include the policy agent's assessor calls. The policy agent returns separate `assessor_usage`, which the current adapter does not forward.
+
+### What the citation check guarantees
+
+Synthesis receives numbered passages and returns `answer`, `cited` and `declined`. Code removes invalid/duplicate numbers from `cited` and builds the source list from the corresponding passage metadata.
+
+This checks that citation numbers refer to supplied passages. It does not verify claim support, remove invalid markers inside answer text, or prevent invented links in model-written prose. Answer rules are mainly prompt instructions.
+
+## 3. Run it
+
+Run from the project root with dependencies installed. Model calls require `OPENAI_API_KEY` or `LLM_API_KEY` in your local `.env`.
 
 ```bash
 source .venv/bin/activate
-```
 
-**Route one question (makes one real API call):**
+# Local supervisor tests using fakes; no model calls.
+python -m pytest tests/test_supervisor_*.py -q
 
-```bash
+# Inspect one routing decision.
 python -m agents.supervisor.router "Can I use CPF for a resale flat?"
+
+# Full pipeline: routing, selected agents, synthesis.
+python -m agents.supervisor.pipeline "Can I use CPF for a resale flat?"
 ```
 
-**Use it from other code:**
+From Python:
 
 ```python
-from agents.supervisor.checks import safe_route
+from agents.supervisor.pipeline import handle_question
+from agents.supervisor.synthesis import format_answer
 
-record, events = safe_route("Can I use CPF for a resale flat?")
-record["route"]   # "policy"
-events            # [] when nothing needed fixing
+bundle = handle_question("Can I use CPF for a resale flat?")
+print(format_answer(bundle["answer"]))
+print(bundle["usage"])
 ```
 
-**Run the tests (no API calls, no cost):**
+Model settings live under `llm` in `config.yaml`. Optional request settings set to `null` are omitted. See [MAINTENANCE.md](MAINTENANCE.md) for environment setup and the team's Git workflow.
+
+## 4. Evaluate: label, run, grade, score
+
+### Label questions
+
+Add rows to [practice_routing.csv](../data/labels/practice_routing.csv) for tuning. Reserve [routing_labels.csv](../data/labels/routing_labels.csv) for held-out evaluation.
+
+Each row needs `question_id`, `question`, `route`, `check_premise` and `answerable`, plus `premise_false` (TRUE/FALSE) on rows where `check_premise` is TRUE: is the claim actually false? Leave it blank while unverified; blank rows are left out of the myth score. Decide it from the sources or the question's author, never from memory. Follow the existing format for `kind`, `rationale` and `labelled_by`. Use stable IDs such as `PR_P2_05`, and `TRUE`/`FALSE` labels.
+
+Label the actual question: a forecast may be unanswerable even when historical facts provide useful context. Keep prompt examples out of practice and held-out sets.
+
+### Check routing
 
 ```bash
-python -m pytest tests/ -v
+python -m agents.supervisor.evaluate data/labels/practice_routing.csv
 ```
 
----
+This makes live router calls and reports field accuracy, all-three accuracy, premise detection (and how many of those were myths), false alarms, repairs/retries, a route confusion table and misses. Results go to `evaluation/results/`.
 
-## 5. Settings (`config.yaml`)
+### Check final answers
 
-```yaml
-llm:
-  model: "gpt-5.4-2026-03-05"
-  temperature: 0
-  seed: 42
-  timeout_seconds: 30
-  max_output_tokens: null
-```
+1. Generate answers using the current pipeline:
 
-| Setting | What it does | Notes |
-| ------- | ------------ | ----- |
-| `model` | Which model is called | Team standard. Dated snapshot so the model cannot change between runs. Must be the same for V0, V1 and V2 |
-| `temperature` | How varied replies are; 0 = most consistent | Set to `null` if a model rejects it |
-| `seed` | Fixed starting point for randomness | Helps reruns match; not a guarantee |
-| `timeout_seconds` | Give up on a call after this long | A timeout is retried once |
-| `max_output_tokens` | Cap on reply length | Off (`null`) until tested; too low can cut off the reply |
+   ```bash
+   python -m agents.supervisor.score_answers run data/labels/practice_routing.csv
+   ```
 
-A setting set to `null` is simply not sent to the API.
+2. Open the printed CSV path under `evaluation/answers/`. Read each answer and review `grade_declined`, which is pre-filled from the model's own claim. Fill `grade_myth_accepted` for myth questions (`premise_false` TRUE); leave `n/a` for other rows. Extra columns such as `grader_notes` are allowed.
 
-The API key is read from `.env`, under `OPENAI_API_KEY` (or `LLM_API_KEY`
-as a fallback). See `.env.example` for the name.
+3. Save the reviewed file, then score it:
 
----
+   ```bash
+   python -m agents.supervisor.score_answers score evaluation/answers/<reviewed-file>.csv
+   ```
 
-## 6. `router.py`
+| Metric | Calculation | Better |
+| --- | --- | --- |
+| Myth acceptance | Myth questions whose answers accept the false premise / all myth questions | Lower |
+| Honesty | Unanswerable questions whose answers decline / all unanswerable questions | Higher |
+| Over-refusal | Answerable questions whose answers decline / all answerable questions | Lower |
 
-### `route_question(question, client=None, today=None) -> dict`
+Required blank grades stop scoring. Pre-filled grades still need human review. Scoring a reviewed sheet makes no model calls; generating answers does. Both agents currently use real evidence; if either is switched to a stub, treat that run as a plumbing check.
 
-Classifies one question and returns the routing record.
+If scores worsen, inspect routing, retrieved evidence, agent failures, synthesis and labels before deciding what to change. Keep saved runs for comparison.
 
-- `client`: optional. Pass a fake client in tests to avoid real API calls.
-- `today`: optional date string (`"2026-10-18"`). Defaults to today. The
-  prompt needs it to judge what counts as "the future" (rule R4).
+## 5. Change a prompt
 
-### Helpers
+| Prompt | Used by |
+| --- | --- |
+| [supervisor_v2.md](../agents/supervisor/prompts/supervisor_v2.md) | Router: rules R1–R5 and routing examples (v1 kept for comparison) |
+| [synthesis_v2.md](../agents/supervisor/prompts/synthesis_v2.md) | Synthesis: answer rules A1–A8 (v1 kept for comparison) |
 
-| Function | Job |
-| -------- | --- |
-| `load_settings()` | Reads the `llm` section of `config.yaml`; stops with a clear error if no model is set |
-| `load_prompt(today)` | Reads the prompt file and fills in `{today}` |
-| `make_client(timeout)` | Reads the key from `.env` and creates the OpenAI client |
+1. Decide which routing or answer rule needs to change and update its explanation alongside the prompt.
+2. Copy the prompt to a new version, edit it, and update `PROMPT_FILE` in `router.py` or `synthesis.py`. Keep old versions for comparison.
+3. If reply fields change, update the JSON schema, prompt, consuming code and tests together. Wording changes alone do not require a schema change.
+4. Run supervisor tests, then the relevant live evaluation. Tests with fakes do not measure prompt quality.
 
-### Design notes
+Prompts are read at call time and `{today}` is replaced with the shared date. Code enforces the two routing repairs and citation-number checks; other routing/answer rules depend mainly on the model following instructions.
 
-- **Structured output** (`ROUTING_SCHEMA`, `"strict": True`): the API only
-  allows replies that match the four fields and their allowed values, so
-  the model cannot invent a route such as `"myth"`.
-- **`.replace("{today}", ...)`, not `.format()`:** the prompt contains JSON
-  examples full of curly braces, which `.format()` would treat as
-  placeholders and crash on.
-- **`PROJECT_ROOT`** is worked out from the file's own location, so the
-  router finds `config.yaml`, `.env` and the prompt from any folder.
-- **`RouterReplyError`** is raised when the model replies with no content
-  (for example a refusal), so the problem has a clear name.
+## 6. Troubleshooting
 
----
+| Problem | Check |
+| --- | --- |
+| `No model set` | Add `llm.model` in `config.yaml` |
+| `No API key found` / authentication error | Check the key in local `.env` |
+| Unsupported temperature/seed | Set the optional setting to `null` |
+| `No module named 'agents'` | Run from the project root |
+| Price data or import failure | Install dependencies and check `price_agent.cleaned_data`; rebuild with `python -m scripts.clean_prices` if the original raw CSV is available |
+| Policy import or retrieval failure | Check dependencies, policy modules, embeddings and Chroma store |
+| `Ungraded row` | Complete the required grade columns in that row |
 
-## 7. `checks.py`
-
-### `safe_route(question, router=route_question, **router_kwargs) -> (record, events)`
-
-The function the rest of the system calls.
-
-- `router`: optional. Pass a fake router in tests.
-- `**router_kwargs`: passed through to the router (e.g. `today=...`).
-- Returns the **record** (always exactly the four contract fields) and a
-  list of **events**.
-
-### Events
-
-Each event is a dictionary for the step log:
-
-```python
-{"code": "invalid_combo", "attempt": 1,
- "detail": "route none with false_belief true: route set to policy"}
-```
-
-| Code | Meaning |
-| ---- | ------- |
-| `malformed_output` | That attempt's reply was unusable (bad JSON, missing field, wrong value, empty reason, refusal, or a temporary API failure) |
-| `invalid_combo` | The reply was usable but contradictory, and was fixed |
-
-Counting events across a test run shows how often the checks had to step in.
-
-### Invalid combinations (routing spec, section 4)
-
-| Combination | Fix |
-| ----------- | --- |
-| `route = none` with `false_belief = true` | `route` becomes `policy` (a myth needs evidence) |
-| `route = none` with `answerable = true` | `answerable` becomes `false` (nothing to answer from) |
-
-The myth rule is checked **first**. A record with both problems becomes
-`policy` and stays answerable.
-
-### Which errors are retried
-
-| Retried once (temporary or a bad reply) | Not retried: stops the program (setup problem) |
-| --------------------------------------- | ---------------------------------------------- |
-| `JSONDecodeError`: reply not valid JSON | `AuthenticationError` (401): wrong or missing API key |
-| `RouterReplyError`: no content, e.g. a refusal | `NotFoundError` (404): wrong model name |
-| `APIConnectionError`: network problem or timeout | `BadRequestError` (400): unsupported setting, e.g. temperature |
-| `RateLimitError` (429): too many requests | `PermissionDeniedError` (403): key cannot use this model |
-| `InternalServerError` (5xx): OpenAI server error | `ValueError`: missing model in `config.yaml`; any other bug |
-
-**Principle:** retry what is temporary; stop on what is permanent. A silent
-fallback on a setup problem would turn every question into "can't help"
-without anyone noticing.
-
-### Safe fallback
-
-Used when both attempts fail:
-
-```python
-{"route": "none", "false_belief": False, "answerable": False,
- "reason": "Router output could not be read; using the safest fallback."}
-```
-
----
-
-## 8. Tests
-
-Every test uses a fake router or fake client, so tests are free and run in
-under a second.
-
-| File | What it proves |
-| ---- | -------------- |
-| `test_supervisor_router.py` | A reply becomes a dictionary; a refusal raises `RouterReplyError` |
-| `test_supervisor_checks.py` | Valid records pass unchanged; both contradictions are fixed, in the right order; bad replies are retried once, then fall back; temporary API errors are retried; setup errors (wrong key, wrong model, bad setting, missing config) stop the program |
-
-Run them after any change to `router.py` or `checks.py`. A failing test
-means a rule from the routing spec has been broken.
-
----
-
-## 9. Changing the prompt
-
-1. Copy the current prompt to a new version, e.g. `supervisor_v2.md`.
-   Never overwrite an old version: each one is evidence of how tuning went.
-2. Edit the new file.
-3. Point `PROMPT_FILE` in `router.py` at the new file.
-4. Rerun the practice questions and record the score for each version.
-
-Keep the prompt in step with `Docs/routing_spec.md`: change the spec first,
-then the prompt.
-
-**The six examples in the prompt must never appear in the practice or held
-out question sets**, or the router would be scored on answers it has
-already been shown.
-
----
-
-## 10. Troubleshooting
-
-| Message | Cause | Fix |
-| ------- | ----- | --- |
-| `No model set. Add llm.model to config.yaml.` | `config.yaml` missing the model | Add the `llm.model` line |
-| `No API key found` | `.env` missing or empty | Add `OPENAI_API_KEY=...` to `.env` |
-| `AuthenticationError` | Key wrong or revoked | Create a new key in your OpenAI account |
-| `NotFoundError` | Model name misspelled or retired | Check the name against the models list |
-| `BadRequestError` mentioning temperature or seed | Model does not support that setting | Set it to `null` in `config.yaml` |
-| `ModuleNotFoundError: No module named 'agents'` | Run from the wrong folder | `cd` into the project folder first |
-
----
-
-## 11. Known limitations
-
-- **The router cannot see the sources.** It judges false beliefs and future
-  announcements from the model's own knowledge, which may be out of date.
-  The flag only routes the question to the evidence; synthesis must confirm
-  against the retrieved pages (routing spec, section 7).
-- **`reason` is written after the decision.** It is the model's stated
-  justification, not a record of how it decided. Putting `reason` first in
-  the schema is a planned experiment for tuning.
-- **Same settings are not a guarantee of identical output.** Even with
-  temperature 0, a seed and a pinned model, reruns can differ slightly, so
-  scored runs should be repeated.
-
----
-
-## 12. History
-
-| Version | Change |
-| ------- | ------ |
-| Phase C | Router and prompt v1; runs live on `gpt-5.4-2026-03-05` |
-| Phase D | Safety checks, timeout, optional reply cap; retries limited to temporary errors; refusals handled; 17 tests |
+The router cannot inspect the corpus, so it does not judge whether a claim is true: it only flags claims to check, and synthesis verifies them against retrieved evidence (rule A1). Real policy retrieval is connected, but a successful run alone does not establish answer accuracy.

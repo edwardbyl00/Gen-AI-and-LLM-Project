@@ -9,7 +9,7 @@
 - Embedded field: `content` (the JSON object itself was not embedded)
 - Embedding dimension: 768
 - Device: `MPS`
-- Processing time: 112.84 seconds
+- Processing time: 27.72 seconds
 - Normalized for cosine similarity: yes
 - Input maximum tokens (special tokens included; no truncation): 511
 - Input dataset SHA-256: `b5bfd15604e07fc485138162f828971fe12e61371a86f549eb152cb30e52d3fa`
@@ -74,7 +74,7 @@ Queries use the BGE retrieval instruction. The results below are a diagnostic sa
 | 2 | 0.811347 | `C05_c0002` | CPF | CPFB \| Retain $20,000 in your OA if you are taking a housing loan / Retain $20,000 in your Ordinary Account if you are taking a housing loan |
 | 3 | 0.803955 | `C05_c0003` | CPF | CPFB \| Retain $20,000 in your OA if you are taking a housing loan / Retain $20,000 in your Ordinary Account if you are taking a housing loan > Who is it for? |
 | 4 | 0.800645 | `C05_c0008` | CPF | CPFB \| Retain $20,000 in your OA if you are taking a housing loan / Retain $20,000 in your Ordinary Account if you are taking a housing loan > When do I need to decide how much to retain in my OA? |
-| 5 | 0.799117 | `C05_c0012` | CPF | CPFB \| Retain $20,000 in your OA if you are taking a housing loan / Retain $20,000 in your Ordinary Account if you are taking a housing loan > Find out how retaining $20,000 affects your monthly instalments |
+| 5 | 0.799118 | `C05_c0012` | CPF | CPFB \| Retain $20,000 in your OA if you are taking a housing loan / Retain $20,000 in your Ordinary Account if you are taking a housing loan > Find out how retaining $20,000 affects your monthly instalments |
 
 ### What restrictions apply to second-timer applicants?
 
