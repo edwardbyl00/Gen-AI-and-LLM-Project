@@ -110,7 +110,7 @@ def chatbot_answer(question, today=None, client=None):
     return {
         "question": question,
         "today": today,
-        "routing": {"route": ROUTE_LABEL, "false_belief": None, "answerable": None,
+        "routing": {"route": ROUTE_LABEL, "check_premise": None, "answerable": None,
                     "reason": "No routing: plain chatbot baseline."},
         "price_result": None,
         "policy_result": None,

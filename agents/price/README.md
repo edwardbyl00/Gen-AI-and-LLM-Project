@@ -18,7 +18,7 @@ The pipeline calls `run_price_agent()`, which uses the approach set in
 | A: filter tool (default) | `agent.py`, `extract.py` | The LLM fills in a fixed form (town, flat type, period). Code does the rest. |
 | B: text-to-SQL | `sql_agent.py` | The LLM writes a SQL query that selects the deals. Code checks it is a safe read-only SELECT, runs it, and calculates the figures. |
 
-Both return the fields agreed in `Docs/p2_supervisor_contract.md` (A4):
+Both return the fields consumed by the supervisor:
 `town`, `flat_type`, `period_start`, `period_end`, `median_price`,
 `min_price`, `max_price`, `n_deals`, `data_as_of`, plus:
 
@@ -57,6 +57,17 @@ Both return the fields agreed in `Docs/p2_supervisor_contract.md` (A4):
 1. Download the CSV from data.gov.sg into `data/raw/` (file name in `config.yaml`).
 2. Run `python -m scripts.clean_prices` from the project root.
 
+## Integration on routing
+
+Imported from `origin/price-agent` at commit `4f4a027`. The supervisor's
+`price_real()` calls `run_price_agent(question, query_date)`; config selects
+approach A by default. The cleaned transaction file is included, so raw
+CSV rebuilding is only needed when refreshing the data.
+
+`mean_price` and `note` are passed into synthesis along with the core
+statistics. Price-agent calls are currently not included in the supervisor's
+shared token log, although both approaches accept their own `usage_log`.
+
 ## Comparing A, B and the plain chatbot
 
 1. `python -m evaluation.build_price_ground_truth` computes the correct
@@ -66,6 +77,12 @@ Both return the fields agreed in `Docs/p2_supervisor_contract.md` (A4):
    and the plain chatbot on them (needs the API key) and scores filters,
    figures, no-data handling, time and tokens.
 
+The demo page is in `ui/` (see `ui/README.md`).
+
 ## Tests
 
-`pytest tests/test_price_agent.py tests/test_price_sql_and_eval.py` (no API key needed).
+No API key needed:
+
+```bash
+python -m pytest tests/test_price_agent.py tests/test_price_integration.py tests/test_price_sql_and_eval.py -q
+```

@@ -1,0 +1,14 @@
+{
+  "total_chunks": 1282,
+  "with_effective_date": 0,
+  "missing_effective_date": 1282,
+  "date_coverage": 0.0,
+  "missing_by_source": {
+    "HDB": 702,
+    "CPF": 303,
+    "SSO": 189,
+    "IRAS": 88
+  },
+  "retrieved_at_available": 1282,
+  "conclusion": "All chunks contain retrieval timestamps but no authoritative effective-date metadata. retrieved_at records corpus capture time and was not substituted for policy effective_date."
+}

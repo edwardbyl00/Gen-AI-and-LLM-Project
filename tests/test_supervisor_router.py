@@ -16,7 +16,7 @@ def fake_client(content, refusal=None):
 
 
 def test_reply_is_turned_into_a_dict():
-    reply = {"route": "price", "false_belief": False, "answerable": True, "reason": "x"}
+    reply = {"route": "price", "check_premise": False, "answerable": True, "reason": "x"}
     assert route_question("q", client=fake_client(json.dumps(reply)), today="2026-10-18") == reply
 
 

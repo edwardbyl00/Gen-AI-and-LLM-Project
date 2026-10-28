@@ -1,0 +1,120 @@
+question_id,question,kind,label_false_belief,label_answerable,route,answer,model_says_declined,n_cited,agent_errors,stub_agents,input_tokens,output_tokens,seconds,grade_declined,grade_myth_accepted,grader_notes
+PR_P2_01,Can I rent out my whole HDB flat after buying it?,rules,FALSE,TRUE,policy,"I couldn't find this in the official sources I have. The only passage provided is a stub and does not contain any real HDB policy on renting out the whole flat.[1]
+
+So I don't know from the materials given whether you can rent out your whole HDB flat after buying it, or what conditions may apply.[1]
+
+If you want, I can answer this once the actual HDB policy passage on flat rental is provided. Please also check the linked official page for the latest position.
+
+Sources:
+[1] Stub passage: https://example.invalid/stub",TRUE,1,,policy_agent,1975,176,5.51,TRUE,n/a,
+PR_P2_02,Can PRs use their CPF to pay for an HDB resale flat?,rules,FALSE,TRUE,policy,"I couldn't find this in the official sources I have. The only passage provided is a stub and not real policy text, so it does not confirm whether Permanent Residents can use CPF to pay for an HDB resale flat [1].
+
+Please check the linked official CPF or HDB page for the latest rule, as I do not have a usable policy passage here [1].
+
+Sources:
+[1] Stub passage: https://example.invalid/stub",TRUE,1,,policy_agent,1979,154,3.93,TRUE,n/a,
+PR_P2_03,What documents do I need for an HDB resale application?,rules,FALSE,TRUE,policy,"I couldn't find this in the official sources I have. The only passage provided is a stub and does not list the documents needed for an HDB resale application [1].
+
+Please check the linked official HDB page for the current document checklist, as requirements can change [1].
+
+Sources:
+[1] Stub passage: https://example.invalid/stub",TRUE,1,,policy_agent,1973,130,3.42,TRUE,n/a,
+PR_P2_04,How much is the Proximity Housing Grant?,rules,FALSE,TRUE,policy,"I couldn't find this in the official sources I have. The only passage provided is a stub and does not state the Proximity Housing Grant amount [1].
+
+Please check the linked official page for the latest grant amount and eligibility details.
+
+Sources:
+[1] Stub passage: https://example.invalid/stub",TRUE,1,,policy_agent,1967,118,3.59,TRUE,n/a,
+PR_P2_05,What was the median price of a 5-room flat in Punggol in 2025?,numbers,FALSE,TRUE,price,"I couldn't find the median price of a 5-room flat in Punggol in 2025 in the official sources I have. The only price fact provided is for STUB town and STUB flat type, covering 2025-10 to 2026-09, with a median price of 500000 based on 100 deals. That does not answer your question about Punggol 5-room flats for 2025.",TRUE,0,,price_agent,2049,155,3.68,TRUE,n/a,
+PR_P2_06,How many 4-room resale flats were sold in Toa Payoh last year?,numbers,FALSE,TRUE,price,"I couldn’t find this for Toa Payoh in the official sources I have. The only price fact provided is for **STUB** town, **STUB** flat type, covering **2025-10 to 2026-09**, with **100 deals**. It does not give the number of **4-room resale flats sold in Toa Payoh** last year.
+
+So I don’t know the Toa Payoh figure from the data provided.",TRUE,0,,price_agent,2043,168,3.96,TRUE,n/a,Non-english character used in the response
+PR_P2_07,What have executive flats in Pasir Ris been going for lately?,numbers,FALSE,TRUE,price,"I couldn’t find Pasir Ris executive-flat prices in the official price facts I have. The only price fact provided is for **STUB** executive flats, not Pasir Ris, for **2025-10 to 2026-09**: **100 deals**, with a **median price of $500,000**, **minimum $400,000**, and **maximum $600,000**.
+
+So I don’t know what executive flats in **Pasir Ris** have been going for lately from the sources I have. What’s missing is a Pasir Ris-specific resale price fact.",TRUE,0,,price_agent,2035,199,3.72,TRUE,n/a,Non-english character used in the response
+PR_P2_08,What is the most expensive 3-room flat sold in Queenstown since 2022?,numbers,FALSE,TRUE,price,"I couldn't find this in the official sources I have. Your question asks for the most expensive 3-room flat sold in Queenstown since 2022, but the only price fact provided is stub data for town “STUB”, flat type “STUB”, for 2025-10 to 2026-09, not Queenstown 3-room transactions since 2022.
+
+For context only, the stub data says the maximum resale price in that dataset was $600,000, based on 100 deals, for the period 2025-10 to 2026-09, as of 2026-10-24.
+
+If you want, I can answer once you provide Queenstown 3-room resale price facts covering 2022 to now.",TRUE,0,,price_agent,2045,229,4.3,TRUE,n/a,Non-english character used in the response
+PR_P2_09,"What is the resale levy, and what did 5-room flats in Bedok sell for in 2024?",both,FALSE,TRUE,both,"I couldn't find this in the official sources I have. The policy passage provided does not explain what a resale levy is, and the price facts provided are not for Bedok 5-room flats in 2024.[1]
+
+The only price fact I have is stub data for STUB flats, covering 2025-10 to 2026-09, with a median price of $500,000, minimum $400,000, maximum $600,000, based on 100 deals as of 2026-10-24. This does not answer your question about Bedok 5-room flats in 2024.
+
+Please check the linked official sources for the latest and correct policy and transaction data.[1]
+
+Sources:
+[1] Stub passage: https://example.invalid/stub",TRUE,1,,"price_agent, policy_agent",2078,225,4.4,TRUE,n/a,
+PR_P2_10,"Can I use my CPF OA for a 3-room resale in Clementi, and roughly how much would it cost?",both,FALSE,TRUE,both,"I couldn't find this in the official sources I have. The policy passage provided is only a stub and does not state whether CPF OA can be used for a 3-room resale flat in Clementi, so I cannot confirm the CPF rule from the materials given. [1]
+
+For price context only: the resale price facts provided are for STUB, not Clementi, and for flat type STUB, not specifically a 3-room flat. Over 2025-10 to 2026-09, the median price was $500,000, with prices from $400,000 to $600,000 across 100 deals. These figures are not a Clementi 3-room estimate. 
+
+Please check the linked official CPF/HDB page for the latest rules, especially if there is an effective date or updated conditions. [1]
+
+Sources:
+[1] Stub passage: https://example.invalid/stub",TRUE,1,,"price_agent, policy_agent",2080,245,4.71,TRUE,n/a,
+PR_P2_11,Can I afford a 4-room flat in Sengkang on a household income of $7000?,unanswerable,FALSE,FALSE,both,"I can’t answer whether you can afford a 4-room flat, because that depends on personal finances and loan eligibility, and I couldn’t find official affordability rules in the sources I have.
+
+As context only, the resale price facts provided are for **STUB** **STUB** flats, not specifically Sengkang 4-room flats. For the period **2025-10 to 2026-09**, the **median price** was **$500,000**, with prices ranging from **$400,000 to $600,000**, based on **100 deals**. These figures are as of **2026-10-24**.
+
+I couldn’t find any official source here that lets me assess affordability from income alone. The only policy passage provided is a stub and does not contain usable housing or CPF rules [1].
+
+Sources:
+[1] Stub passage: https://example.invalid/stub",TRUE,1,,"price_agent, policy_agent",2074,265,5.01,TRUE,n/a,
+PR_P2_12,"Now that the MOP is only 3 years, when can I sell a flat I bought in 2023?",myth,TRUE,TRUE,policy,"I couldn’t confirm the claim that the MOP is now only 3 years from the official sources I have. The only passage provided is a stub and does not contain any real policy rule on MOP or when a flat bought in 2023 can be sold. [1]
+
+So I don’t know when you can sell a flat bought in 2023 based on the materials given. What’s missing is an official passage stating the MOP that applies to flats bought in 2023, and whether any 3-year MOP rule exists and who it applies to. [1]
+
+Please check the linked official HDB source for the latest rule.
+
+Sources:
+[1] Stub passage: https://example.invalid/stub",TRUE,1,,policy_agent,2007,222,4.85,TRUE,TRUE,Non-english character used in the response
+PR_P2_13,"My single sister will have to buy a BTO, so what do resale 2-room flats in Jurong East cost for comparison?",myth,TRUE,TRUE,price,"I couldn’t confirm the idea that your single sister “will have to buy a BTO” from the official sources I have, because no policy passages were provided.
+
+For resale 2-room flats in **Jurong East**, I couldn’t find the official price facts you asked for. The only price fact provided is for **STUB, STUB flats**, covering **2025-10 to 2026-09**, with a **median price of $500,000**, **minimum $400,000**, **maximum $600,000**, based on **100 deals** (data as of **2026-10-24**). That is not Jurong East and not specifically 2-room flats, so I can’t use it as the comparison you want.
+
+I don’t know the resale price for **2-room flats in Jurong East** from the official sources I have. What’s missing is the Jurong East 2-room resale transaction data for the period you want.",TRUE,0,,price_agent,2073,304,5.71,TRUE,TRUE,Non-english character used in the response
+PR_P2_14,"Since resale prices in Bishan have fallen every year since 2020, is now a good time to buy?",myth,TRUE,FALSE,price,"I couldn’t confirm the claim that Bishan resale prices have fallen every year since 2020. The only price fact I have is for **STUB, STUB flats**, covering **2025-10 to 2026-09**, with a **median resale price of $500,000**, **minimum $400,000**, **maximum $600,000**, based on **100 deals** (data as of 2026-10-24). There is no Bishan-by-year trend in the sources I have.
+
+I also can’t answer whether **now is a good time to buy**. That is not something the official sources here can determine, and no one can reliably forecast future resale prices from this data alone.
+
+As context only: for **STUB, STUB flats** in **2025-10 to 2026-09**, the recorded resale prices ranged from **$400,000 to $600,000**, with a **median of $500,000**, based on **100 deals**.
+
+If you want, I can help interpret official Bishan resale transaction data if you provide it.",TRUE,0,,price_agent,2065,336,5.62,TRUE,TRUE,Non-english character used in the response
+PR_P2_15,"Since I'm 36 and single, can I buy a 3-room resale flat?",rules,FALSE,TRUE,policy,"I couldn't confirm this from the official sources I have. The only passage provided is a stub and does not contain any real HDB eligibility rule for a single person aged 36 buying a 3-room resale flat.[1]
+
+So I don't know, based on the materials given here, whether you can buy a 3-room resale flat. To answer this properly, I would need the official HDB policy passage on resale flat eligibility for singles, including any age and flat-type conditions.[1]
+
+Sources:
+[1] Stub passage: https://example.invalid/stub",TRUE,1,,policy_agent,1983,178,3.99,TRUE,n/a,
+PR_P2_16,"Given that grants are only for BTO flats, how much cash do I need for a 4-room resale in Yishun?",myth,TRUE,TRUE,both,"I couldn’t confirm your assumption that grants are only for BTO flats from the official sources I have. The policy passage provided does not state that, so I can’t verify it either way. [1]
+
+I also can’t tell you how much cash you need for a 4-room resale flat in Yishun from the sources provided. I only have a stub resale price fact, and it is not for Yishun or 4-room flats, so it does not answer your question. I also do not have any official passage here on resale grants, loan rules, downpayment, or cash requirements. [1]
+
+What I do have is one stub resale-price reference: median price 500,000, with prices from 400,000 to 600,000, for STUB flats in STUB from 2025-10 to 2026-09, based on 100 deals, as of 2026-10-24.
+
+I couldn’t find this in the official sources I have. Please check the linked official pages for the latest rules and the correct town/flat-type resale data.
+
+Sources:
+[1] Stub passage: https://example.invalid/stub",TRUE,1,,"price_agent, policy_agent",2096,320,5.63,TRUE,TRUE,Non-english character used in the response
+PR_P2_17,Will resale prices in Tampines drop after the new MRT line opens?,unanswerable,FALSE,FALSE,price,"I can’t answer whether resale prices in Tampines will drop after a new MRT line opens. Price movements cannot be confirmed or forecast from the official sources I have, and I was only given past transaction data, not any rule or official projection.
+
+For context, the price facts provided are not for Tampines. They are for town: STUB, flat type: STUB, covering 2025-10 to 2026-09, based on 100 resale deals. The median price was $500,000, with prices ranging from $400,000 to $600,000.
+
+I couldn’t find official Tampines resale price facts or any official source here that links a new MRT line to future HDB resale prices.",TRUE,0,,price_agent,2037,237,4.61,TRUE,n/a,Non-english character used in the response
+PR_P2_18,What is the launch price of a 4-room BTO flat in the next Bayshore launch?,unanswerable,FALSE,FALSE,none,"I can’t answer the launch price of a 4-room BTO flat in the next Bayshore launch from the official sources I have, because no policy passages or price facts were provided. I also can’t predict or confirm future launch prices without an official release.
+
+If you want, check the official HDB BTO launch details for Bayshore when they are published, as that is where the launch prices will be stated.",TRUE,0,,,1966,167,4.06,TRUE,n/a,Non-english character used in the response
+PR_P2_19,Will the CPF housing grant amounts be increased next year?,unanswerable,FALSE,FALSE,policy,"I cannot answer whether CPF housing grant amounts will be increased next year. Future changes are not confirmed in the official sources I have, and no one can verify next year’s policy changes from the material provided.
+
+I also couldn’t find any real policy text here about CPF housing grant amounts. The only passage provided is a stub and not actual policy, so it does not let me confirm any current or future grant rules [1].
+
+Please check the linked official page for the latest position if new announcements are made [1].
+
+Sources:
+[1] Stub passage: https://example.invalid/stub",TRUE,1,,policy_agent,1971,195,4.64,TRUE,n/a,
+PR_P2_20,What's the best way to invest my CPF Special Account savings?,out_of_scope,FALSE,FALSE,none,"I can’t answer what the “best” way is to invest your CPF Special Account savings. That depends on personal goals, risk tolerance and market conditions, and I don’t have any official CPF policy passages here to cite.
+
+I also couldn’t find any official sources in the material provided about what investment options, rules or limits apply to CPF Special Account savings.
+
+If you want, ask a narrower question such as the current official CPF rules for using Special Account savings, and I can answer from the official passages if they are provided.",TRUE,0,,,1950,185,4.5,TRUE,n/a,Non-english character used in the response

@@ -1,7 +1,7 @@
 """Supervisor router: turns a user question into a routing record.
 
-Rules: Docs/routing_spec.md
-Output fields: Docs/p2_supervisor_contract.md (section A1)
+Rules R1-R5: agents/supervisor/prompts/supervisor_v1.md
+Code walkthrough: Docs/p2_supervisor_code.md
 """
 
 import json
@@ -14,12 +14,24 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-PROMPT_FILE = Path(__file__).parent / "prompts" / "supervisor_v1.md"
+PROMPT_FILE = Path(__file__).parent / "prompts" / "supervisor_v2.md"
 CONFIG_FILE = PROJECT_ROOT / "config.yaml"
 
 
 class RouterReplyError(Exception):
     """The model replied, but with no usable content (e.g. a refusal)."""
+
+
+def record_usage(usage_log, step, response):
+    """Add one call's token counts to usage_log (a list), if one is given."""
+    if usage_log is None:
+        return
+    usage = getattr(response, "usage", None)
+    usage_log.append({
+        "step": step,
+        "input_tokens": getattr(usage, "prompt_tokens", None),
+        "output_tokens": getattr(usage, "completion_tokens", None),
+    })
 
 # The exact shape the model must reply in. With "strict": True the API
 # refuses to return anything that does not match (structured output).
@@ -30,11 +42,11 @@ ROUTING_SCHEMA = {
         "type": "object",
         "properties": {
             "route": {"type": "string", "enum": ["price", "policy", "both", "none"]},
-            "false_belief": {"type": "boolean"},
+            "check_premise": {"type": "boolean"},
             "answerable": {"type": "boolean"},
             "reason": {"type": "string"},
         },
-        "required": ["route", "false_belief", "answerable", "reason"],
+        "required": ["route", "check_premise", "answerable", "reason"],
         "additionalProperties": False,
     },
 }
@@ -76,9 +88,9 @@ def make_client(timeout=None):
 # Use the supplied client and date, or create a client and use today's date.
 # Request a response matching ROUTING_SCHEMA, include optional temperature
 # and seed settings when configured, and parse the JSON into a dictionary
-# containing route, false_belief, answerable, and reason.
-def route_question(question, client=None, today=None):
-    """Classify one question. Returns a dict with route, false_belief,
+# containing route, check_premise, answerable, and reason.
+def route_question(question, client=None, today=None, usage_log=None):
+    """Classify one question. Returns a dict with route, check_premise,
     answerable and reason."""
     settings = load_settings()
     today = today or date.today().isoformat()
@@ -101,6 +113,7 @@ def route_question(question, client=None, today=None):
         request["max_completion_tokens"] = settings["max_output_tokens"]
 
     response = client.chat.completions.create(**request)
+    record_usage(usage_log, "router", response)
     message = response.choices[0].message
     if message.content is None:
         refusal = getattr(message, "refusal", None)

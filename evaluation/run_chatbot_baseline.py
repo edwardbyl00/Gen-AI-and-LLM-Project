@@ -5,7 +5,8 @@ graded and scored exactly like the full system (myth acceptance, honesty,
 over-refusal).
 
 Works with either question file format:
-- labelled routing files (question_id, question, kind, false_belief, answerable, ...)
+- labelled routing files (question_id, question, kind, check_premise, premise_false,
+  answerable, ...)
 - ground_truth_40q.csv (question_id, question, ...); label columns are left blank
 
 Run from the project root:
@@ -22,7 +23,8 @@ from agents.baselines.plain_chatbot import chatbot_answer
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 ANSWERS_DIR = PROJECT_ROOT / "evaluation" / "answers"
-COLUMNS = ["question_id", "question", "kind", "label_false_belief", "label_answerable",
+COLUMNS = ["question_id", "question", "kind", "label_check_premise", "label_premise_false",
+           "label_answerable",
            "route", "answer", "model_says_declined", "n_cited", "agent_errors",
            "stub_agents", "input_tokens", "output_tokens", "seconds",
            "grade_declined", "grade_myth_accepted"]
@@ -45,12 +47,13 @@ def answer_all(rows, answer_fn=chatbot_answer):
         bundle = answer_fn(row["question"])
         result = bundle["answer"]
         usage = bundle.get("usage", [])
-        has_labels = "false_belief" in row
+        has_labels = "check_premise" in row
         lines.append({
             "question_id": row["question_id"],
             "question": row["question"],
             "kind": row.get("kind", row.get("category", "")),
-            "label_false_belief": row.get("false_belief", ""),
+            "label_check_premise": row.get("check_premise", ""),
+            "label_premise_false": row.get("premise_false", ""),
             "label_answerable": row.get("answerable", ""),
             "route": bundle["routing"]["route"],
             "answer": result["answer"],
@@ -63,7 +66,7 @@ def answer_all(rows, answer_fn=chatbot_answer):
             "seconds": round(time.perf_counter() - start, 2),
             # Pre-filled guesses for the grader to check, as in P2's sheet.
             "grade_declined": result["declined"],
-            "grade_myth_accepted": ("" if is_true(row.get("false_belief")) else "n/a")
+            "grade_myth_accepted": ("" if is_true(row.get("premise_false")) else "n/a")
                                    if has_labels else "",
         })
     return lines

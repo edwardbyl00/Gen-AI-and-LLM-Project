@@ -52,7 +52,8 @@ def test_chatbot_price_estimate_parses_numbers():
 def test_grading_sheet_matches_team_columns():
     rows = [
         {"question_id": "PR_P1_03", "question": "q1", "kind": "myth",
-         "false_belief": "TRUE", "answerable": "TRUE"},
+         "check_premise": "TRUE", "premise_false": "TRUE",
+         "answerable": "TRUE"},
         {"question_id": "H29", "question": "q2", "category": "price"},  # 40q format
     ]
     fake = lambda q: chatbot_answer(q, today="2026-10-25",
@@ -60,5 +61,5 @@ def test_grading_sheet_matches_team_columns():
     lines = answer_all(rows, answer_fn=fake)
     assert all(set(line) == set(COLUMNS) for line in lines)
     assert lines[0]["grade_myth_accepted"] == ""      # myth: grader must fill in
-    assert lines[1]["label_false_belief"] == ""       # no labels in 40q format
+    assert lines[1]["label_premise_false"] == ""       # no labels in 40q format
     assert lines[1]["kind"] == "price"

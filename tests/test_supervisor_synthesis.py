@@ -5,7 +5,6 @@ from types import SimpleNamespace
 
 import pytest
 
-from agents.supervisor.adapters import policy_stub, price_stub
 from agents.supervisor.pipeline import handle_question
 from agents.supervisor.synthesis import (FALLBACK_ANSWER, SynthesisReplyError,
                                          build_context, check_citations,
@@ -18,11 +17,20 @@ def passage(n, url=True):
             "effective_date": "2025-04-01" if n == 1 else None}
 
 
-def bundle(route="both", false_belief=False, answerable=True, passages=2, price=True):
+def fake_price_result(query_date):
+    """A price-shaped dict with the stub flag set, just to exercise
+    synthesis's price handling here without a real price agent call."""
+    return {"town": "STUB", "flat_type": "STUB",
+            "period_start": "2025-10", "period_end": "2026-09",
+            "median_price": 500000, "min_price": 400000, "max_price": 600000,
+            "n_deals": 100, "data_as_of": query_date, "stub": True}
+
+
+def bundle(route="both", check_premise=False, answerable=True, passages=2, price=True):
     return {"question": "q?", "today": "2026-10-22",
-            "routing": {"route": route, "false_belief": false_belief,
+            "routing": {"route": route, "check_premise": check_premise,
                         "answerable": answerable, "reason": "r"},
-            "price_result": price_stub("q", "2026-10-22") if price else None,
+            "price_result": fake_price_result("2026-10-22") if price else None,
             "policy_result": {"evidence": [passage(i + 1) for i in range(passages)]},
             "agent_errors": {}}
 
@@ -40,10 +48,10 @@ class FakeClient:
 
 
 def test_context_numbers_passages_and_flags():
-    text, passages = build_context(bundle(false_belief=True))
+    text, passages = build_context(bundle(check_premise=True))
     assert "[1] Rule 1" in text and "[2] Rule 2" in text
     assert "effective date: 2025-04-01" in text
-    assert "possible false belief: yes" in text and "suspicion" in text
+    assert "claim in the question to check: yes" in text and "may be true or false" in text
     assert "[STUB DATA" in text
     assert len(passages) == 2
 
@@ -83,7 +91,7 @@ def test_format_answer_lists_sources_with_dates():
 
 
 def test_pipeline_uses_fallback_when_synthesis_fails():
-    route = lambda q, today=None: ({"route": "none", "false_belief": False,
+    route = lambda q, **kwargs: ({"route": "none", "check_premise": False,
                                     "answerable": False, "reason": "r"}, [])
     def broken(bundle):
         raise RuntimeError("down")

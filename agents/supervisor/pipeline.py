@@ -4,7 +4,7 @@ write the answer.
 Produces a "bundle" holding the routing record, the agents' results, the
 final answer and a step log.
 
-Usage (two real model calls, routing and synthesis; agents follow config.yaml):
+Usage (routing, synthesis and selected agents make model calls as configured):
     python -m agents.supervisor.pipeline "Can I use CPF for a resale flat?"
 """
 
@@ -39,13 +39,14 @@ def handle_question(question, today=None, route_fn=safe_route,
         "price": price_fn or get_price_agent(),
         "policy": policy_fn or get_policy_agent(),
     }
-    synth_fn = synth_fn or synthesise
+    usage = []  # token counts, one entry per model call (for cost)
+    synth_fn = synth_fn or (lambda b: synthesise(b, usage_log=usage))
     steps = []
 
     start = time.perf_counter()
     # Routing must succeed before agents can be selected. Routing errors propagate
     # to the caller, even when strict=False.
-    routing, events = route_fn(question, today=today)
+    routing, events = route_fn(question, today=today, usage_log=usage)
     steps.append({"step": "router", "seconds": _since(start),
                   "output": routing, "events": events})
 
@@ -75,6 +76,7 @@ def handle_question(question, today=None, route_fn=safe_route,
         "policy_result": results["policy"],
         "agent_errors": errors,
         "steps": steps,
+        "usage": usage,
     }
 
     start = time.perf_counter()

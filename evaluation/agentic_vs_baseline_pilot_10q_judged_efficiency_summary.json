@@ -1,0 +1,16 @@
+{
+  "questions": 10,
+  "baseline_average_latency_seconds": 6.504,
+  "agentic_average_latency_seconds": 14.294,
+  "agentic_latency_overhead_seconds": 7.79,
+  "assessor": {
+    "total_calls": 15,
+    "average_calls_per_question": 1.5,
+    "total_input_tokens": 56312,
+    "total_output_tokens": 3740,
+    "total_tokens": 60052,
+    "average_tokens_per_question": 6005.2,
+    "total_latency_seconds": 60.727,
+    "average_latency_seconds_per_question": 6.073
+  }
+}

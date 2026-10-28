@@ -6,7 +6,7 @@
       "today": "2026-10-25",
       "routing": {
         "route": "price",
-        "false_belief": false,
+        "check_premise": false,
         "answerable": true,
         "reason": "R2: asks for past resale prices; 'recently' is turned into an exact period by the price agent."
       },
@@ -61,7 +61,7 @@
       "today": "2026-10-25",
       "routing": {
         "route": "price",
-        "false_belief": false,
+        "check_premise": false,
         "answerable": false,
         "reason": "R4: a forecast cannot be answered; recent prices are offered as context."
       },
@@ -116,7 +116,7 @@
       "today": "2026-10-25",
       "routing": {
         "route": "price",
-        "false_belief": false,
+        "check_premise": false,
         "answerable": true,
         "reason": "Asks for resale prices in a named place."
       },

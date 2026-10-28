@@ -15,22 +15,31 @@ llm:
   # "thinking" tokens towards it, and too low a cap cuts the reply off.
   max_output_tokens: null
 
+judge:
+  model: gpt-5.4-2026-03-05
+
+self_check:
+  # P3's self check loop (agents/graph/self_check.py). A weak answer is
+  # sent back at most this many times; the diagram says once.
+  max_retries: 1
+  # true: after the free code checks pass, one more model call reviews the
+  # answer against the synthesis rules A1-A8. false: code checks only.
+  llm_check: true
+
 agents:
-  # "stub" = fake data in the agreed shape, so the pipeline runs before the
-  # real agents exist. Switch each to "real" once that agent is merged.
-  price: stub
-  policy: stub
+  # The price agent has no stub anymore; it always runs for real.
+  # Policy can still be run as "stub" (fake data in the agreed shape) to
+  # build/test/run the pipeline without the real policy dependencies.
+  policy: real
   # How many policy passages to retrieve (passed to P5's agent).
-  policy_top_k: 3
+  policy_top_k: 10
 
 price_agent:
-  # P1. Raw file from data.gov.sg goes in data/raw/ (git-ignored);
-  # run "python -m scripts.clean_prices" to build the cleaned file.
   raw_data: data/raw/ResaleflatpricesbasedonregistrationdatefromJan2017onwards.csv
   cleaned_data: data/cleaned/hdb_resale_prices.csv.gz
-  # What "recently", "lately" or no time words mean: the latest N full months.
+  # Vague or missing periods use the latest 12 complete months.
   default_months: 12
-  # Which price agent the pipeline uses: "A" = filter tool, "B" = text-to-SQL.
+  # A: extract filters, then calculate in Python. B: text-to-SQL.
   approach: A
 
 data_preparation:
@@ -39,9 +48,14 @@ data_preparation:
     output: data/processed/chunks.jsonl
     report: reports/chunking_report.csv
     summary: reports/chunking_summary.md
-    chunk_size: 500
-    chunk_overlap: 75
-    token_counter: regex_words_v1
+    validation_report: reports/chunking_validation.csv
+    raw_root: data/raw
+    # Chunk by the embedding model's own tokenizer, sized to its input
+    # limit, so a chunk is never truncated when it's embedded.
+    tokenizer: BAAI/bge-base-en-v1.5
+    target_chunk_size: 400
+    max_chunk_size: 512
+    chunk_overlap: 0
   quality:
     documents: data/cleaned/deduplicated_documents.jsonl
     chunks: data/processed/chunks.jsonl
@@ -53,3 +67,21 @@ data_preparation:
     summary: reports/data_quality_summary.md
     short_chunk_threshold: 10
     long_chunk_threshold: 500
+
+  embedding:
+    input: data/processed/chunks.jsonl
+    output_dir: data/embeddings/bge-base-en-v1.5
+    summary: reports/embedding_summary.md
+    smoke_test: reports/embedding_smoke_test.csv
+    model: BAAI/bge-base-en-v1.5
+    batch_size: 16
+    max_length: 512
+    normalize: true
+
+  vector_store:
+    chunks: data/processed/chunks.jsonl
+    embedding_dir: data/embeddings/bge-base-en-v1.5
+    persist_directory: data/vector_db/chroma
+    collection_name: hdb_housing_advisory_bge_base_v1_5
+    distance_metric: cosine
+    batch_size: 100

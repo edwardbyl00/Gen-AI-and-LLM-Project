@@ -1,7 +1,7 @@
 """Synthesis: turn the pipeline's bundle into the final answer.
 
-Rules: Docs/routing_spec.md section 7, written as A1 to A8 in
-prompts/synthesis_v1.md.
+Answer rules A1-A8: agents/supervisor/prompts/synthesis_v1.md
+Code walkthrough: Docs/p2_supervisor_code.md
 
 The model writes the answer text and lists the passage numbers it cited.
 The code, not the model, builds the source list (titles, dates, links),
@@ -12,9 +12,9 @@ import json
 from datetime import date
 from pathlib import Path
 
-from agents.supervisor.router import load_settings, make_client
+from agents.supervisor.router import load_settings, make_client, record_usage
 
-PROMPT_FILE = Path(__file__).parent / "prompts" / "synthesis_v1.md"
+PROMPT_FILE = Path(__file__).parent / "prompts" / "synthesis_v2.md"
 
 SYNTHESIS_SCHEMA = {
     "name": "answer",
@@ -55,8 +55,8 @@ def build_context(bundle):
         "",
         "Routing note:",
         f"- sources searched: {routing['route']}",
-        f"- possible false belief: {yes_no(routing['false_belief'])}"
-        + (" (a suspicion only; check it against the sources)" if routing["false_belief"] else ""),
+        f"- claim in the question to check: {yes_no(routing['check_premise'])}"
+        + (" (check it against the sources; it may be true or false)" if routing["check_premise"] else ""),
         f"- answerable: {yes_no(routing['answerable'])}",
     ]
 
@@ -66,12 +66,46 @@ def build_context(bundle):
         if price.get("stub"):
             lines.append("[STUB DATA: not real prices]")
         for key in ("town", "flat_type", "period_start", "period_end", "median_price",
-                    "min_price", "max_price", "n_deals", "data_as_of"):
+                    "mean_price", "min_price", "max_price", "n_deals", "data_as_of", "note"):
             lines.append(f"- {key}: {price.get(key)}")
     else:
         lines.append("- none provided")
 
-    passages = (bundle.get("policy_result") or {}).get("evidence", [])
+    policy = bundle.get("policy_result") or {}
+
+    lines += [
+        "",
+        "Policy agent decision:",
+        f"- decision: {policy.get('decision') or 'not stated'}",
+        f"- reason: {policy.get('reason') or 'not stated'}",
+    ]
+
+    raw_passages = policy.get("evidence", [])
+
+    passages = []
+    by_url = {}
+
+    for item in raw_passages:
+        url = item.get("url")
+
+        if url and url in by_url:
+            existing = by_url[url]
+            extra_text = str(item.get("text", "")).strip()
+
+            if extra_text and extra_text not in existing.get("text", ""):
+                existing["text"] = (
+                    existing.get("text", "").rstrip()
+                    + "\n\n"
+                    + extra_text
+                )
+            continue
+
+        merged = dict(item)
+        passages.append(merged)
+
+        if url:
+            by_url[url] = merged
+
     lines += ["", "Policy passages:"]
     if not passages:
         lines.append("- none provided")
@@ -99,7 +133,7 @@ def check_citations(cited, passages):
     return valid, events
 
 
-def synthesise(bundle, client=None):
+def synthesise(bundle, client=None, usage_log=None):
     """Write the answer for one bundle. Returns a dict with the answer,
     the cited sources (built by code) and any events."""
     settings = load_settings()
@@ -120,7 +154,9 @@ def synthesise(bundle, client=None):
         if settings.get(key) is not None:
             request[api_key] = settings[key]
 
-    message = client.chat.completions.create(**request).choices[0].message
+    response = client.chat.completions.create(**request)
+    record_usage(usage_log, "synthesis", response)
+    message = response.choices[0].message
     if message.content is None:
         raise SynthesisReplyError(f"No content in reply (refusal: {getattr(message, 'refusal', None)})")
     reply = json.loads(message.content)

@@ -1,0 +1,54 @@
+[
+  {
+    "document_id": "H01",
+    "title": "HDB Eligibility",
+    "source": "HDB",
+    "category": "Eligibility",
+    "url": "https://example.com/hdb-eligibility",
+    "collection_date": "2026-10-16",
+    "effective_date": "2026-01-01",
+    "text": "Applicants must meet the applicable eligibility conditions before purchasing an HDB flat."
+  },
+  {
+    "document_id": "C01",
+    "title": "Using CPF to Buy a Home",
+    "source": "CPF",
+    "category": "Financing",
+    "url": "https://example.com/cpf-housing",
+    "collection_date": "2026-10-16",
+    "effective_date": "2026-01-01",
+    "text": "CPF Ordinary Account savings may be used for eligible housing purchases subject to applicable CPF housing rules."
+  },
+  {
+    "document_id": "H06",
+    "title": "Minimum Occupation Period",
+    "source": "HDB",
+    "category": "Ownership",
+    "url": "https://example.com/hdb-mop",
+    "collection_date": "2026-10-16",
+    "effective_date": "2025-01-01",
+    "text": "Flat owners may be required to fulfil a Minimum Occupation Period before they can sell the flat."
+  },
+  {
+    "document_id": "OLD01",
+    "policy_key": "cpf_housing_rule",
+    "title": "Old CPF Housing Rule",
+    "source": "CPF",
+    "category": "Financing",
+    "url": "https://example.com/old-rule",
+    "collection_date": "2024-01-01",
+    "effective_date": "2024-01-01",
+    "text": "This is an older housing rule used only for testing date-aware retrieval."
+  },
+  {
+    "document_id": "NEW01",
+    "policy_key": "cpf_housing_rule",
+    "title": "Updated CPF Housing Rule",
+    "source": "CPF",
+    "category": "Financing",
+    "url": "https://example.com/new-rule",
+    "collection_date": "2026-10-16",
+    "effective_date": "2026-01-01",
+    "text": "This is the updated housing rule used to test whether retrieval prefers the applicable version."
+  }
+]

@@ -256,7 +256,7 @@ def show_details(bundle):
         routing = bundle.get("routing") or {}
         if routing.get("reason"):
             st.markdown(f"**Why:** {plain_text(routing['reason'])}")
-        st.caption(f"Route: {routing.get('route')}. False belief: {routing.get('false_belief')}. "
+        st.caption(f"Route: {routing.get('route')}. Premise to check: {routing.get('check_premise')}. "
                    f"Answerable: {routing.get('answerable')}.")
         if price and price.get("filters"):
             st.markdown(f"**What the Price Agent Understood** ({price.get('approach')})")
@@ -270,7 +270,7 @@ def show_examples(heading):
     cols = st.columns(2)
     for i, example in enumerate(EXAMPLES):
         cols[i % 2].button(example, key=f"example_{i}", on_click=ask_example,
-                           args=(example,), use_container_width=True)
+                           args=(example,), width="stretch")
 
 
 # ---------- the page ----------
