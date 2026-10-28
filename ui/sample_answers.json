@@ -1,0 +1,170 @@
+{
+  "note": "Demo mode only. Price figures are real (data.gov.sg); answer text was written to show the layout.",
+  "samples": [
+    {
+      "question": "What did 4-room flats in Tampines sell for recently?",
+      "today": "2026-10-25",
+      "routing": {
+        "route": "price",
+        "check_premise": false,
+        "answerable": true,
+        "reason": "R2: asks for past resale prices; 'recently' is turned into an exact period by the price agent."
+      },
+      "price_result": {
+        "town": "TAMPINES",
+        "flat_type": "4 ROOM",
+        "period_start": "2025-10",
+        "period_end": "2026-09",
+        "median_price": 665000,
+        "mean_price": 685674,
+        "min_price": 510000,
+        "max_price": 928000,
+        "n_deals": 902,
+        "data_as_of": "2026-10",
+        "approach": "A_filter_tool",
+        "filters": {
+          "town": "TAMPINES",
+          "flat_type": "4 ROOM",
+          "period_start": null,
+          "period_end": null,
+          "last_n_months": null,
+          "unmatched_place": null,
+          "period_words": "recently"
+        },
+        "note": "No exact period asked; used the latest 12 full months."
+      },
+      "policy_result": null,
+      "agent_errors": {},
+      "steps": [
+        {
+          "step": "router",
+          "seconds": 1.4
+        },
+        {
+          "step": "price_agent",
+          "seconds": 1.1
+        },
+        {
+          "step": "synthesis",
+          "seconds": 2.3
+        }
+      ],
+      "answer": {
+        "answer": "Over the latest 12 full months (October 2025 to September 2026), 902 4-room resale flats were sold in Tampines. The median price was $665,000, and prices ranged from $510,000 to $928,000 for single deals. These are past resale transaction prices, not current asking prices.",
+        "declined": false,
+        "cited": [],
+        "sources": []
+      }
+    },
+    {
+      "question": "Will 4-room flats in Tampines cost more next year?",
+      "today": "2026-10-25",
+      "routing": {
+        "route": "price",
+        "check_premise": false,
+        "answerable": false,
+        "reason": "R4: a forecast cannot be answered; recent prices are offered as context."
+      },
+      "price_result": {
+        "town": "TAMPINES",
+        "flat_type": "4 ROOM",
+        "period_start": "2025-10",
+        "period_end": "2026-09",
+        "median_price": 665000,
+        "mean_price": 685674,
+        "min_price": 510000,
+        "max_price": 928000,
+        "n_deals": 902,
+        "data_as_of": "2026-10",
+        "approach": "A_filter_tool",
+        "filters": {
+          "town": "TAMPINES",
+          "flat_type": "4 ROOM",
+          "period_start": null,
+          "period_end": null,
+          "last_n_months": null,
+          "unmatched_place": null,
+          "period_words": null
+        },
+        "note": "No exact period asked; used the latest 12 full months."
+      },
+      "policy_result": null,
+      "agent_errors": {},
+      "steps": [
+        {
+          "step": "router",
+          "seconds": 1.3
+        },
+        {
+          "step": "price_agent",
+          "seconds": 1.0
+        },
+        {
+          "step": "synthesis",
+          "seconds": 2.1
+        }
+      ],
+      "answer": {
+        "answer": "I can't predict future prices. No one can reliably forecast them, and my data only covers past sales. For context, the median 4-room resale price in Tampines from October 2025 to September 2026 was $665,000, based on 902 deals.",
+        "declined": true,
+        "cited": [],
+        "sources": []
+      }
+    },
+    {
+      "question": "How much is a 5-room resale flat in Tengah?",
+      "today": "2026-10-25",
+      "routing": {
+        "route": "price",
+        "check_premise": false,
+        "answerable": true,
+        "reason": "Asks for resale prices in a named place."
+      },
+      "price_result": {
+        "town": "TENGAH",
+        "flat_type": "5 ROOM",
+        "period_start": "2025-10",
+        "period_end": "2026-09",
+        "median_price": null,
+        "mean_price": null,
+        "min_price": null,
+        "max_price": null,
+        "n_deals": 0,
+        "data_as_of": "2026-10",
+        "approach": "A_filter_tool",
+        "filters": {
+          "town": null,
+          "flat_type": "5 ROOM",
+          "period_start": null,
+          "period_end": null,
+          "last_n_months": null,
+          "unmatched_place": "Tengah",
+          "period_words": null
+        },
+        "note": "Tengah is not one of the HDB towns in the resale data, so there are no resale deals to report."
+      },
+      "policy_result": null,
+      "agent_errors": {},
+      "steps": [
+        {
+          "step": "router",
+          "seconds": 1.2
+        },
+        {
+          "step": "price_agent",
+          "seconds": 0.9
+        },
+        {
+          "step": "synthesis",
+          "seconds": 1.8
+        }
+      ],
+      "answer": {
+        "answer": "I couldn't find any resale deals for Tengah. It is not one of the HDB towns in the resale records I have, so there are no past resale prices to report.",
+        "declined": true,
+        "cited": [],
+        "sources": []
+      }
+    }
+  ]
+}

@@ -68,9 +68,21 @@ CSV rebuilding is only needed when refreshing the data.
 statistics. Price-agent calls are currently not included in the supervisor's
 shared token log, although both approaches accept their own `usage_log`.
 
-The teammate's comparison harness and UI were not imported as part of this
-integration. Run local pricing and integration tests without an API key:
+## Comparing A, B and the plain chatbot
+
+1. `python -m evaluation.build_price_ground_truth` computes the correct
+   answers for the 20 questions in `evaluation/price_questions_P1.csv`
+   straight from the table (not with the agent's own code).
+2. `python -m evaluation.evaluate_price_agents` runs approach A, approach B
+   and the plain chatbot on them (needs the API key) and scores filters,
+   figures, no-data handling, time and tokens.
+
+The demo page is in `ui/` (see `ui/README.md`).
+
+## Tests
+
+No API key needed:
 
 ```bash
-python -m pytest tests/test_price_agent.py tests/test_price_integration.py -q
+python -m pytest tests/test_price_agent.py tests/test_price_integration.py tests/test_price_sql_and_eval.py -q
 ```
