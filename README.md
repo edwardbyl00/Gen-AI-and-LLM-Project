@@ -6,6 +6,10 @@ Start with the [P2 supervisor code guide](Docs/p2_supervisor_code.md) for the hi
 
 The supervisor uses v2 prompts: routing flags `check_premise`, while synthesis checks the claim against retrieved evidence. Saved evaluations live under `evaluation/results/` and `evaluation/answers/`; individual pipeline calls do not automatically create a history file.
 
+Optional router decomposition and paired A/B evaluation are described in the
+[supervisor ablation and unseen-question guide](Docs/supervisor_ablation.md),
+including the team's input format, blinded grading and cost/quality comparison.
+
 This README also includes the reproducible setup for the final P5 Agentic RAG evaluation below.
 
 ## Environment

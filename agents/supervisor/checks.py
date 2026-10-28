@@ -69,6 +69,31 @@ def fix_combinations(record):
     return fixed, fixes
 
 
+def valid_tasks(record):
+    """Validate execution structure; semantic fidelity is evaluated separately."""
+    tasks = record.get("tasks")
+    if not isinstance(tasks, list) or len(tasks) > 6:
+        return False
+    ids = set()
+    agents = set()
+    for task in tasks:
+        if not isinstance(task, dict):
+            return False
+        if any(not isinstance(task.get(k), str) or not task[k].strip()
+               for k in ("id", "agent", "question")):
+            return False
+        if task["id"] in ids or task["agent"] not in {"price", "policy"}:
+            return False
+        elements = task.get("required_elements")
+        if not isinstance(elements, list) or not elements or any(
+                not isinstance(e, str) or not e.strip() for e in elements):
+            return False
+        ids.add(task["id"])
+        agents.add(task["agent"])
+    return agents == {"none": set(), "price": {"price"}, "policy": {"policy"},
+                      "both": {"price", "policy"}}.get(record.get("route"))
+
+
 def safe_route(question, router=route_question, **router_kwargs):
     """Route a question with all safety checks applied.
 
@@ -91,8 +116,15 @@ def safe_route(question, router=route_question, **router_kwargs):
             continue
 
         fixed, fixes = fix_combinations(record)
+        if router_kwargs.get("decompose") and not valid_tasks(fixed):
+            events.append({"code": "malformed_tasks", "attempt": attempt,
+                           "detail": "Tasks invalid or inconsistent with route"})
+            continue
         for fix in fixes:
             events.append({"code": "invalid_combo", "attempt": attempt, "detail": fix})
         return fixed, events
 
-    return dict(SAFE_FALLBACK), events
+    fallback = dict(SAFE_FALLBACK)
+    if router_kwargs.get("decompose"):
+        fallback["tasks"] = []
+    return fallback, events

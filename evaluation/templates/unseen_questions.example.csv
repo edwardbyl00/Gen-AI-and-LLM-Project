@@ -1,0 +1,5 @@
+question_id,question,category
+EXAMPLE_PRICE,"What was the average resale price of 4-room flats in Tampines in 2023?",price_only
+EXAMPLE_POLICY,"What housing grants can first-time couples receive when buying an HDB resale flat?",policy_only
+EXAMPLE_MIXED,"What was the average resale price of 4-room flats in Tampines in 2023, and which housing grants can first-time couples receive for a resale purchase?",mixed
+EXAMPLE_UNSUPPORTED,"What will the median resale price of Tampines 4-room flats be in 2030?",unsupported

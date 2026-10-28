@@ -82,11 +82,11 @@ OUTPUT_PRICE = 15.00
 
 
 def _get_client():
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("OPENAI_API_KEY") or os.getenv("LLM_API_KEY")
 
     if not api_key:
         raise ValueError(
-            "OPENAI_API_KEY was not found in .env"
+            "No API key found. Add OPENAI_API_KEY or LLM_API_KEY to .env."
         )
 
     return OpenAI(api_key=api_key)

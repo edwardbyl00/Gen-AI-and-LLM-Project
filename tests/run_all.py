@@ -24,6 +24,7 @@ PYTEST_TESTS = [
     "test_supervisor_pipeline.py",
     "test_supervisor_router.py",
     "test_supervisor_synthesis.py",
+    "test_supervisor_decomposition.py",
     "test_p5_integration.py",
     "test_p5_agentic_control.py",
 ]

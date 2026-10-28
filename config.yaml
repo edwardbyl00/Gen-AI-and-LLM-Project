@@ -24,6 +24,10 @@ llm:
 judge:
   model: gpt-5.4-2026-03-05
 
+supervisor:
+  # Baseline remains the default. The ablation runner overrides per request.
+  decompose: false
+
 self_check:
   # P3's self check loop (agents/graph/self_check.py). A weak answer is
   # sent back at most this many times; the diagram says once.

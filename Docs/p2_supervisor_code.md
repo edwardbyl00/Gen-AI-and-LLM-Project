@@ -6,6 +6,11 @@ Scope: P2 routing, orchestration, synthesis, agent adapters and evaluation. Revi
 
 Start with `handle_question()` in [pipeline.py](../agents/supervisor/pipeline.py). The routing and synthesis prompts define the decision rules; the tables below explain the returned fields.
 
+The default flow below remains the A baseline. Optional `decompose=True` adds
+router-generated focused tasks, per-task execution and synthesis from all task
+results. See the [ablation and unseen-question guide](supervisor_ablation.md)
+for its interfaces, paired evaluation commands and team grading workflow.
+
 ## 1. High-level flow
 
 ```mermaid

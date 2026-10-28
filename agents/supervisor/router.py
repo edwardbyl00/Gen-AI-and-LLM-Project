@@ -5,6 +5,7 @@ Code walkthrough: Docs/p2_supervisor_code.md
 """
 
 import json
+from copy import deepcopy
 import os
 from datetime import date
 from pathlib import Path
@@ -70,6 +71,25 @@ ROUTING_SCHEMA = {
     },
 }
 
+# Separate schema/prompt keeps the baseline request unchanged for ablation.
+DECOMPOSITION_SCHEMA = deepcopy(ROUTING_SCHEMA)
+DECOMPOSITION_SCHEMA["name"] = "routing_tasks"
+DECOMPOSITION_SCHEMA["schema"]["properties"]["tasks"] = {
+    "type": "array", "maxItems": 6,
+    "items": {
+        "type": "object", "additionalProperties": False,
+        "properties": {
+            "id": {"type": "string"},
+            "agent": {"type": "string", "enum": ["price", "policy"]},
+            "question": {"type": "string"},
+            "required_elements": {"type": "array", "minItems": 1,
+                                  "items": {"type": "string"}},
+        },
+        "required": ["id", "agent", "question", "required_elements"],
+    },
+}
+DECOMPOSITION_SCHEMA["schema"]["required"].append("tasks")
+
 
 # Load the LLM configuration and check that a model has been specified.
 # Return the settings used to build the routing request.
@@ -108,20 +128,24 @@ def make_client(timeout=None):
 # Request a response matching ROUTING_SCHEMA, include optional temperature
 # and seed settings when configured, and parse the JSON into a dictionary
 # containing route, check_premise, answerable, and reason.
-def route_question(question, client=None, today=None, usage_log=None):
+def route_question(question, client=None, today=None, usage_log=None, decompose=False):
     """Classify one question. Returns a dict with route, check_premise,
     answerable and reason."""
     settings = load_settings()
     today = today or date.today().isoformat()
     client = client or make_client(settings.get("timeout_seconds"))
 
+    prompt = load_prompt(today)
+    if decompose:
+        prompt += "\n\n" + (Path(__file__).parent / "prompts" / "decomposition_v1.md").read_text()
     request = {
         "model": settings["model"],
         "messages": [
-            {"role": "system", "content": load_prompt(today)},
+            {"role": "system", "content": prompt},
             {"role": "user", "content": question},
         ],
-        "response_format": {"type": "json_schema", "json_schema": ROUTING_SCHEMA},
+        "response_format": {"type": "json_schema", "json_schema":
+                            DECOMPOSITION_SCHEMA if decompose else ROUTING_SCHEMA},
     }
     # Only send these if config.yaml sets them; some models reject them.
     if settings.get("temperature") is not None:

@@ -60,27 +60,56 @@ def build_context(bundle):
         f"- answerable: {yes_no(routing['answerable'])}",
     ]
 
+    task_results = bundle.get("task_results")
+    if task_results is not None:
+        lines += ["", "Decomposed tasks (requirements are requests, not evidence):"]
+        for entry in task_results:
+            task = entry["task"]
+            lines.append(f"- {task['id']} ({task['agent']}): {task['question']}")
+            lines.append("  Required: " + json.dumps(task["required_elements"]))
+            if entry.get("error"):
+                lines.append("  Execution failed: " + entry["error"])
+
     price = bundle.get("price_result")
+    prices = ([entry for entry in task_results if entry["task"]["agent"] == "price"]
+              if task_results is not None else [{"result": price}])
     lines += ["", "Price facts (HDB resale transactions):"]
-    if price:
+    if not any(entry.get("result") for entry in prices):
+        lines.append("- none provided")
+    for entry in prices:
+        price = entry.get("result")
+        if not price:
+            continue
+        if "task" in entry:
+            lines.append(f"Task {entry['task']['id']}:")
         if price.get("stub"):
             lines.append("[STUB DATA: not real prices]")
         for key in ("town", "flat_type", "period_start", "period_end", "median_price",
                     "mean_price", "min_price", "max_price", "n_deals", "data_as_of", "note"):
             lines.append(f"- {key}: {price.get(key)}")
-    else:
-        lines.append("- none provided")
 
     policy = bundle.get("policy_result") or {}
 
     lines += [
         "",
         "Policy agent decision:",
-        f"- decision: {policy.get('decision') or 'not stated'}",
-        f"- reason: {policy.get('reason') or 'not stated'}",
+        f"- decision: {policy.get('decision') or 'not stated'}" if task_results is None
+        else "- decisions are per task below",
     ]
+    if task_results is None:
+        lines.append(f"- reason: {policy.get('reason') or 'not stated'}")
 
     raw_passages = policy.get("evidence", [])
+    if task_results is not None:
+        raw_passages = []
+        for entry in task_results:
+            if entry["task"]["agent"] != "policy":
+                continue
+            result = entry.get("result") or {}
+            lines.append(f"- Task {entry['task']['id']}: decision={result.get('decision')}; "
+                         f"reason={result.get('reason')}")
+            raw_passages.extend({**item, "task_ids": [entry["task"]["id"]]}
+                                for item in result.get("evidence", []))
 
     passages = []
     by_url = {}
@@ -90,6 +119,9 @@ def build_context(bundle):
 
         if url and url in by_url:
             existing = by_url[url]
+            if "task_ids" in item:
+                existing["task_ids"] = list(dict.fromkeys(
+                    existing.get("task_ids", []) + item["task_ids"]))
             extra_text = str(item.get("text", "")).strip()
 
             if extra_text and extra_text not in existing.get("text", ""):
@@ -112,6 +144,8 @@ def build_context(bundle):
     for n, item in enumerate(passages, start=1):
         lines.append(f"[{n}] {item.get('title')} | source: {item.get('source')} | "
                      f"effective date: {item.get('effective_date') or 'not stated'}")
+        if item.get("task_ids"):
+            lines.append("Retrieved for tasks: " + ", ".join(item["task_ids"]))
         lines.append(str(item.get("text", "")).strip())
 
     errors = bundle.get("agent_errors") or {}
@@ -149,6 +183,15 @@ def synthesise(bundle, client=None, usage_log=None):
         ],
         "response_format": {"type": "json_schema", "json_schema": SYNTHESIS_SCHEMA},
     }
+    if "task_results" in bundle:
+        request["messages"][0]["content"] += (
+            "\n\nTask results belong to the listed focused subquestions. Answer the original "
+            "question using all supported results. A policy ABSTAIN applies to that task, "
+            "not to unrelated price tasks. Explain missing parts without discarding "
+            "supported parts. Requirements are requests, not factual evidence. "
+            "Keep price figures associated with their own town, flat type and period. "
+            "The routing answerable flag remains a prediction, not proof of coverage."
+        )
     for key, api_key in (("temperature", "temperature"), ("seed", "seed"),
                          ("max_output_tokens", "max_completion_tokens")):
         if settings.get(key) is not None:

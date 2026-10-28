@@ -11,6 +11,52 @@ diff already shows the what. Mark whether it's still uncommitted.
 
 ---
 
+## 2026-10-28 — Optional supervisor decomposition and paired A/B evaluation
+
+**Status:** uncommitted
+
+- Added router-generated focused tasks behind `supervisor.decompose`, retaining
+  the existing baseline as the default. Synthesis receives all task results,
+  with separate transaction facts and policy decisions.
+- Added a paired A/B runner for unseen question CSVs, task/usage traces, file
+  fingerprints, repeated runs, blinded grading and category-level quality/cost
+  summaries. References stay outside inference and failures remain in scoring.
+- Documented team preparation, fixed snapshots, grading and the evaluation
+  boundary: the supervisor pipeline, excluding the separate P3 self-check graph.
+- Deferred supervisor coverage assessment and replanning to later ablations so
+  this comparison isolates the decomposition integration.
+
+**Why:** keep transaction requests out of policy retrieval subquestions and
+measure the cost and answer-quality impact of decomposition, while supporting
+the team's evaluation on unseen questions without exposing reference answers
+to the pipeline.
+
+**Verified:** 150 offline tests passed across supervisor, pricing, P5 integration
+and graph regressions. The example evaluation dry-run passed without API calls.
+No paid evaluation or accuracy comparison has been run.
+
+---
+
+## 2026-10-28 — Re-fixed the API key lookup, and applied it to the two judge modules too
+
+**Status:** uncommitted
+
+`src/evidence_assessor.py` was back to reading only `OPENAI_API_KEY`, raising
+`ValueError` for anyone whose `.env` uses `LLM_API_KEY` (the fallback
+`router.py` already uses). Widened the lookup again and reworded the error
+to name both variable names. Found the same single-key lookup in
+`src/ground_truth_judge.py` and `src/llm_judge.py` and applied the identical
+fix there, so all four modules that build an OpenAI client now accept either
+variable name consistently.
+
+**Why:** this exact fallback was added once already in `f9e2fae` but was
+lost when a later merge (`1d38dca`, completing the P5 agentic RAG
+integration) brought in an older copy of `evidence_assessor.py` without it.
+`ground_truth_judge.py` and `llm_judge.py` never had the fallback at all —
+fixed now for consistency with `router.py` and `evidence_assessor.py`.
+
+---
+
 ## 2026-10-25 — Updated P2 guide and shared usage/cost tracking
 
 **Status:** included in this commit
