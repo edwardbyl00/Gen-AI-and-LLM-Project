@@ -4,6 +4,8 @@ A running record of what changed in the supervisor/RAG work, in plain
 English, so you (or a teammate) can see what happened and why without
 re-reading every diff.
 
+This file was renamed from `Docs/CHANGELOG.md` in `b709f92`.
+
 **How to use this file:** newest entry at the top. One entry per logical
 change (not per commit). Each entry: a one-line summary, what actually
 changed, and *why* — the why is the part worth writing down, since the
@@ -13,7 +15,7 @@ diff already shows the what. Mark whether it's still uncommitted.
 
 ## 2026-10-28 — Optional supervisor decomposition and paired A/B evaluation
 
-**Status:** uncommitted
+**Status:** committed in `b709f92`
 
 - Added router-generated focused tasks behind `supervisor.decompose`, retaining
   the existing baseline as the default. Synthesis receives all task results,
@@ -31,15 +33,15 @@ measure the cost and answer-quality impact of decomposition, while supporting
 the team's evaluation on unseen questions without exposing reference answers
 to the pipeline.
 
-**Verified:** 150 offline tests passed across supervisor, pricing, P5 integration
+**Verified at implementation:** 150 offline tests passed across supervisor, pricing, P5 integration
 and graph regressions. The example evaluation dry-run passed without API calls.
-No paid evaluation or accuracy comparison has been run.
+No paid A/B evaluation or accuracy comparison is recorded for this change.
 
 ---
 
 ## 2026-10-28 — Re-fixed the API key lookup, and applied it to the two judge modules too
 
-**Status:** uncommitted
+**Status:** committed in `b709f92`
 
 `src/evidence_assessor.py` was back to reading only `OPENAI_API_KEY`, raising
 `ValueError` for anyone whose `.env` uses `LLM_API_KEY` (the fallback
@@ -57,9 +59,25 @@ fixed now for consistency with `router.py` and `evidence_assessor.py`.
 
 ---
 
+## 2026-10-25 — Added the supervisor routing evaluation report
+
+**Status:** committed in `a006695`
+
+Added [reports/routing_report.md](../reports/routing_report.md), summarizing
+the saved 54-question routing evaluations, the v2 prompt changes and remaining
+errors involving procedures, personal-finance routing and implicit premises.
+The report covers routing only, not final-answer accuracy or decomposition.
+
+**Why:** give the team a readable account of the saved routing results and
+the cases to review before further prompt tuning. As documented in the
+supervisor guide, v1's `false_belief` and v2's `check_premise` have different
+meanings; their premise scores are not a like-for-like improvement measure.
+
+---
+
 ## 2026-10-25 — Updated P2 guide and shared usage/cost tracking
 
-**Status:** included in this commit
+**Status:** committed in `929a961`
 
 - Documented the current supervisor interfaces: price is always real, policy
   remains configurable, and selected agents accept `usage_log`.
@@ -78,7 +96,7 @@ usage totals, changed labels or old stub runs as comparable current results.
 
 **Verified:** 157 local tests passed; documentation links and diff checks
 passed. No paid evaluations were rerun for this documentation pass. The
-existing v2 routing CSV is included with the other working-tree changes.
+v2 routing CSV was included in `929a961`.
 
 Historical entries below describe the state at their recorded change.
 Their verification counts are historical, not a new validation of this tree.
