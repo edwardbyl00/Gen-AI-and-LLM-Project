@@ -225,6 +225,12 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# Streamlit auto-registers its bundled skill here on install (symlink into
+# .venv); regenerated locally, nothing to commit. Narrowed to the skills
+# subdir so other .claude/ project config (e.g. settings.json) stays trackable.
+.agents/skills/
+.claude/skills/
+
 # Local source documents (shared separately; never commit raw SingleFile HTML)
 data/raw/
 
@@ -241,3 +247,6 @@ data/vector_db/
 
 # Local question and API usage history
 logs/usage/
+logs/mlflow/
+mlruns/
+mlartifacts/
