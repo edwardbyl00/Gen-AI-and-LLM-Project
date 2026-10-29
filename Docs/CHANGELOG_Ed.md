@@ -13,6 +13,63 @@ diff already shows the what. Mark whether it's still uncommitted.
 
 ---
 
+## 2026-10-29 — Extended decomposition to the P3 graph; made it the default
+
+**Status:** uncommitted
+
+- Extracted the routing/task logic shared by the sequential pipeline into
+  `agents/supervisor/tasks.py` (`resolve_decompose()`, `route_with_tasks()`,
+  `tasks_for_route()`, `execute_task()`), replacing `pipeline.py`'s private
+  `AGENTS_FOR_ROUTE` map and inline task-execution code.
+- `agents/graph/graph.py` (P3) now builds on the same helpers: its agent
+  nodes run per-task in parallel branches, its self-check loop retries only
+  the failed task IDs (not the whole question), and `code_checks()` reads
+  the same aggregated evidence `synthesis.build_context()` uses so it stays
+  consistent with what synthesis actually saw.
+- `agents/supervisor/ablation.py` takes `--pipeline {supervisor,graph}` so
+  the A/B runner can evaluate either entry point; the manifest and each
+  run record now also save which one was used. Graph A/B runs retain identical
+  self-check settings, and summaries count weak verdicts and review errors.
+- P3 now logs policy-assessor calls alongside routing, pricing, synthesis and
+  self-check usage. Task calls carry task IDs and attempt numbers; the final
+  state includes estimated total cost and end-to-end elapsed time.
+- Flipped `config.yaml`'s `supervisor.decompose` from `false` to `true`,
+  making decomposition (B) the default for both entry points rather than
+  opt-in; `decompose=False` still runs the plain baseline.
+- Updated `README.md`, `p2_supervisor_code.md` and `supervisor_ablation.md`
+  to describe `tasks.py`, the P3 graph's decomposition support and the new
+  default.
+
+**Why:** the P3 CLI previously ignored the decomposition flag and sent the
+full mixed question to policy retrieval. For "Since singles can't buy resale
+flats, what's the cheapest 2-room in Yishun?", the assessor found evidence to
+check the eligibility premise but abstained because policy passages did not
+also contain transaction prices. The shared helpers let P3 execute the
+supervisor's focused tasks, with one decomposition step rather than a second
+planner. Policy assesses eligibility evidence; the price agent supplies
+historical transaction statistics.
+
+**Verified:** 162 offline tests passed across supervisor, graph, pricing and
+P5 integration; the graph ablation dry-run passed. Baseline tests now pass
+`decompose=False` explicitly where they depend on the one-task-per-agent
+behavior. Added `tests/test_graph_decomposition.py` for focused mixed-question
+execution, parallel result merging, targeted retries, evidence checks,
+configuration overrides and usage accounting.
+
+**Live development check:** one run of the mixed singles-premise/Yishun-price question created
+two focused tasks and returned policy `ANSWER_READY` with cited policy evidence.
+The [development trace](../evaluation/diagnostics/p3_decomposition_smoke_20261029.json)
+records 27.50 seconds and estimated USD 0.067248, including self-check/rewrite
+calls. These measurements describe one development run, not a graded A/B
+benchmark or evidence of an overall accuracy improvement.
+
+**Remaining issue:** final self-check remained `weak`, flagging price
+citation/formatting after its bounded rewrite. Its review prompt was unchanged;
+resolving the policy abstention does not mean the full answer passed review.
+Supervisor coverage assessment and replanning remain deferred.
+
+---
+
 ## 2026-10-28 — Optional supervisor decomposition and paired A/B evaluation
 
 **Status:** committed in `b709f92`

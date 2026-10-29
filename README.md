@@ -6,9 +6,13 @@ Start with the [P2 supervisor code guide](Docs/p2_supervisor_code.md) for the hi
 
 The supervisor uses v2 prompts: routing flags `check_premise`, while synthesis checks the claim against retrieved evidence. Saved evaluations live under `evaluation/results/` and `evaluation/answers/`; individual pipeline calls do not automatically create a history file.
 
-Optional router decomposition and paired A/B evaluation are described in the
-[supervisor ablation and unseen-question guide](Docs/supervisor_ablation.md),
-including the team's input format, blinded grading and cost/quality comparison.
+Router decomposition (on by default via `supervisor.decompose` in
+`config.yaml`; pass `decompose=False` to run the plain baseline) and paired
+A/B evaluation are described in the [supervisor ablation and unseen-question
+guide](Docs/supervisor_ablation.md), including the team's input format,
+blinded grading and cost/quality comparison. The P3 graph uses the same
+decomposition setting; select `--pipeline graph` in the ablation runner to
+include its self-check loop in the comparison.
 
 This README also includes the reproducible setup for the final P5 Agentic RAG evaluation below.
 

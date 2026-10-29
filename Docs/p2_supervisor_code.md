@@ -6,10 +6,15 @@ Scope: P2 routing, orchestration, synthesis, agent adapters and evaluation. Revi
 
 Start with `handle_question()` in [pipeline.py](../agents/supervisor/pipeline.py). The routing and synthesis prompts define the decision rules; the tables below explain the returned fields.
 
-The default flow below remains the A baseline. Optional `decompose=True` adds
-router-generated focused tasks, per-task execution and synthesis from all task
-results. See the [ablation and unseen-question guide](supervisor_ablation.md)
-for its interfaces, paired evaluation commands and team grading workflow.
+The flow below is the A baseline. `config.yaml`'s `supervisor.decompose` is
+now `true` by default, which adds router-generated focused tasks, per-task
+execution and synthesis from all task results (B); pass `decompose=False` to
+run the baseline instead. See the [ablation and unseen-question
+guide](supervisor_ablation.md) for its interfaces, paired evaluation commands
+and team grading workflow. P3's graph (`agents/graph/graph.py`) uses the same
+`agents/supervisor/tasks.py` routing/task helpers and config flag, then adds
+its own self-check loop. Use `--pipeline graph` in the ablation runner when
+evaluating that full workflow.
 
 ## 1. High-level flow
 
@@ -68,7 +73,7 @@ flowchart TD
 
 ### Detailed flow: agent selection and execution
 
-In `pipeline.py`, `AGENTS_FOR_ROUTE` creates an ordered list of agents. Each call goes through the same success/error branch.
+`pipeline.py` and P3's `graph.py` share `agents/supervisor/tasks.py`: `tasks_for_route()` returns the baseline's one-task-per-selected-agent list (via its `AGENTS_FOR_ROUTE` mapping) or the router's decomposed tasks, and `execute_task()` runs one task through the same success/error branch for both entry points.
 
 ```mermaid
 flowchart TD
@@ -181,6 +186,7 @@ All files below are in `agents/supervisor/`.
 | File | Main function | Purpose |
 | --- | --- | --- |
 | [pipeline.py](../agents/supervisor/pipeline.py) | `handle_question()` | Runs the stages and returns the results, errors, timing and token usage |
+| [tasks.py](../agents/supervisor/tasks.py) | `tasks_for_route()`, `execute_task()`, `route_with_tasks()`, `resolve_decompose()` | Routing/task helpers shared by `pipeline.py` and P3's `agents/graph/graph.py`, so both entry points select agents, run tasks and read `supervisor.decompose` the same way |
 | [router.py](../agents/supervisor/router.py) | `route_question()` | Reads the prompt/settings and asks the model to classify the question |
 | [checks.py](../agents/supervisor/checks.py) | `safe_route()` | Validates routing output, retries failures and repairs known contradictions |
 | [adapters.py](../agents/supervisor/adapters.py) | `get_price_agent()`, `get_policy_agent()` | Connects the always-real price agent and selectable real/stub policy agent |

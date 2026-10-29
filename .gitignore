@@ -238,3 +238,6 @@ data/vector_db/
 
 # Local R session history
 .Rhistory
+
+# Local question and API usage history
+logs/usage/

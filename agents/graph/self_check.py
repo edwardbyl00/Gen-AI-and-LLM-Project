@@ -73,8 +73,13 @@ def code_checks(state):
     """Free checks on the state. Returns a list of problems."""
     problems = []
     for name, error in (state.get("agent_errors") or {}).items():
-        problems.append({"rule": "code", "target": f"{name}_agent",
-                         "issue": f"The {name} agent failed ({error})."})
+        task = (state.get("task_records", {}).get(name) or {}).get("task")
+        agent = task["agent"] if task else name
+        problem = {"rule": "code", "target": f"{agent}_agent",
+                   "issue": f"The {agent} agent failed ({error})."}
+        if task:
+            problem["task_id"] = task["id"]
+        problems.append(problem)
 
     answer = state.get("answer") or {}
     if answer.get("answer") == FALLBACK_ANSWER:
@@ -87,7 +92,9 @@ def code_checks(state):
             problems.append({"rule": "A2", "target": "synthesis",
                              "issue": f"Cited a passage that does not exist: {event.get('detail')}."})
 
-    evidence = (state.get("policy_result") or {}).get("evidence") or []
+    # Use exactly the same aggregated passages as synthesis, including evidence
+    # from later tasks when the first policy task abstained.
+    _, evidence = build_context(state)
     if evidence and not answer.get("declined") and not answer.get("cited"):
         problems.append({"rule": "A2", "target": "synthesis",
                          "issue": "Policy passages were provided, but the answer cites none of them."})

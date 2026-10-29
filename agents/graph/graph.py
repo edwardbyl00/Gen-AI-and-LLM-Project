@@ -13,7 +13,10 @@ The self check (agents/graph/self_check.py) sends a weak answer back once:
                         --none---> synthesis (declines)
     self_check --weak--> synthesis (with feedback) or the failed agent(s)
 
-Input:  question, today
+Input:  question, today, optional decompose override
+
+Decomposition is planned once by the shared supervisor router. P3 executes
+focused tasks per agent branch and retries failed task IDs without replanning.
 Output: routing (route, check_premise, answerable, reason), routing_events,
         price_result, policy_result, agent_errors, answer (answer, declined,
         cited, sources, events), self_check (verdict, problems, retry),
@@ -29,13 +32,16 @@ import json
 import operator
 import time
 from datetime import date
-from typing import Annotated, Literal, Optional, TypedDict
+from typing import Annotated, Literal, NotRequired, Optional, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
 from agents.supervisor.adapters import get_policy_agent
 from agents.supervisor.checks import safe_route
 from agents.supervisor.synthesis import FALLBACK_ANSWER, synthesise
+from agents.supervisor.router import estimate_cost_usd
+from agents.supervisor.tasks import execute_task, resolve_decompose, route_with_tasks, tasks_for_route
+from agents.supervisor.usage_log import track_run
 from agents.graph.self_check import code_checks, feedback_text, llm_check, load_self_check_settings
 
 
@@ -45,6 +51,7 @@ class Routing(TypedDict):
     check_premise: bool  # question makes a claim synthesis must check against the sources
     answerable: bool     # False means decline, offering related facts as context
     reason: str          # one sentence, cites a rule (R1-R5) where one applies
+    tasks: NotRequired[list]
 
 
 def merge_dicts(left, right):
@@ -58,6 +65,10 @@ class State(TypedDict, total=False):
     # Input
     question: str
     today: str
+    decompose: bool
+    variant: str
+    task_records: Annotated[dict, merge_dicts]  # latest result per task; parallel-safe
+    task_results: list  # ordered snapshot for synthesis and self-check
     # Supervisor output
     routing: Routing
     routing_events: list  # malformed_output retries and invalid_combo fixes
@@ -77,72 +88,74 @@ class State(TypedDict, total=False):
     usage: Annotated[list, operator.add]
 
 
-def make_supervisor_node(route_fn=safe_route):
-    """Wrap the router as a graph node. route_fn can be swapped for a fake in tests."""
+def make_supervisor_node(route_fn=safe_route, decompose=None, failure_usage_log=None):
+    """Use the same router and decomposition setting as the sequential pipeline."""
     def supervisor(state):
+        enabled = resolve_decompose(state.get("decompose", decompose))
         usage = []
         start = time.perf_counter()
-        # Routing errors propagate, as in pipeline.py: nothing can run without a route.
-        routing, events = route_fn(state["question"], today=state["today"], usage_log=usage)
+        try:
+            routing, events = route_with_tasks(
+                state["question"], state["today"], usage, route_fn, enabled)
+        except Exception:
+            if failure_usage_log is not None:
+                failure_usage_log.extend(usage)
+            raise
         step = {"step": "router", "seconds": round(time.perf_counter() - start, 2),
                 "output": routing, "events": events}
-        return {"routing": routing, "routing_events": events, "steps": [step], "usage": usage}
+        return {"routing": routing, "routing_events": events, "steps": [step], "usage": usage,
+                "decompose": enabled, "variant": "B_decomposition" if enabled else "A_baseline"}
     return supervisor
 
 
+def make_agent_node(name, agent):
+    """Execute this branch's focused tasks, keeping other branches' records."""
+    def agent_node(state):
+        enabled = state.get("decompose", False)
+        all_tasks = [task for task in tasks_for_route(state["question"], state["routing"], enabled)
+                     if task["agent"] == name]
+        tasks = all_tasks
+        if enabled and state.get("attempts", 0):
+            # Code checks name failed tasks. Retrying one must not repeat the
+            # successful sibling tasks or re-plan the original mixed question.
+            targets = {p["task_id"] for p in state.get("self_check", {}).get("problems", [])
+                       if p.get("target") == name + "_agent" and p.get("task_id")}
+            if targets:
+                tasks = [task for task in all_tasks if task["id"] in targets]
+        usage, steps, updates, errors = [], [], {}, {}
+        latest = dict(state.get("task_records", {}))
+        first_result = None
+        for task in tasks:
+            record, step = execute_task(task, agent, state["today"], usage,
+                decompose=enabled, attempt=state.get("attempts", 0) + 1)
+            steps.append(step)
+            errors[task["id"] if enabled else name] = record["error"]
+            if enabled:
+                updates[task["id"]] = record
+                latest[task["id"]] = record
+            elif record["error"] is None:
+                first_result = record["result"]
+        if enabled:
+            first_result = next((latest[t["id"]]["result"] for t in all_tasks
+                if t["id"] in latest and latest[t["id"]]["result"] is not None), None)
+        result = {name + "_result": first_result, "agent_errors": errors,
+                  "steps": steps, "usage": usage}
+        if enabled:
+            result["task_records"] = updates
+        return result
+    return agent_node
+
+
 def make_price_node(price_fn=None):
-    """Wrap the price agent as a graph node. price_fn takes (question, today,
-    usage_log=...); by default it is P1's run_price_agent(), which picks
-    approach A or B from config.yaml. Called directly rather than through P2's
-    adapter, which passes the call through unchanged but drops usage_log."""
     if price_fn is None:
-        # Imported here so the graph can be built without loading the price data.
         from agents.price import run_price_agent
         price_fn = run_price_agent
-
-    def price_agent(state):
-        usage = []
-        start = time.perf_counter()
-        # Agent errors are recorded and the run carries on, as in pipeline.py.
-        # No matching deals is not an error: the agent returns n_deals 0 and a note.
-        try:
-            result = price_fn(state["question"], state["today"], usage_log=usage)
-        except Exception as error:
-            message = f"{type(error).__name__}: {error}"
-            step = {"step": "price_agent", "seconds": round(time.perf_counter() - start, 2),
-                    "error": message}
-            return {"price_result": None, "agent_errors": {"price": message},
-                    "steps": [step], "usage": usage}
-        step = {"step": "price_agent", "seconds": round(time.perf_counter() - start, 2),
-                "stub": bool(result.get("stub"))}
-        # None clears any error left by an earlier, failed attempt.
-        return {"price_result": result, "agent_errors": {"price": None},
-                "steps": [step], "usage": usage}
-    return price_agent
+    return make_agent_node("price", price_fn)
 
 
 def make_policy_node(policy_fn=None):
-    """Wrap the policy agent as a graph node. policy_fn takes (question, today);
-    by default it is P2's adapter, which reads agents.policy (real or stub) and
-    policy_top_k from config.yaml."""
-    policy_fn = policy_fn or get_policy_agent()
-
-    def policy_agent(state):
-        start = time.perf_counter()
-        # Agent errors are recorded and the run carries on, as in pipeline.py.
-        try:
-            result = policy_fn(state["question"], state["today"])
-        except Exception as error:
-            message = f"{type(error).__name__}: {error}"
-            step = {"step": "policy_agent", "seconds": round(time.perf_counter() - start, 2),
-                    "error": message}
-            return {"policy_result": None, "agent_errors": {"policy": message}, "steps": [step]}
-        # Token usage is not logged yet: P2's adapter drops P5's assessor_usage.
-        step = {"step": "policy_agent", "seconds": round(time.perf_counter() - start, 2),
-                "stub": bool(result.get("stub"))}
-        # None clears any error left by an earlier, failed attempt.
-        return {"policy_result": result, "agent_errors": {"policy": None}, "steps": [step]}
-    return policy_agent
+    # Forward usage_log so P5's assessor calls count in graph cost too.
+    return make_agent_node("policy", policy_fn or get_policy_agent())
 
 
 def make_synthesis_node(synth_fn=synthesise):
@@ -150,6 +163,11 @@ def make_synthesis_node(synth_fn=synthesise):
     the state already has every key the bundle needs (question, today,
     routing, price_result, policy_result, agent_errors)."""
     def synthesis(state):
+        task_update = {}
+        if state.get("decompose"):
+            ordered = [state["task_records"][task["id"]] for task in state["routing"]["tasks"]]
+            task_update = {"task_results": ordered}
+            state = {**state, **task_update}
         usage = []
         start = time.perf_counter()
         # A synthesis failure gives P2's fallback answer, as in pipeline.py.
@@ -160,12 +178,12 @@ def make_synthesis_node(synth_fn=synthesise):
                       "cited": [], "sources": [], "events": []}
             step = {"step": "synthesis", "seconds": round(time.perf_counter() - start, 2),
                     "error": f"{type(error).__name__}: {error}"}
-            return {"answer": answer, "steps": [step], "usage": usage}
+            return {**task_update, "answer": answer, "steps": [step], "usage": usage}
         step = {"step": "synthesis", "seconds": round(time.perf_counter() - start, 2),
                 "events": answer.get("events", [])}
         if state.get("feedback"):
             step["feedback"] = state["feedback"]
-        return {"answer": answer, "steps": [step], "usage": usage}
+        return {**task_update, "answer": answer, "steps": [step], "usage": usage}
     return synthesis
 
 
@@ -252,13 +270,21 @@ def route_after_supervisor(state):
 
 
 def build_graph(route_fn=safe_route, price_fn=None, policy_fn=None, synth_fn=synthesise,
-                check_fn=llm_check, self_check_settings=None):
+                check_fn=llm_check, self_check_settings=None, decompose=None, usage_log=None):
+    def capture(node):
+        def wrapped(state):
+            update = node(state)
+            if usage_log is not None:
+                usage_log.extend(update.get("usage", []))
+            return update
+        return wrapped
+
     graph = StateGraph(State)
-    graph.add_node("supervisor", make_supervisor_node(route_fn))
-    graph.add_node("price_agent", make_price_node(price_fn))
-    graph.add_node("policy_agent", make_policy_node(policy_fn))
-    graph.add_node("synthesis", make_synthesis_node(synth_fn))
-    graph.add_node("self_check", make_self_check_node(check_fn, self_check_settings))
+    graph.add_node("supervisor", capture(make_supervisor_node(route_fn, decompose, usage_log)))
+    graph.add_node("price_agent", capture(make_price_node(price_fn)))
+    graph.add_node("policy_agent", capture(make_policy_node(policy_fn)))
+    graph.add_node("synthesis", capture(make_synthesis_node(synth_fn)))
+    graph.add_node("self_check", capture(make_self_check_node(check_fn, self_check_settings)))
 
     graph.add_edge(START, "supervisor")
     graph.add_conditional_edges("supervisor", route_after_supervisor,
@@ -272,14 +298,24 @@ def build_graph(route_fn=safe_route, price_fn=None, policy_fn=None, synth_fn=syn
     return graph.compile()
 
 
-def run(question, today=None, app=None):
-    """Run one question through the graph and return the final state."""
-    app = app or build_graph()
-    return app.invoke({"question": question,
-                       "today": today or date.today().isoformat(),
-                       "price_result": None, "policy_result": None, "agent_errors": {},
-                       "attempts": 0, "feedback": None,
-                       "steps": [], "usage": []})
+@track_run("graph")
+def run(question, today=None, app=None, decompose=None, usage_log=None, log_usage=None):
+    """Run P3 with optional per-request decomposition and external usage capture."""
+    start = time.perf_counter()
+    supplied_app = app is not None
+    app = app or build_graph(usage_log=usage_log)
+    initial = {"question": question, "today": today or date.today().isoformat(),
+               "price_result": None, "policy_result": None, "agent_errors": {},
+               "task_records": {}, "attempts": 0, "feedback": None,
+               "steps": [], "usage": []}
+    if decompose is not None:
+        initial["decompose"] = resolve_decompose(decompose)
+    result = app.invoke(initial)
+    if supplied_app and usage_log is not None:
+        usage_log.extend(result["usage"])
+    result["cost_usd"] = estimate_cost_usd(result["usage"])
+    result["seconds"] = round(time.perf_counter() - start, 4)
+    return result
 
 
 if __name__ == "__main__":

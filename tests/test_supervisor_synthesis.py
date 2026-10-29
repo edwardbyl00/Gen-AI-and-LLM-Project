@@ -95,6 +95,6 @@ def test_pipeline_uses_fallback_when_synthesis_fails():
                                     "answerable": False, "reason": "r"}, [])
     def broken(bundle):
         raise RuntimeError("down")
-    b = handle_question("q", today="2026-10-22", route_fn=route, synth_fn=broken)
+    b = handle_question("q", decompose=False, today="2026-10-22", route_fn=route, synth_fn=broken)
     assert b["answer"]["answer"] == FALLBACK_ANSWER
     assert "RuntimeError" in b["steps"][-1]["error"]

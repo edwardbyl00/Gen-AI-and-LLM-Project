@@ -20,6 +20,19 @@ from agents.supervisor.synthesis import format_answer
 
 VARIANTS = {"A_baseline": False, "B_decomposition": True}
 GRADES = ("correctness", "completeness", "groundedness", "appropriate_abstention")
+PIPELINES = {
+    "supervisor": "Supervisor handle_question: routing, agents and synthesis; excludes P3 graph/self-check",
+    "graph": "P3 graph: supervisor routing, parallel agent branches, synthesis and bounded self-check",
+}
+
+
+def select_pipeline(name):
+    if name == "graph":
+        from agents.graph.graph import run
+        return run
+    if name == "supervisor":
+        return handle_question
+    raise ValueError(f"Unknown pipeline: {name}")
 
 
 def fingerprint(path):
@@ -75,6 +88,10 @@ def aggregate(records):
                        r.get("bundle", {}).get("routing", {}).get("reason", "").startswith(
                            "Router output could not be read") for r in rows),
                    "usage_incomplete_runs": sum(r["usage_incomplete"] for r in rows),
+                   "weak_self_check_runs": sum(r.get("bundle", {}).get("self_check", {}).get(
+                       "verdict") == "weak" for r in rows),
+                   "self_check_error_runs": sum(any(s["step"] == "self_check" and s.get("error")
+                       for s in r.get("bundle", {}).get("steps", [])) for r in rows),
                    "total_recorded_cost_usd": round(sum(values("cost_usd")), 6)}
         for key in ("seconds", "input_tokens", "output_tokens", "model_calls", "cost_usd"):
             vals = values(key)
@@ -85,9 +102,13 @@ def aggregate(records):
     return summaries
 
 
-def run_experiment(questions, out_dir, today, repeats=1, seed=42, answer_fn=handle_question):
+def run_experiment(questions, out_dir, today, repeats=1, seed=42, answer_fn=None,
+                   pipeline="supervisor"):
     if repeats < 1:
         raise ValueError("repeats must be positive")
+    if pipeline not in PIPELINES:
+        raise ValueError(f"Unknown pipeline: {pipeline}")
+    answer_fn = answer_fn or select_pipeline(pipeline)
     settings = yaml.safe_load(CONFIG_FILE.read_text()) or {}
     if settings.get("agents", {}).get("policy") != "real":
         raise ValueError("End-to-end evaluation requires agents.policy: real")
@@ -112,7 +133,7 @@ def run_experiment(questions, out_dir, today, repeats=1, seed=42, answer_fn=hand
                     json.dumps(questions, sort_keys=True).encode()).hexdigest(),
                 "fingerprints": {str(p.relative_to(PROJECT_ROOT)) if p.is_relative_to(PROJECT_ROOT)
                                  else str(p): fingerprint(p) for p in sorted(set(paths))},
-                "scope": "Supervisor handle_question: routing, agents and synthesis; excludes P3 graph/self-check",
+                "pipeline": pipeline, "scope": PIPELINES[pipeline],
                 "cost_note": "Configured rates, recorded calls only; unreported SDK retries may be missing"}
     (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     rng = random.Random(seed)
@@ -128,7 +149,7 @@ def run_experiment(questions, out_dir, today, repeats=1, seed=42, answer_fn=hand
         for index, (repeat, question, variant) in enumerate(schedule, 1):
             print(f"[{index}/{len(schedule)}] {question['question_id']} repeat={repeat} {variant}", flush=True)
             start = time.perf_counter()
-            record = {**question, "repeat": repeat, "variant": variant}
+            record = {**question, "repeat": repeat, "variant": variant, "pipeline": pipeline}
             reported_usage = []
             try:
                 bundle = answer_fn(question["question"], today=today, decompose=VARIANTS[variant],
@@ -157,7 +178,7 @@ def run_experiment(questions, out_dir, today, repeats=1, seed=42, answer_fn=hand
                                   if reported_usage else None, usage_incomplete=True)
             record["seconds"] = round(time.perf_counter() - start, 4)
             record["review_id"] = hashlib.sha256(
-                f"{seed}:{question['question_id']}:{repeat}:{variant}".encode()).hexdigest()[:16]
+                f"{pipeline}:{seed}:{question['question_id']}:{repeat}:{variant}".encode()).hexdigest()[:16]
             stream.write(json.dumps(record, ensure_ascii=False) + "\n")
             stream.flush()
             records.append(record)
@@ -226,6 +247,7 @@ def main():
     run.add_argument("--repeats", type=int, default=1)
     run.add_argument("--seed", type=int, default=42)
     run.add_argument("--dry-run", action="store_true")
+    run.add_argument("--pipeline", choices=PIPELINES, default="supervisor")
     score = commands.add_parser("score")
     score.add_argument("run_dir", type=Path)
     score.add_argument("grading", type=Path)
@@ -239,9 +261,10 @@ def main():
         parser.error("--repeats must be positive")
     if args.dry_run:
         print(json.dumps({"questions": len(questions), "pipeline_runs": len(questions) * args.repeats * 2,
-                          "variants": VARIANTS, "today": args.today}, indent=2))
+                          "variants": VARIANTS, "today": args.today,
+                          "pipeline": args.pipeline, "scope": PIPELINES[args.pipeline]}, indent=2))
         return
-    run_experiment(questions, args.out, args.today, args.repeats, args.seed)
+    run_experiment(questions, args.out, args.today, args.repeats, args.seed, pipeline=args.pipeline)
     print(f"Saved {args.out}. Grade grading_blind.csv, then use the score command.")
 
 

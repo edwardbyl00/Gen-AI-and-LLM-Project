@@ -1,10 +1,13 @@
 # Supervisor decomposition ablation and unseen-question evaluation
 
-This first experiment compares A (the existing supervisor) with B (the same
-supervisor with router-generated tasks). It runs routing, the selected real
-price/policy agents, and final synthesis. It does **not** run the separate P3
-LangGraph/self-check entry point. Agree this evaluation boundary with the team
-before running a held-out set; results must name the entry point.
+This experiment compares A (decomposition disabled) with B (decomposition
+enabled). Choose one execution path for both variants: `--pipeline supervisor`
+(the default) runs routing, selected agents and synthesis; `--pipeline graph`
+also includes P3's parallel agent branches and bounded self-check loop. Both
+paths use the same supervisor router and task execution helpers. Agree the
+evaluation boundary with the team before running a held-out set; results must
+name the entry point. Historical runs made before P3 integration used only the
+supervisor path and should not be pooled with graph runs.
 
 B adds decomposition to the existing router call. Each task has an ID, target
 agent, focused question and required answer elements. Execution uses the focused
@@ -25,21 +28,51 @@ experiments, after freezing the A/B design.
 
 ## Run a single question
 
-`config.yaml` keeps `supervisor.decompose: false` by default. Callers can choose
-per request without changing shared config:
+Both entry points read `supervisor.decompose` in `config.yaml` (currently
+`true`; `false` if the key is omitted entirely). Callers can override it per
+request without changing shared config:
 
 ```python
 from agents.supervisor.pipeline import handle_question
 
 baseline = handle_question(question, today="2026-10-28", decompose=False)
 decomposed = handle_question(question, today="2026-10-28", decompose=True)
+
+from agents.graph.graph import run
+
+graph_baseline = run(question, today="2026-10-29", decompose=False)
+graph_decomposed = run(question, today="2026-10-29", decompose=True)
 ```
+
+The existing graph CLI now respects the same config setting:
+
+```sh
+python -m agents.graph.graph "Since singles can't buy resale flats, what's the cheapest 2-room in Yishun?"
+```
+
+There is one decomposition step inside the router, not a second P3 planner.
+For this example, the policy task should verify the eligibility claim while
+the price task asks for historical transaction statistics. The policy assessor
+receives only its focused question. A successful split does not guarantee
+sufficient evidence; genuine policy abstentions remain possible. A minimum
+recorded transaction is historical and does not establish the cheapest current
+listing available to buy.
 
 B returns `task_results`, including the task, raw result, elapsed seconds and
 execution error. Usage entries include `task_id` for agent calls. Legacy
 `price_result`/`policy_result` fields hold the first successful result of each
 type; consumers needing all results should read `task_results`. Synthesis already
 does this. No task coverage status is inferred from a successful execution.
+
+P3 stores the latest task records in a dictionary keyed by task ID, merging
+updates from its parallel price/policy branches. Before synthesis it creates
+the ordered `task_results` list. Self-check agent-error retries rerun only the
+failed task IDs with their original focused questions; successful sibling task
+results remain available. Synthesis-only retries reuse all task results. The
+router is not called again. Task steps and usage include `task_id` and `attempt`;
+all reported calls across retries, including policy assessments and self-check,
+contribute to `cost_usd`. P3's existing retry limit applies to the whole review
+loop; no new coverage reviewer or planner retry is introduced.
 
 ## Prepare the team's unseen set
 
@@ -77,6 +110,19 @@ From the repository root, with the project environment activated:
 python -m agents.supervisor.ablation run evaluation/templates/unseen_questions.example.csv --out evaluation/ablation/dev_check --today 2026-10-28 --repeats 1 --dry-run
 python -m agents.supervisor.ablation run /path/to/team_unseen.csv --out evaluation/ablation/team_unseen_v1 --today 2026-10-28 --repeats 3
 ```
+
+For the team's full P3 workflow, choose the graph explicitly and use a separate
+output directory:
+
+```sh
+python -m agents.supervisor.ablation run /path/to/team_unseen.csv --pipeline graph --out evaluation/ablation/team_graph_v1 --today 2026-10-29 --repeats 3
+```
+
+This compares P3 without decomposition against P3 with decomposition, using
+identical `self_check` settings in both variants. Self-check model calls and
+retries count toward inference cost. The manifest and run records identify the
+selected pipeline; the manifest also records self-check settings. Add
+`--dry-run` to validate the schedule without calling models.
 
 Dry-run validates input and prints the number of pipeline runs, with no model
 calls or output files. A real run requires real policy configuration, API
@@ -155,6 +201,22 @@ unreported, and failed requests can incur costs without returned usage. Report
 incomplete-usage counts alongside cost. Reported usage before a pipeline exception
 is retained, but any unreported portion of failed-run cost is unknown, not zero.
 No accuracy/cost improvement is claimed until actual runs have been graded.
+
+## Development smoke test on 29 October 2026
+
+The [saved P3 trace](../evaluation/diagnostics/p3_decomposition_smoke_20261029.json)
+records one live development run of the mixed singles-premise/Yishun-price
+question. The router created two tasks, policy returned `ANSWER_READY`, and the
+final answer retained policy citations and historical price facts. The run took
+27.50 seconds and recorded an estimated USD 0.067248 at the configured rates,
+including one synthesis retry and two self-check calls. These are observations
+from one run, not an accuracy benchmark or a paired cost comparison.
+
+The final self-check remained `weak`, flagging price citation/formatting issues.
+Those reviewer findings are retained in the trace; the self-check prompt was
+unchanged for this integration. The successful policy task demonstrates that
+the full mixed question no longer forces policy assessment to supply transaction
+prices. It does not establish that the entire final answer passed review.
 
 An interrupted run preserves completed JSONL records. The grading exports are
 written only at normal completion; do not mix a partial run with a completed
