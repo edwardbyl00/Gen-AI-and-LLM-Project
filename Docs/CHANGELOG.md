@@ -4,8 +4,6 @@ A running record of what changed in the supervisor/RAG work, in plain
 English, so you (or a teammate) can see what happened and why without
 re-reading every diff.
 
-This file was renamed from `Docs/CHANGELOG.md` in `b709f92`.
-
 **How to use this file:** newest entry at the top. One entry per logical
 change (not per commit). Each entry: a one-line summary, what actually
 changed, and *why* — the why is the part worth writing down, since the
@@ -13,9 +11,86 @@ diff already shows the what. Mark whether it's still uncommitted.
 
 ---
 
-## 2026-10-29 — Extended decomposition to the P3 graph; made it the default
+## 2026-10-29 — Added MLflow parameter, cost and compute experiment tracking
 
 **Status:** uncommitted
+
+- Added optional MLflow tracking to the existing paired evaluator with one
+  parent per batch and child runs per question/variant/repeat. Preserved local
+  JSON/CSV exports and linked them through `mlflow.json` and child run IDs.
+- Stored original questions/IDs, answers, decomposed tasks, retrieved evidence
+  and errors in each child run's `result.json` artifact; the parent manifest
+  includes the question set. These are experiment artifacts, not a chat-history
+  view. Reference answers and grades are not passed to pipeline inference.
+- Saved searchable model/request, retrieval, price and self-check parameters,
+  applied A/B overrides, setup IDs, full configuration/prompt snapshots,
+  source/data hashes, code revision, package versions and machine information.
+- Logged reported API tokens/calls/configured-rate USD cost and stage totals,
+  errors/retries, latency, local process CPU time and sampled RSS memory.
+  These local measurements do not claim provider CPU/GPU, energy or billing.
+- Added `score --publish-mlflow` to attach independent team grades to original
+  runs without repeating inference. Added per-variant `comparison.csv` exports
+  and a `compare` command that filters by quality thresholds and marks cost/
+  latency/CPU/memory trade-offs rather than declaring the cheapest answer best.
+- Added config-drift checks to prevent settings changing within a batch and a
+  cached-model guard for fresh-process configuration experiments. Kept model
+  grading optional; tracking itself makes no LLM calls.
+- Installed pinned optional dependencies from `requirements-experiments.txt`,
+  initialized the local SQLite store, and added the
+  [MLflow experiment guide](mlflow_experiments.md). Local tracking storage is
+  ignored by Git; normal single-question CLI runs retain CSV logging.
+- Clarified that MLflow records evaluator runs enabled through `--mlflow` or
+  `experiment_tracking.enabled`; standalone supervisor/P3 CLI calls continue
+  to save question/consumption history in CSV without creating MLflow runs.
+
+**Why:** the team needs a unified record linking actual setup parameters and
+independently reviewed quality to API cost and local resource use, so a cheaper
+configuration can be assessed against answer quality rather than token count alone.
+
+**Verified:** 180 offline tests passed, including real SQLite MLflow parameters,
+metrics, artifacts, grade updates, failure handling, configuration drift and
+quality-constrained comparison. Dependency checks passed. The local MLflow
+health/UI endpoints returned HTTP 200. No model API calls were made for this
+integration's verification; no best-performing configuration is claimed yet.
+
+---
+
+## 2026-10-29 — Added automatic CSV consumption history
+
+**Status:** implementation included in `7a36d49`; documentation and regression-runner updates uncommitted
+
+- Supervisor and P3 public entry points now append one local summary row per
+  run to `logs/usage/runs.csv`, with stage/task entries in `calls.csv` joined by
+  a generated run ID. Logging adds no model calls.
+- Recorded Singapore timestamps, questions, pipeline/variant, model-call and
+  token totals, estimated USD cost, duration, retry cycles, review status and
+  incomplete-usage flags. Saved configured model/pricing rates with each run.
+- Included failed runs and any reported usage; unknown counts/costs remain blank
+  rather than appearing as zero. Logging I/O errors preserve the original answer
+  or exception. Locked appends prevent concurrent writes from mixing rows.
+- Enabled logging through `usage_logging` configuration, with per-request
+  `log_usage=False` overrides. Default logs are ignored by Git. Offline tests
+  disable persistent history, while logging tests use temporary directories.
+- Added an idempotent saved-trace import and imported the existing P3 smoke
+  trace as `source=trace_import`: seven reported calls, 19,999 tokens and
+  estimated USD 0.067248. This import did not make another API call.
+- Added the [usage log guide](usage_logging.md), updated export documentation
+  and included logging tests in the consolidated regression runner.
+
+**Why:** terminal output and experiment-specific JSON files did not provide a
+simple cumulative view of normal question costs. The two CSVs let the team view
+per-question consumption and identify expensive stages without rerunning models.
+
+**Verified:** 172 offline tests passed across usage logging, supervisor, P3,
+pricing and P5 integration. CSV readback confirmed the saved smoke trace's totals,
+seven stage entries, UTF-8 headers and Git exclusion. Cost estimates are based on
+reported tokens and configured rates, not provider billing records.
+
+---
+
+## 2026-10-29 — Extended decomposition to the P3 graph; made it the default
+
+**Status:** committed in `7a36d49`
 
 - Extracted the routing/task logic shared by the sequential pipeline into
   `agents/supervisor/tasks.py` (`resolve_decompose()`, `route_with_tasks()`,

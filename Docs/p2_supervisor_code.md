@@ -257,7 +257,7 @@ These read `data_preparation.embedding` and `data_preparation.vector_store` sett
 
 ### The bundle, errors and token tracking
 
-A **bundle** is the dictionary created inside `handle_question()` in [pipeline.py](../agents/supervisor/pipeline.py). It collects the results of one question, is passed to synthesis, and is returned to the caller. It lives in memory unless a caller exports it:
+A **bundle** is the dictionary created inside `handle_question()` in [pipeline.py](../agents/supervisor/pipeline.py). It collects the results of one question, is passed to synthesis, and is returned to the caller. Full answers/evidence remain in memory unless exported. Consumption summaries and stage usage are automatically appended to local CSVs when usage logging is enabled; see the [usage log guide](usage_logging.md).
 
 | Key | Contents |
 | --- | --- |
@@ -268,6 +268,7 @@ A **bundle** is the dictionary created inside `handle_question()` in [pipeline.p
 | `steps` | Stage timings, events, errors and stub flags |
 | `usage` | Router, price, policy-assessor and synthesis input/output token counts |
 | `cost_usd` | Estimated cost of recorded usage, added after synthesis |
+| `usage_tracking` | Saved usage run ID and paths to summary/stage CSVs, when logging succeeds |
 | `answer` | Answer text, `declined`, valid `cited` numbers, `sources` and citation events |
 
 With default `strict=False`, agent errors are recorded and processing continues; synthesis errors produce a fallback answer. With `strict=True`, those errors are raised. The pipeline CLI uses strict mode. Routing errors that escape `safe_route()` propagate in either mode.
@@ -398,7 +399,7 @@ If scores worsen, inspect routing, retrieved evidence, agent failures, synthesis
 
 | Entry point | What is saved |
 | --- | --- |
-| `pipeline` CLI / `handle_question()` | No automatic file history; CLI prints the answer/routing/timing, Python returns the bundle |
+| `pipeline` CLI / `handle_question()` and P3 `graph.run()` | Local `logs/usage/runs.csv` and `calls.csv` usage history when enabled; full bundles are returned, not automatically archived |
 | `evaluate` | `evaluation/results/routing_<prompt>_<timestamp>.csv`: question, expected/predicted routing fields, correctness, model reason, event count and seconds |
 | `score_answers run` | `evaluation/answers/answers_<timestamp>.csv`: question/labels, route, answer with sources, citation count, errors, stub flags, total tokens, estimated USD, seconds and grading columns |
 | `score_answers score` | Prints metrics from reviewed grades; no new report file |
