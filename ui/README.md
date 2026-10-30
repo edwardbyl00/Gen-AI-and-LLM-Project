@@ -4,6 +4,12 @@
 streamlit run ui/app.py
 ```
 
+Live modes read `OPENAI_API_KEY` (or `LLM_API_KEY`) from the project root's
+local `.env` file or the server environment. The page starts in Full System
+when a key is present, otherwise in Demo Mode. The sidebar shows whether a
+key was detected; this does not validate the key with the provider. Keep
+`.env` out of Git.
+
 Shows the answer, its sources with dates, the price facts used and each agent
 step. The sidebar switches between:
 

@@ -25,9 +25,9 @@ judge:
   model: gpt-5.4-2026-03-05
 
 supervisor:
-  # Decomposition (B) is now the default for both the sequential pipeline
-  # and the P3 graph. The ablation runner overrides per request to run A.
-  decompose: true
+  # Default decomposition setting for the sequential pipeline and P3 graph.
+  # The ablation runner overrides this per request to compare A and B.
+  decompose: false
 
 usage_logging:
   enabled: true

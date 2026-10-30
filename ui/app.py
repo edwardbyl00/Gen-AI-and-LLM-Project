@@ -15,15 +15,20 @@ API is down during the presentation.
 
 import html
 import json
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
 
 import streamlit as st
+from dotenv import load_dotenv
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+
+load_dotenv(PROJECT_ROOT / ".env")
+HAS_LLM_KEY = bool(os.getenv("OPENAI_API_KEY") or os.getenv("LLM_API_KEY"))
 
 SAMPLES_FILE = Path(__file__).parent / "sample_answers.json"
 DEMO, FULL, CHATBOT = "Demo Mode (Saved Samples)", "Full System", "Plain Chatbot (Baseline)"
@@ -285,12 +290,15 @@ st.markdown(CSS, unsafe_allow_html=True)
 
 with st.sidebar:
     st.header("Presenter Settings")
-    mode = st.radio("System", [FULL, CHATBOT, DEMO], index=2)
+    mode = st.radio("System", [FULL, CHATBOT, DEMO], index=0 if HAS_LLM_KEY else 2)
     approach = st.radio("Price Agent Approach", ["A", "B"],
                         format_func=lambda a: {"A": "A: Filter Tool",
                                                "B": "B: Text-to-SQL"}[a],
                         disabled=mode != FULL)
-    st.caption("Demo Mode needs no API key. The other modes need OPENAI_API_KEY in .env.")
+    if HAS_LLM_KEY:
+        st.caption("LLM key detected. Full System and Plain Chatbot use live model calls.")
+    else:
+        st.caption("Add OPENAI_API_KEY or LLM_API_KEY to .env for live answers. Demo Mode needs no key.")
 
 st.markdown('<div class="ag-header"><h1>AskGov SG</h1>'
             "<p>Ask about HDB resale prices or CPF housing rules. Answers come from official "
