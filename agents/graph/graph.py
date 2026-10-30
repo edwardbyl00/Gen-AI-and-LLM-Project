@@ -122,26 +122,29 @@ def make_price_node(price_fn=None):
 
 
 def make_policy_node(policy_fn=None):
-    """Wrap the policy agent as a graph node. policy_fn takes (question, today);
-    by default it is P2's adapter, which reads agents.policy (real or stub) and
-    policy_top_k from config.yaml."""
+    """Wrap the policy agent as a graph node. policy_fn takes (question, today,
+    usage_log=...); by default it is P2's adapter, which reads agents.policy
+    (real or stub) and policy_top_k from config.yaml."""
     policy_fn = policy_fn or get_policy_agent()
 
     def policy_agent(state):
+        usage = []
         start = time.perf_counter()
         # Agent errors are recorded and the run carries on, as in pipeline.py.
         try:
-            result = policy_fn(state["question"], state["today"])
+            # The adapter adds P5's evidence-check tokens to usage ("policy_assessor").
+            result = policy_fn(state["question"], state["today"], usage_log=usage)
         except Exception as error:
             message = f"{type(error).__name__}: {error}"
             step = {"step": "policy_agent", "seconds": round(time.perf_counter() - start, 2),
                     "error": message}
-            return {"policy_result": None, "agent_errors": {"policy": message}, "steps": [step]}
-        # Token usage is not logged yet: P2's adapter drops P5's assessor_usage.
+            return {"policy_result": None, "agent_errors": {"policy": message},
+                    "steps": [step], "usage": usage}
         step = {"step": "policy_agent", "seconds": round(time.perf_counter() - start, 2),
                 "stub": bool(result.get("stub"))}
         # None clears any error left by an earlier, failed attempt.
-        return {"policy_result": result, "agent_errors": {"policy": None}, "steps": [step]}
+        return {"policy_result": result, "agent_errors": {"policy": None},
+                "steps": [step], "usage": usage}
     return policy_agent
 
 

@@ -460,3 +460,10 @@ def test_real_llm_check_with_faked_model_reply():
     assert "Question: Can singles buy?" in review and "Draft answer:\nNo." in review
     assert "2026-10-28" in sent[0]["messages"][0]["content"]
     assert usage == [{"step": "self_check", "input_tokens": 9, "output_tokens": 4}]
+
+
+def test_policy_usage_is_logged():
+    """P2's adapter reports P5's evidence-check tokens through usage_log."""
+    p_usage = {"step": "policy_assessor", "input_tokens": 700, "output_tokens": 90, "calls": 1}
+    state = run("q", today="2026-10-30", app=graph(policy=Spy(EVIDENCE, usage=p_usage)))
+    assert p_usage in state["usage"]
