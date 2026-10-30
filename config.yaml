@@ -25,8 +25,22 @@ judge:
   model: gpt-5.4-2026-03-05
 
 supervisor:
-  # Baseline remains the default. The ablation runner overrides per request.
+  # Default decomposition setting for the sequential pipeline and P3 graph.
+  # The ablation runner overrides this per request to compare A and B.
   decompose: false
+
+usage_logging:
+  enabled: true
+  # Relative to the repository root. Local CSVs are excluded from Git.
+  directory: logs/usage
+
+experiment_tracking:
+  # Enable for an experiment with --mlflow; normal CLI calls retain CSV logging.
+  enabled: false
+  tracking_uri: sqlite:///logs/mlflow/mlflow.db
+  artifact_directory: logs/mlflow/artifacts
+  experiment_name: AskGov-supervisor
+  memory_sampling_interval_seconds: 0.1
 
 self_check:
   # P3's self check loop (agents/graph/self_check.py). A weak answer is

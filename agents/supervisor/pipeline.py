@@ -12,25 +12,18 @@ import json
 import time
 from datetime import date
 
-import yaml
-
 from agents.supervisor.adapters import get_policy_agent, get_price_agent
-from agents.supervisor.checks import safe_route, valid_tasks
-from agents.supervisor.router import CONFIG_FILE, estimate_cost_usd
+from agents.supervisor.checks import safe_route
+from agents.supervisor.router import estimate_cost_usd
 from agents.supervisor.synthesis import FALLBACK_ANSWER, format_answer, synthesise
-
-# Tuple order determines execution order and the order of entries in the step log.
-AGENTS_FOR_ROUTE = {
-    "price": ("price",),
-    "policy": ("policy",),
-    "both": ("price", "policy"),
-    "none": (),
-}
+from agents.supervisor.tasks import execute_task, resolve_decompose, route_with_tasks, tasks_for_route
+from agents.supervisor.usage_log import track_run
 
 
+@track_run("supervisor")
 def handle_question(question, today=None, route_fn=safe_route,
                     price_fn=None, policy_fn=None, synth_fn=None, strict=False,
-                    decompose=None, usage_log=None):
+                    decompose=None, usage_log=None, log_usage=None):
     """Route one question and gather what synthesis needs.
 
     Optional callables let tests or callers replace routing and agent execution.
@@ -42,11 +35,7 @@ def handle_question(question, today=None, route_fn=safe_route,
     """
     today = today or date.today().isoformat()
     pipeline_start = time.perf_counter()
-    if decompose is None:
-        with open(CONFIG_FILE) as f:
-            decompose = (yaml.safe_load(f) or {}).get("supervisor", {}).get("decompose", False)
-    if not isinstance(decompose, bool):
-        raise ValueError("decompose must be a boolean")
+    decompose = resolve_decompose(decompose)
     agents = {
         "price": price_fn or get_price_agent(),
         "policy": policy_fn or get_policy_agent(),
@@ -59,12 +48,7 @@ def handle_question(question, today=None, route_fn=safe_route,
     start = time.perf_counter()
     # Routing must succeed before agents can be selected. Routing errors propagate
     # to the caller, even when strict=False.
-    route_kwargs = {"today": today, "usage_log": usage}
-    if decompose:
-        route_kwargs["decompose"] = True
-    routing, events = route_fn(question, **route_kwargs)
-    if decompose and not valid_tasks(routing):
-        raise ValueError("Decomposition routing returned invalid tasks")
+    routing, events = route_with_tasks(question, today, usage, route_fn, decompose)
     steps.append({"step": "router", "seconds": _since(start),
                   "output": routing, "events": events})
 
@@ -73,38 +57,17 @@ def handle_question(question, today=None, route_fn=safe_route,
     results = {"price": None, "policy": None}
     errors = {}
     task_results = []
-    tasks = routing["tasks"] if decompose else [
-        {"id": name, "agent": name, "question": question, "required_elements": []}
-        for name in AGENTS_FOR_ROUTE[routing["route"]]
-    ]
-    for task in tasks:
+    for task in tasks_for_route(question, routing, decompose):
         name = task["agent"]
-        error_key = task["id"] if decompose else name
-        start = time.perf_counter()
-        usage_start = len(usage)
-        task_record = {"task": task, "result": None, "error": None}
-        try:
-            result = agents[name](task["question"], today, usage_log=usage)
-            task_record["result"] = result
-            # Retain legacy fields for callers; synthesis uses all task results.
-            if results[name] is None:
-                results[name] = result
-            steps.append({"step": f"{name}_agent", "seconds": _since(start),
-                          "stub": bool(result.get("stub"))})
-        except Exception as error:
-            if strict:
-                raise
-            # Preserve the failure and continue to any remaining selected agent.
-            errors[error_key] = f"{type(error).__name__}: {error}"
-            task_record["error"] = errors[error_key]
-            steps.append({"step": f"{name}_agent", "seconds": _since(start),
-                          "error": errors[error_key]})
+        record, step = execute_task(task, agents[name], today, usage,
+                                    decompose=decompose, strict=strict)
+        steps.append(step)
+        if record["error"]:
+            errors[task["id"] if decompose else name] = record["error"]
+        elif results[name] is None:
+            results[name] = record["result"]
         if decompose:
-            steps[-1]["task_id"] = task["id"]
-            for entry in usage[usage_start:]:
-                entry["task_id"] = task["id"]
-            task_record["seconds"] = _since(start)
-            task_results.append(task_record)
+            task_results.append(record)
 
     bundle = {
         "question": question,

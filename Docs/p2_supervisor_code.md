@@ -6,10 +6,15 @@ Scope: P2 routing, orchestration, synthesis, agent adapters and evaluation. Revi
 
 Start with `handle_question()` in [pipeline.py](../agents/supervisor/pipeline.py). The routing and synthesis prompts define the decision rules; the tables below explain the returned fields.
 
-The default flow below remains the A baseline. Optional `decompose=True` adds
-router-generated focused tasks, per-task execution and synthesis from all task
-results. See the [ablation and unseen-question guide](supervisor_ablation.md)
-for its interfaces, paired evaluation commands and team grading workflow.
+The flow below is the A baseline. `config.yaml`'s `supervisor.decompose` is
+now `true` by default, which adds router-generated focused tasks, per-task
+execution and synthesis from all task results (B); pass `decompose=False` to
+run the baseline instead. See the [ablation and unseen-question
+guide](supervisor_ablation.md) for its interfaces, paired evaluation commands
+and team grading workflow. P3's graph (`agents/graph/graph.py`) uses the same
+`agents/supervisor/tasks.py` routing/task helpers and config flag, then adds
+its own self-check loop. Use `--pipeline graph` in the ablation runner when
+evaluating that full workflow.
 
 ## 1. High-level flow
 
@@ -68,7 +73,7 @@ flowchart TD
 
 ### Detailed flow: agent selection and execution
 
-In `pipeline.py`, `AGENTS_FOR_ROUTE` creates an ordered list of agents. Each call goes through the same success/error branch.
+`pipeline.py` and P3's `graph.py` share `agents/supervisor/tasks.py`: `tasks_for_route()` returns the baseline's one-task-per-selected-agent list (via its `AGENTS_FOR_ROUTE` mapping) or the router's decomposed tasks, and `execute_task()` runs one task through the same success/error branch for both entry points.
 
 ```mermaid
 flowchart TD
@@ -181,6 +186,7 @@ All files below are in `agents/supervisor/`.
 | File | Main function | Purpose |
 | --- | --- | --- |
 | [pipeline.py](../agents/supervisor/pipeline.py) | `handle_question()` | Runs the stages and returns the results, errors, timing and token usage |
+| [tasks.py](../agents/supervisor/tasks.py) | `tasks_for_route()`, `execute_task()`, `route_with_tasks()`, `resolve_decompose()` | Routing/task helpers shared by `pipeline.py` and P3's `agents/graph/graph.py`, so both entry points select agents, run tasks and read `supervisor.decompose` the same way |
 | [router.py](../agents/supervisor/router.py) | `route_question()` | Reads the prompt/settings and asks the model to classify the question |
 | [checks.py](../agents/supervisor/checks.py) | `safe_route()` | Validates routing output, retries failures and repairs known contradictions |
 | [adapters.py](../agents/supervisor/adapters.py) | `get_price_agent()`, `get_policy_agent()` | Connects the always-real price agent and selectable real/stub policy agent |
@@ -251,7 +257,7 @@ These read `data_preparation.embedding` and `data_preparation.vector_store` sett
 
 ### The bundle, errors and token tracking
 
-A **bundle** is the dictionary created inside `handle_question()` in [pipeline.py](../agents/supervisor/pipeline.py). It collects the results of one question, is passed to synthesis, and is returned to the caller. It lives in memory unless a caller exports it:
+A **bundle** is the dictionary created inside `handle_question()` in [pipeline.py](../agents/supervisor/pipeline.py). It collects the results of one question, is passed to synthesis, and is returned to the caller. Full answers/evidence remain in memory unless exported. Consumption summaries and stage usage are automatically appended to local CSVs when usage logging is enabled; see the [usage log guide](usage_logging.md).
 
 | Key | Contents |
 | --- | --- |
@@ -262,6 +268,7 @@ A **bundle** is the dictionary created inside `handle_question()` in [pipeline.p
 | `steps` | Stage timings, events, errors and stub flags |
 | `usage` | Router, price, policy-assessor and synthesis input/output token counts |
 | `cost_usd` | Estimated cost of recorded usage, added after synthesis |
+| `usage_tracking` | Saved usage run ID and paths to summary/stage CSVs, when logging succeeds |
 | `answer` | Answer text, `declined`, valid `cited` numbers, `sources` and citation events |
 
 With default `strict=False`, agent errors are recorded and processing continues; synthesis errors produce a fallback answer. With `strict=True`, those errors are raised. The pipeline CLI uses strict mode. Routing errors that escape `safe_route()` propagate in either mode.
@@ -392,7 +399,7 @@ If scores worsen, inspect routing, retrieved evidence, agent failures, synthesis
 
 | Entry point | What is saved |
 | --- | --- |
-| `pipeline` CLI / `handle_question()` | No automatic file history; CLI prints the answer/routing/timing, Python returns the bundle |
+| `pipeline` CLI / `handle_question()` and P3 `graph.run()` | Local `logs/usage/runs.csv` and `calls.csv` usage history when enabled; full bundles are returned, not automatically archived |
 | `evaluate` | `evaluation/results/routing_<prompt>_<timestamp>.csv`: question, expected/predicted routing fields, correctness, model reason, event count and seconds |
 | `score_answers run` | `evaluation/answers/answers_<timestamp>.csv`: question/labels, route, answer with sources, citation count, errors, stub flags, total tokens, estimated USD, seconds and grading columns |
 | `score_answers score` | Prints metrics from reviewed grades; no new report file |

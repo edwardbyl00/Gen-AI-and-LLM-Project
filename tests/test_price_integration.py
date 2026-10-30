@@ -49,7 +49,7 @@ def test_pipeline_uses_real_transactions(monkeypatch):
     bundle = handle_question(
         "How many 4-room resale flats were sold in Toa Payoh in 2024?",
         today="2026-10-25", route_fn=lambda *args, **kwargs: (routing, []),
-        synth_fn=synthesise, strict=True,
+        synth_fn=synthesise, strict=True, decompose=False,
     )
     # Independently count the source rows without using agent calculations.
     path = Path(__file__).resolve().parents[1] / "data/cleaned/hdb_resale_prices.csv.gz"

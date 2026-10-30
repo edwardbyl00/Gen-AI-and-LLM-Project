@@ -8,9 +8,15 @@ st_testing = pytest.importorskip("streamlit.testing.v1")
 APP = str(Path(__file__).resolve().parents[1] / "ui" / "app.py")
 
 
+def demo_app():
+    """Select saved samples explicitly, even if a developer has a local key."""
+    app = st_testing.AppTest.from_file(APP, default_timeout=30).run()
+    return app.radio[0].set_value("Demo Mode (Saved Samples)").run()
+
+
 def run_example(index):
     """Open the page and click one example question (it is asked straight away)."""
-    app = st_testing.AppTest.from_file(APP, default_timeout=30).run()
+    app = demo_app()
     app.button(key=f"example_{index}").click().run()
     return app
 
@@ -20,7 +26,7 @@ def all_markdown(app):
 
 
 def test_page_loads_in_demo_mode():
-    app = st_testing.AppTest.from_file(APP, default_timeout=30).run()
+    app = demo_app()
     assert not app.exception
     assert "AskGov SG" in all_markdown(app)
 
@@ -58,7 +64,7 @@ def test_demo_mode_explains_missing_sample():
 
 
 def test_typed_question_uses_the_form():
-    app = st_testing.AppTest.from_file(APP, default_timeout=30).run()
+    app = demo_app()
     app.text_input(key="question").input("What did 4-room flats in Tampines sell for recently?")
     app.button[0].click().run()            # the form's Ask button
     assert not app.exception
@@ -66,7 +72,7 @@ def test_typed_question_uses_the_form():
 
 
 def test_examples_move_below_the_answer():
-    app = st_testing.AppTest.from_file(APP, default_timeout=30).run()
+    app = demo_app()
     assert "Or Try One of These" in all_markdown(app)
     app.button(key="example_0").click().run()
     text = all_markdown(app)

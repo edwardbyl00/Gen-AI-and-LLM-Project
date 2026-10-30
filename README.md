@@ -2,13 +2,27 @@
 
 AskGov SG routes HDB/CPF housing questions to policy retrieval, resale-price analysis, or both, then synthesizes an answer with policy sources. Pricing always uses the real agent; policy is currently configured as real.
 
-Start with the [P2 supervisor code guide](Docs/p2_supervisor_code.md) for the high-level flow, detailed decision branches, bundle, token/cost tracking and evaluation commands. See the [price-agent guide](agents/price/README.md) for P1 details and the [maintenance guide](Docs/MAINTENANCE.md) for team setup and Git conventions.
+Start with the [end-to-end pipeline map](Docs/end_to_end_overview.md) for how the phases fit together, then the [P2 supervisor code guide](Docs/p2_supervisor_code.md) for the high-level flow, detailed decision branches, bundle, token/cost tracking and evaluation commands. See the [price-agent guide](agents/price/README.md) for P1 details and the [maintenance guide](Docs/MAINTENANCE.md) for team setup and Git conventions.
 
-The supervisor uses v2 prompts: routing flags `check_premise`, while synthesis checks the claim against retrieved evidence. Saved evaluations live under `evaluation/results/` and `evaluation/answers/`; individual pipeline calls do not automatically create a history file.
+The supervisor uses v2 prompts: routing flags `check_premise`, while synthesis checks the claim against retrieved evidence. Saved evaluations live under `evaluation/results/` and `evaluation/answers/`.
 
-Optional router decomposition and paired A/B evaluation are described in the
-[supervisor ablation and unseen-question guide](Docs/supervisor_ablation.md),
-including the team's input format, blinded grading and cost/quality comparison.
+Supervisor and P3 runs append local usage history to `logs/usage/runs.csv`
+(one row per question) and `logs/usage/calls.csv` (stage/task breakdown).
+Open these CSVs in Excel or another spreadsheet app. See the
+[usage log guide](Docs/usage_logging.md) for columns and settings.
+
+For parameter/configuration experiments, add `--mlflow` to the ablation runner.
+It records effective A/B settings, model/retrieval/review parameters, API cost,
+latency, local CPU/memory and later team grades in one UI. See the
+[MLflow experiment guide](Docs/mlflow_experiments.md) for setup and comparison.
+
+Router decomposition (on by default via `supervisor.decompose` in
+`config.yaml`; pass `decompose=False` to run the plain baseline) and paired
+A/B evaluation are described in the [supervisor ablation and unseen-question
+guide](Docs/supervisor_ablation.md), including the team's input format,
+blinded grading and cost/quality comparison. The P3 graph uses the same
+decomposition setting; select `--pipeline graph` in the ablation runner to
+include its self-check loop in the comparison.
 
 This README also includes the reproducible setup for the final P5 Agentic RAG evaluation below.
 

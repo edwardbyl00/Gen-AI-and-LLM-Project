@@ -1,0 +1,678 @@
+{
+  "question": "Since singles can't buy resale flats, what's the cheapest 2-room in Yishun?",
+  "today": "2026-10-29",
+  "decompose": true,
+  "variant": "B_decomposition",
+  "task_records": {
+    "policy_1": {
+      "task": {
+        "id": "policy_1",
+        "agent": "policy",
+        "question": "Can a single person buy an HDB resale flat, and what eligibility conditions apply for a 2-room resale purchase in Yishun?",
+        "required_elements": [
+          "Whether singles may buy HDB resale flats",
+          "Relevant eligibility conditions for a single buyer purchasing a resale flat"
+        ]
+      },
+      "result": {
+        "question": "Can a single person buy an HDB resale flat, and what eligibility conditions apply for a 2-room resale purchase in Yishun?",
+        "query_date": "2026-10-29",
+        "retrieval_mode": "hybrid",
+        "final_query": "Can a single person buy an HDB resale flat, and what eligibility conditions apply for a 2-room resale purchase in Yishun?",
+        "requeried": false,
+        "rewrite_accepted": false,
+        "original_coverage": 0.8,
+        "final_coverage": 0.6,
+        "evidence": [
+          {
+            "document_id": "H05_C",
+            "chunk_id": "H05_C_c0023",
+            "title": "Terms and Conditions - Sale and Purchase of An HDB Resale Flat",
+            "source": "HDB",
+            "category": "policy",
+            "url": "https://www.hdb.gov.sg/e-resale/resale-purchase-of-an-hdb-resale-flat",
+            "effective_date": null,
+            "text": "Document: Terms and Conditions - Sale and Purchase of An HDB Resale Flat\nSection: Terms and Conditions - Sale and Purchase of An HDB Resale Flat > **APPLICABLE TO THE BUYER**\n\n**21 ELIGIBILITY TO PURCHASE**\n\n21.1 The buyer\u2018s eligibility to purchase the flat is determined with the issuance and subject to the terms and conditions of the HDB Flat Eligibility (HFE) letter or any other eligibility assessment process that HDB may decide from time to time.\n\n21.2 HDB in its discretion reserves the right to determine the eligibility conditions in accordance with the prevailing policies, rules and regulations. This includes any policies relating to the ownership or disposal of any residential property as well as any wait-out period to be complied with as may be determined by HDB. Any decision made by the HDB on the buyer\u2019s eligibility to purchase the flat shall be final and conclusive.\n\n21.3 The buyer is eligible to purchase only one flat which must be owner-occupied by the buyer and his immediate family who are authorised by HDB to stay in the flat. The buyer must be able to take physical possession of the flat on resale completion and must be in actual, exclusive and continuous occupation of the flat.\n\n21.4 The buyer and all occupiers must be eligible to purchase the flat under an eligibility scheme, comply with the terms and conditions of the scheme, and endorse the forms and undertakings on the HDB Flat Portal (or any mode that HDB may introduce from time to time) required under the scheme.\n\n21.5 The buyer must be a Singapore Citizen or Singapore Permanent Resident who is at least 21 years old at the submission of the HDB Flat Eligibility (HFE) letter application. The application must include at least another Singapore Citizen or Singapore Permanent Resident (either as a co-buyer or listed occupier) to form a core family nucleus comprising:",
+            "section_title": null,
+            "section_path": [
+              "Terms and Conditions - Sale and Purchase of An HDB Resale Flat",
+              "**APPLICABLE TO THE BUYER**"
+            ],
+            "score": 0.016393,
+            "dense_score": 0.7700690031051636
+          },
+          {
+            "document_id": "H02_C",
+            "chunk_id": "H02_C_c0001",
+            "title": "CPF Housing Grant for Singles Buying Resale Flats",
+            "source": "HDB",
+            "category": "policy",
+            "url": "https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/cpf-housing-grant",
+            "effective_date": null,
+            "text": "Document: CPF Housing Grant for Singles Buying Resale Flats\nSection: CPF Housing Grant for Singles Buying Resale Flats\n\nIf you are a first-timer Singapore Citizen (SC) and buying a resale flat on your own, you may qualify for a Singles Grant of $40,000 for the purchase of a 2- to 4- room resale flat or $25,000 for a 5-room resale flat.\n\nIf you are buying with your parents or your non-resident spouse or other first-timer single(s) (up to 2 Singles Grant applicants), you may be eligible for a Singles Grant of $40,000 for the purchase of a 2- to 4-room resale flat (i.e. a total of $80,000 for 2 singles) or $25,000 for a 5-room or bigger resale flat (i.e. a total of $50,000 for 2 singles).\n\nIn addition, you may also receive the following housing grants if you meet the respective eligibility conditions:\n\n[Enhanced CPF Housing Grant (Singles)](https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/enhanced-cpf-housing-grant)\n\n[Proximity Housing Grant (Singles)](https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/proximity-housing-grant)",
+            "section_title": null,
+            "section_path": [
+              "CPF Housing Grant for Singles Buying Resale Flats"
+            ],
+            "score": 0.015873,
+            "dense_score": null
+          },
+          {
+            "document_id": "H05_C",
+            "chunk_id": "H05_C_c0024",
+            "title": "Terms and Conditions - Sale and Purchase of An HDB Resale Flat",
+            "source": "HDB",
+            "category": "policy",
+            "url": "https://www.hdb.gov.sg/e-resale/resale-purchase-of-an-hdb-resale-flat",
+            "effective_date": null,
+            "text": "Document: Terms and Conditions - Sale and Purchase of An HDB Resale Flat\nSection: Terms and Conditions - Sale and Purchase of An HDB Resale Flat > **APPLICABLE TO THE BUYER**\n\n(a) buyer, spouse and children (if any),\n\n(b) buyer (single), parents and siblings, or\n\n(c) buyer (widowed or divorced) and children under his custody, care and control.\n\n21.6 The buyer who is unmarried and buying the flat to stay alone must be a Singapore Citizen of at least 35 years old (or 21 years old if he is orphaned or widowed) at the time of application for the HDB Flat Eligibility (HFE) letter. He may buy the flat with another unmarried Singapore Citizen who meets the age requirement.\n\n21.7 The buyer and any member of the core family nucleus who are Singapore Permanent Residents must have obtained Singapore Permanent Resident status for at least 3 years at the time of application for the HDB Flat Eligibility (HFE) letter.\n\n21.8 Where the buyer is applying with his fianc\u00e9e to form a family nucleus, they must register their marriage with the Registry of Civil or Muslim Marriages and submit their marriage certificate to HDB within 3 months from the resale completion date.\n\n21.9 The buyer must inform HDB of any changes in his household in the resale application, including changes in marital status or ownership of residential property, before the resale completion.\n\n21.10 For the Ethnic Integration Policy, the ethnic classification of the buyer\u2019s household at the point of flat purchase will remain unchanged when he sells the flat.\n\n**22 DEBARMENT**\n\nA person whose name is in a debarment list for infringement of any HDB/Government rules, regulations or policies will not be eligible to apply for an HDB flat or be included as a member of the core family nucleus in an application for a flat.\n\n**23 MANNER OF HOLDING**",
+            "section_title": null,
+            "section_path": [
+              "Terms and Conditions - Sale and Purchase of An HDB Resale Flat",
+              "**APPLICABLE TO THE BUYER**"
+            ],
+            "score": 0.015873,
+            "dense_score": 0.7631843686103821
+          },
+          {
+            "document_id": "H02",
+            "chunk_id": "H02_c0001",
+            "title": "Singles",
+            "source": "HDB",
+            "category": "policy",
+            "url": "https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles",
+            "effective_date": null,
+            "text": "Document: Singles\nSection: Singles\n\nUnderstand the eligibility conditions, the types of flats, CPF housing grants and HDB housing loan that you may apply for if you are a Singapore citizen who is unmarried, widowed or divorced, aged 35 and above, and are buying a flat on your own.\n\nApply for an [HDB Flat Eligibility (HFE) letter](https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/application-for-an-hdb-flat-eligibility-hfe-letter) via the [HDB Flat Portal](https://homes.hdb.gov.sg/home/landing) for a holistic understanding of your housing and financing options before you embark on your home buying journey. It will inform you upfront of your eligibility to buy a new or resale flat, as well as the amount of CPF housing grants and HDB housing loan you are eligible for.\n\nIf you are aged 55 and above and looking to buy a short-lease 2-room Flexi flat or a Community Care Apartment (CCA), please refer to the section on [seniors](https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/seniors).\n\nIf you intend to buy a new flat (3-room or bigger) or a resale flat with CPF Housing Grant (Families) with your parents, please refer to [married couples and/ or parent(s) with child(ren)](https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families?anchor=pa).",
+            "section_title": null,
+            "section_path": [
+              "Singles"
+            ],
+            "score": 0.015152,
+            "dense_score": null
+          }
+        ],
+        "top_dense_score": 0.7700690031051636,
+        "decision": "ANSWER_READY",
+        "reason": "The passages provide direct policy support that a single person can buy an HDB resale flat, subject to eligibility rules. Passage 7 states that an unmarried buyer staying alone must be a Singapore Citizen aged at least 35 (or 21 if orphaned or widowed), and may buy with another unmarried Singapore Citizen who meets the age requirement. Passage 3 adds the general resale-flat eligibility framework and family nucleus rules. Passage 10 confirms the Singles scheme applies to Singapore citizens who are unmarried, widowed or divorced, aged 35 and above, buying on their own. Passage 6 supports that singles may buy resale flats on their own and describes grant treatment for 2- to 4-room resale flats. This is enough to give a grounded conditional answer about single-person resale purchase and the main eligibility conditions for a 2-room resale flat in Yishun, while noting that outcome may still depend on general resale checks such as HFE and quotas.",
+        "trace": [
+          {
+            "step": "RETRIEVE",
+            "query": "Can a single person buy an HDB resale flat, and what eligibility conditions apply for a 2-room resale purchase in Yishun?"
+          },
+          {
+            "step": "ASSESS_EVIDENCE",
+            "sufficient": true,
+            "answer_mode": "conditional",
+            "reason": "The passages provide direct policy support that a single person can buy an HDB resale flat, subject to eligibility rules. Passage 7 states that an unmarried buyer staying alone must be a Singapore Citizen aged at least 35 (or 21 if orphaned or widowed), and may buy with another unmarried Singapore Citizen who meets the age requirement. Passage 3 adds the general resale-flat eligibility framework and family nucleus rules. Passage 10 confirms the Singles scheme applies to Singapore citizens who are unmarried, widowed or divorced, aged 35 and above, buying on their own. Passage 6 supports that singles may buy resale flats on their own and describes grant treatment for 2- to 4-room resale flats. This is enough to give a grounded conditional answer about single-person resale purchase and the main eligibility conditions for a 2-room resale flat in Yishun, while noting that outcome may still depend on general resale checks such as HFE and quotas.",
+            "relevant_indices": [
+              3,
+              6,
+              7,
+              10
+            ],
+            "missing_user_information": [
+              "Whether the buyer is a Singapore Citizen or Singapore Permanent Resident",
+              "Whether the buyer is unmarried, widowed, divorced, or orphaned",
+              "Buyer age at HFE application",
+              "Whether the buyer is buying alone or with another eligible person",
+              "Whether HDB approves the buyer under the HFE assessment",
+              "Whether the specific Yishun flat satisfies resale constraints such as Ethnic Integration Policy and SPR quota"
+            ]
+          },
+          {
+            "step": "ANSWER_READY"
+          }
+        ]
+      },
+      "error": null,
+      "seconds": 6.68,
+      "attempt": 1
+    },
+    "price_1": {
+      "task": {
+        "id": "price_1",
+        "agent": "price",
+        "question": "What is the lowest recorded resale price for a 2-room flat in Yishun in the available transaction data?",
+        "required_elements": [
+          "Lowest recorded resale price",
+          "Relevant transaction month",
+          "Matching transaction count or confirmation it is the minimum in the dataset"
+        ]
+      },
+      "result": {
+        "town": "YISHUN",
+        "flat_type": "2 ROOM",
+        "period_start": "2025-10",
+        "period_end": "2026-09",
+        "median_price": 362500,
+        "mean_price": 361748,
+        "min_price": 318000,
+        "max_price": 395500,
+        "n_deals": 54,
+        "data_as_of": "2026-10",
+        "approach": "A_filter_tool",
+        "filters": {
+          "town": "YISHUN",
+          "flat_type": "2 ROOM",
+          "period_start": null,
+          "period_end": null,
+          "last_n_months": null,
+          "unmatched_place": null,
+          "period_words": null
+        },
+        "note": "No exact period asked; used the latest 12 full months."
+      },
+      "error": null,
+      "seconds": 2.05,
+      "attempt": 1
+    }
+  },
+  "task_results": [
+    {
+      "task": {
+        "id": "policy_1",
+        "agent": "policy",
+        "question": "Can a single person buy an HDB resale flat, and what eligibility conditions apply for a 2-room resale purchase in Yishun?",
+        "required_elements": [
+          "Whether singles may buy HDB resale flats",
+          "Relevant eligibility conditions for a single buyer purchasing a resale flat"
+        ]
+      },
+      "result": {
+        "question": "Can a single person buy an HDB resale flat, and what eligibility conditions apply for a 2-room resale purchase in Yishun?",
+        "query_date": "2026-10-29",
+        "retrieval_mode": "hybrid",
+        "final_query": "Can a single person buy an HDB resale flat, and what eligibility conditions apply for a 2-room resale purchase in Yishun?",
+        "requeried": false,
+        "rewrite_accepted": false,
+        "original_coverage": 0.8,
+        "final_coverage": 0.6,
+        "evidence": [
+          {
+            "document_id": "H05_C",
+            "chunk_id": "H05_C_c0023",
+            "title": "Terms and Conditions - Sale and Purchase of An HDB Resale Flat",
+            "source": "HDB",
+            "category": "policy",
+            "url": "https://www.hdb.gov.sg/e-resale/resale-purchase-of-an-hdb-resale-flat",
+            "effective_date": null,
+            "text": "Document: Terms and Conditions - Sale and Purchase of An HDB Resale Flat\nSection: Terms and Conditions - Sale and Purchase of An HDB Resale Flat > **APPLICABLE TO THE BUYER**\n\n**21 ELIGIBILITY TO PURCHASE**\n\n21.1 The buyer\u2018s eligibility to purchase the flat is determined with the issuance and subject to the terms and conditions of the HDB Flat Eligibility (HFE) letter or any other eligibility assessment process that HDB may decide from time to time.\n\n21.2 HDB in its discretion reserves the right to determine the eligibility conditions in accordance with the prevailing policies, rules and regulations. This includes any policies relating to the ownership or disposal of any residential property as well as any wait-out period to be complied with as may be determined by HDB. Any decision made by the HDB on the buyer\u2019s eligibility to purchase the flat shall be final and conclusive.\n\n21.3 The buyer is eligible to purchase only one flat which must be owner-occupied by the buyer and his immediate family who are authorised by HDB to stay in the flat. The buyer must be able to take physical possession of the flat on resale completion and must be in actual, exclusive and continuous occupation of the flat.\n\n21.4 The buyer and all occupiers must be eligible to purchase the flat under an eligibility scheme, comply with the terms and conditions of the scheme, and endorse the forms and undertakings on the HDB Flat Portal (or any mode that HDB may introduce from time to time) required under the scheme.\n\n21.5 The buyer must be a Singapore Citizen or Singapore Permanent Resident who is at least 21 years old at the submission of the HDB Flat Eligibility (HFE) letter application. The application must include at least another Singapore Citizen or Singapore Permanent Resident (either as a co-buyer or listed occupier) to form a core family nucleus comprising:",
+            "section_title": null,
+            "section_path": [
+              "Terms and Conditions - Sale and Purchase of An HDB Resale Flat",
+              "**APPLICABLE TO THE BUYER**"
+            ],
+            "score": 0.016393,
+            "dense_score": 0.7700690031051636
+          },
+          {
+            "document_id": "H02_C",
+            "chunk_id": "H02_C_c0001",
+            "title": "CPF Housing Grant for Singles Buying Resale Flats",
+            "source": "HDB",
+            "category": "policy",
+            "url": "https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/cpf-housing-grant",
+            "effective_date": null,
+            "text": "Document: CPF Housing Grant for Singles Buying Resale Flats\nSection: CPF Housing Grant for Singles Buying Resale Flats\n\nIf you are a first-timer Singapore Citizen (SC) and buying a resale flat on your own, you may qualify for a Singles Grant of $40,000 for the purchase of a 2- to 4- room resale flat or $25,000 for a 5-room resale flat.\n\nIf you are buying with your parents or your non-resident spouse or other first-timer single(s) (up to 2 Singles Grant applicants), you may be eligible for a Singles Grant of $40,000 for the purchase of a 2- to 4-room resale flat (i.e. a total of $80,000 for 2 singles) or $25,000 for a 5-room or bigger resale flat (i.e. a total of $50,000 for 2 singles).\n\nIn addition, you may also receive the following housing grants if you meet the respective eligibility conditions:\n\n[Enhanced CPF Housing Grant (Singles)](https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/enhanced-cpf-housing-grant)\n\n[Proximity Housing Grant (Singles)](https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/proximity-housing-grant)",
+            "section_title": null,
+            "section_path": [
+              "CPF Housing Grant for Singles Buying Resale Flats"
+            ],
+            "score": 0.015873,
+            "dense_score": null
+          },
+          {
+            "document_id": "H05_C",
+            "chunk_id": "H05_C_c0024",
+            "title": "Terms and Conditions - Sale and Purchase of An HDB Resale Flat",
+            "source": "HDB",
+            "category": "policy",
+            "url": "https://www.hdb.gov.sg/e-resale/resale-purchase-of-an-hdb-resale-flat",
+            "effective_date": null,
+            "text": "Document: Terms and Conditions - Sale and Purchase of An HDB Resale Flat\nSection: Terms and Conditions - Sale and Purchase of An HDB Resale Flat > **APPLICABLE TO THE BUYER**\n\n(a) buyer, spouse and children (if any),\n\n(b) buyer (single), parents and siblings, or\n\n(c) buyer (widowed or divorced) and children under his custody, care and control.\n\n21.6 The buyer who is unmarried and buying the flat to stay alone must be a Singapore Citizen of at least 35 years old (or 21 years old if he is orphaned or widowed) at the time of application for the HDB Flat Eligibility (HFE) letter. He may buy the flat with another unmarried Singapore Citizen who meets the age requirement.\n\n21.7 The buyer and any member of the core family nucleus who are Singapore Permanent Residents must have obtained Singapore Permanent Resident status for at least 3 years at the time of application for the HDB Flat Eligibility (HFE) letter.\n\n21.8 Where the buyer is applying with his fianc\u00e9e to form a family nucleus, they must register their marriage with the Registry of Civil or Muslim Marriages and submit their marriage certificate to HDB within 3 months from the resale completion date.\n\n21.9 The buyer must inform HDB of any changes in his household in the resale application, including changes in marital status or ownership of residential property, before the resale completion.\n\n21.10 For the Ethnic Integration Policy, the ethnic classification of the buyer\u2019s household at the point of flat purchase will remain unchanged when he sells the flat.\n\n**22 DEBARMENT**\n\nA person whose name is in a debarment list for infringement of any HDB/Government rules, regulations or policies will not be eligible to apply for an HDB flat or be included as a member of the core family nucleus in an application for a flat.\n\n**23 MANNER OF HOLDING**",
+            "section_title": null,
+            "section_path": [
+              "Terms and Conditions - Sale and Purchase of An HDB Resale Flat",
+              "**APPLICABLE TO THE BUYER**"
+            ],
+            "score": 0.015873,
+            "dense_score": 0.7631843686103821
+          },
+          {
+            "document_id": "H02",
+            "chunk_id": "H02_c0001",
+            "title": "Singles",
+            "source": "HDB",
+            "category": "policy",
+            "url": "https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles",
+            "effective_date": null,
+            "text": "Document: Singles\nSection: Singles\n\nUnderstand the eligibility conditions, the types of flats, CPF housing grants and HDB housing loan that you may apply for if you are a Singapore citizen who is unmarried, widowed or divorced, aged 35 and above, and are buying a flat on your own.\n\nApply for an [HDB Flat Eligibility (HFE) letter](https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/application-for-an-hdb-flat-eligibility-hfe-letter) via the [HDB Flat Portal](https://homes.hdb.gov.sg/home/landing) for a holistic understanding of your housing and financing options before you embark on your home buying journey. It will inform you upfront of your eligibility to buy a new or resale flat, as well as the amount of CPF housing grants and HDB housing loan you are eligible for.\n\nIf you are aged 55 and above and looking to buy a short-lease 2-room Flexi flat or a Community Care Apartment (CCA), please refer to the section on [seniors](https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/seniors).\n\nIf you intend to buy a new flat (3-room or bigger) or a resale flat with CPF Housing Grant (Families) with your parents, please refer to [married couples and/ or parent(s) with child(ren)](https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families?anchor=pa).",
+            "section_title": null,
+            "section_path": [
+              "Singles"
+            ],
+            "score": 0.015152,
+            "dense_score": null
+          }
+        ],
+        "top_dense_score": 0.7700690031051636,
+        "decision": "ANSWER_READY",
+        "reason": "The passages provide direct policy support that a single person can buy an HDB resale flat, subject to eligibility rules. Passage 7 states that an unmarried buyer staying alone must be a Singapore Citizen aged at least 35 (or 21 if orphaned or widowed), and may buy with another unmarried Singapore Citizen who meets the age requirement. Passage 3 adds the general resale-flat eligibility framework and family nucleus rules. Passage 10 confirms the Singles scheme applies to Singapore citizens who are unmarried, widowed or divorced, aged 35 and above, buying on their own. Passage 6 supports that singles may buy resale flats on their own and describes grant treatment for 2- to 4-room resale flats. This is enough to give a grounded conditional answer about single-person resale purchase and the main eligibility conditions for a 2-room resale flat in Yishun, while noting that outcome may still depend on general resale checks such as HFE and quotas.",
+        "trace": [
+          {
+            "step": "RETRIEVE",
+            "query": "Can a single person buy an HDB resale flat, and what eligibility conditions apply for a 2-room resale purchase in Yishun?"
+          },
+          {
+            "step": "ASSESS_EVIDENCE",
+            "sufficient": true,
+            "answer_mode": "conditional",
+            "reason": "The passages provide direct policy support that a single person can buy an HDB resale flat, subject to eligibility rules. Passage 7 states that an unmarried buyer staying alone must be a Singapore Citizen aged at least 35 (or 21 if orphaned or widowed), and may buy with another unmarried Singapore Citizen who meets the age requirement. Passage 3 adds the general resale-flat eligibility framework and family nucleus rules. Passage 10 confirms the Singles scheme applies to Singapore citizens who are unmarried, widowed or divorced, aged 35 and above, buying on their own. Passage 6 supports that singles may buy resale flats on their own and describes grant treatment for 2- to 4-room resale flats. This is enough to give a grounded conditional answer about single-person resale purchase and the main eligibility conditions for a 2-room resale flat in Yishun, while noting that outcome may still depend on general resale checks such as HFE and quotas.",
+            "relevant_indices": [
+              3,
+              6,
+              7,
+              10
+            ],
+            "missing_user_information": [
+              "Whether the buyer is a Singapore Citizen or Singapore Permanent Resident",
+              "Whether the buyer is unmarried, widowed, divorced, or orphaned",
+              "Buyer age at HFE application",
+              "Whether the buyer is buying alone or with another eligible person",
+              "Whether HDB approves the buyer under the HFE assessment",
+              "Whether the specific Yishun flat satisfies resale constraints such as Ethnic Integration Policy and SPR quota"
+            ]
+          },
+          {
+            "step": "ANSWER_READY"
+          }
+        ]
+      },
+      "error": null,
+      "seconds": 6.68,
+      "attempt": 1
+    },
+    {
+      "task": {
+        "id": "price_1",
+        "agent": "price",
+        "question": "What is the lowest recorded resale price for a 2-room flat in Yishun in the available transaction data?",
+        "required_elements": [
+          "Lowest recorded resale price",
+          "Relevant transaction month",
+          "Matching transaction count or confirmation it is the minimum in the dataset"
+        ]
+      },
+      "result": {
+        "town": "YISHUN",
+        "flat_type": "2 ROOM",
+        "period_start": "2025-10",
+        "period_end": "2026-09",
+        "median_price": 362500,
+        "mean_price": 361748,
+        "min_price": 318000,
+        "max_price": 395500,
+        "n_deals": 54,
+        "data_as_of": "2026-10",
+        "approach": "A_filter_tool",
+        "filters": {
+          "town": "YISHUN",
+          "flat_type": "2 ROOM",
+          "period_start": null,
+          "period_end": null,
+          "last_n_months": null,
+          "unmatched_place": null,
+          "period_words": null
+        },
+        "note": "No exact period asked; used the latest 12 full months."
+      },
+      "error": null,
+      "seconds": 2.05,
+      "attempt": 1
+    }
+  ],
+  "routing": {
+    "route": "both",
+    "check_premise": true,
+    "answerable": true,
+    "reason": "Assumes singles cannot buy resale flats, a claim about eligibility that must be checked against policy, while the cheapest 2-room in Yishun comes from past resale transactions (R3).",
+    "tasks": [
+      {
+        "id": "policy_1",
+        "agent": "policy",
+        "question": "Can a single person buy an HDB resale flat, and what eligibility conditions apply for a 2-room resale purchase in Yishun?",
+        "required_elements": [
+          "Whether singles may buy HDB resale flats",
+          "Relevant eligibility conditions for a single buyer purchasing a resale flat"
+        ]
+      },
+      {
+        "id": "price_1",
+        "agent": "price",
+        "question": "What is the lowest recorded resale price for a 2-room flat in Yishun in the available transaction data?",
+        "required_elements": [
+          "Lowest recorded resale price",
+          "Relevant transaction month",
+          "Matching transaction count or confirmation it is the minimum in the dataset"
+        ]
+      }
+    ]
+  },
+  "routing_events": [],
+  "price_result": {
+    "town": "YISHUN",
+    "flat_type": "2 ROOM",
+    "period_start": "2025-10",
+    "period_end": "2026-09",
+    "median_price": 362500,
+    "mean_price": 361748,
+    "min_price": 318000,
+    "max_price": 395500,
+    "n_deals": 54,
+    "data_as_of": "2026-10",
+    "approach": "A_filter_tool",
+    "filters": {
+      "town": "YISHUN",
+      "flat_type": "2 ROOM",
+      "period_start": null,
+      "period_end": null,
+      "last_n_months": null,
+      "unmatched_place": null,
+      "period_words": null
+    },
+    "note": "No exact period asked; used the latest 12 full months."
+  },
+  "policy_result": {
+    "question": "Can a single person buy an HDB resale flat, and what eligibility conditions apply for a 2-room resale purchase in Yishun?",
+    "query_date": "2026-10-29",
+    "retrieval_mode": "hybrid",
+    "final_query": "Can a single person buy an HDB resale flat, and what eligibility conditions apply for a 2-room resale purchase in Yishun?",
+    "requeried": false,
+    "rewrite_accepted": false,
+    "original_coverage": 0.8,
+    "final_coverage": 0.6,
+    "evidence": [
+      {
+        "document_id": "H05_C",
+        "chunk_id": "H05_C_c0023",
+        "title": "Terms and Conditions - Sale and Purchase of An HDB Resale Flat",
+        "source": "HDB",
+        "category": "policy",
+        "url": "https://www.hdb.gov.sg/e-resale/resale-purchase-of-an-hdb-resale-flat",
+        "effective_date": null,
+        "text": "Document: Terms and Conditions - Sale and Purchase of An HDB Resale Flat\nSection: Terms and Conditions - Sale and Purchase of An HDB Resale Flat > **APPLICABLE TO THE BUYER**\n\n**21 ELIGIBILITY TO PURCHASE**\n\n21.1 The buyer\u2018s eligibility to purchase the flat is determined with the issuance and subject to the terms and conditions of the HDB Flat Eligibility (HFE) letter or any other eligibility assessment process that HDB may decide from time to time.\n\n21.2 HDB in its discretion reserves the right to determine the eligibility conditions in accordance with the prevailing policies, rules and regulations. This includes any policies relating to the ownership or disposal of any residential property as well as any wait-out period to be complied with as may be determined by HDB. Any decision made by the HDB on the buyer\u2019s eligibility to purchase the flat shall be final and conclusive.\n\n21.3 The buyer is eligible to purchase only one flat which must be owner-occupied by the buyer and his immediate family who are authorised by HDB to stay in the flat. The buyer must be able to take physical possession of the flat on resale completion and must be in actual, exclusive and continuous occupation of the flat.\n\n21.4 The buyer and all occupiers must be eligible to purchase the flat under an eligibility scheme, comply with the terms and conditions of the scheme, and endorse the forms and undertakings on the HDB Flat Portal (or any mode that HDB may introduce from time to time) required under the scheme.\n\n21.5 The buyer must be a Singapore Citizen or Singapore Permanent Resident who is at least 21 years old at the submission of the HDB Flat Eligibility (HFE) letter application. The application must include at least another Singapore Citizen or Singapore Permanent Resident (either as a co-buyer or listed occupier) to form a core family nucleus comprising:",
+        "section_title": null,
+        "section_path": [
+          "Terms and Conditions - Sale and Purchase of An HDB Resale Flat",
+          "**APPLICABLE TO THE BUYER**"
+        ],
+        "score": 0.016393,
+        "dense_score": 0.7700690031051636
+      },
+      {
+        "document_id": "H02_C",
+        "chunk_id": "H02_C_c0001",
+        "title": "CPF Housing Grant for Singles Buying Resale Flats",
+        "source": "HDB",
+        "category": "policy",
+        "url": "https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/cpf-housing-grant",
+        "effective_date": null,
+        "text": "Document: CPF Housing Grant for Singles Buying Resale Flats\nSection: CPF Housing Grant for Singles Buying Resale Flats\n\nIf you are a first-timer Singapore Citizen (SC) and buying a resale flat on your own, you may qualify for a Singles Grant of $40,000 for the purchase of a 2- to 4- room resale flat or $25,000 for a 5-room resale flat.\n\nIf you are buying with your parents or your non-resident spouse or other first-timer single(s) (up to 2 Singles Grant applicants), you may be eligible for a Singles Grant of $40,000 for the purchase of a 2- to 4-room resale flat (i.e. a total of $80,000 for 2 singles) or $25,000 for a 5-room or bigger resale flat (i.e. a total of $50,000 for 2 singles).\n\nIn addition, you may also receive the following housing grants if you meet the respective eligibility conditions:\n\n[Enhanced CPF Housing Grant (Singles)](https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/enhanced-cpf-housing-grant)\n\n[Proximity Housing Grant (Singles)](https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles/proximity-housing-grant)",
+        "section_title": null,
+        "section_path": [
+          "CPF Housing Grant for Singles Buying Resale Flats"
+        ],
+        "score": 0.015873,
+        "dense_score": null
+      },
+      {
+        "document_id": "H05_C",
+        "chunk_id": "H05_C_c0024",
+        "title": "Terms and Conditions - Sale and Purchase of An HDB Resale Flat",
+        "source": "HDB",
+        "category": "policy",
+        "url": "https://www.hdb.gov.sg/e-resale/resale-purchase-of-an-hdb-resale-flat",
+        "effective_date": null,
+        "text": "Document: Terms and Conditions - Sale and Purchase of An HDB Resale Flat\nSection: Terms and Conditions - Sale and Purchase of An HDB Resale Flat > **APPLICABLE TO THE BUYER**\n\n(a) buyer, spouse and children (if any),\n\n(b) buyer (single), parents and siblings, or\n\n(c) buyer (widowed or divorced) and children under his custody, care and control.\n\n21.6 The buyer who is unmarried and buying the flat to stay alone must be a Singapore Citizen of at least 35 years old (or 21 years old if he is orphaned or widowed) at the time of application for the HDB Flat Eligibility (HFE) letter. He may buy the flat with another unmarried Singapore Citizen who meets the age requirement.\n\n21.7 The buyer and any member of the core family nucleus who are Singapore Permanent Residents must have obtained Singapore Permanent Resident status for at least 3 years at the time of application for the HDB Flat Eligibility (HFE) letter.\n\n21.8 Where the buyer is applying with his fianc\u00e9e to form a family nucleus, they must register their marriage with the Registry of Civil or Muslim Marriages and submit their marriage certificate to HDB within 3 months from the resale completion date.\n\n21.9 The buyer must inform HDB of any changes in his household in the resale application, including changes in marital status or ownership of residential property, before the resale completion.\n\n21.10 For the Ethnic Integration Policy, the ethnic classification of the buyer\u2019s household at the point of flat purchase will remain unchanged when he sells the flat.\n\n**22 DEBARMENT**\n\nA person whose name is in a debarment list for infringement of any HDB/Government rules, regulations or policies will not be eligible to apply for an HDB flat or be included as a member of the core family nucleus in an application for a flat.\n\n**23 MANNER OF HOLDING**",
+        "section_title": null,
+        "section_path": [
+          "Terms and Conditions - Sale and Purchase of An HDB Resale Flat",
+          "**APPLICABLE TO THE BUYER**"
+        ],
+        "score": 0.015873,
+        "dense_score": 0.7631843686103821
+      },
+      {
+        "document_id": "H02",
+        "chunk_id": "H02_c0001",
+        "title": "Singles",
+        "source": "HDB",
+        "category": "policy",
+        "url": "https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles",
+        "effective_date": null,
+        "text": "Document: Singles\nSection: Singles\n\nUnderstand the eligibility conditions, the types of flats, CPF housing grants and HDB housing loan that you may apply for if you are a Singapore citizen who is unmarried, widowed or divorced, aged 35 and above, and are buying a flat on your own.\n\nApply for an [HDB Flat Eligibility (HFE) letter](https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/application-for-an-hdb-flat-eligibility-hfe-letter) via the [HDB Flat Portal](https://homes.hdb.gov.sg/home/landing) for a holistic understanding of your housing and financing options before you embark on your home buying journey. It will inform you upfront of your eligibility to buy a new or resale flat, as well as the amount of CPF housing grants and HDB housing loan you are eligible for.\n\nIf you are aged 55 and above and looking to buy a short-lease 2-room Flexi flat or a Community Care Apartment (CCA), please refer to the section on [seniors](https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/seniors).\n\nIf you intend to buy a new flat (3-room or bigger) or a resale flat with CPF Housing Grant (Families) with your parents, please refer to [married couples and/ or parent(s) with child(ren)](https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/couples-and-families?anchor=pa).",
+        "section_title": null,
+        "section_path": [
+          "Singles"
+        ],
+        "score": 0.015152,
+        "dense_score": null
+      }
+    ],
+    "top_dense_score": 0.7700690031051636,
+    "decision": "ANSWER_READY",
+    "reason": "The passages provide direct policy support that a single person can buy an HDB resale flat, subject to eligibility rules. Passage 7 states that an unmarried buyer staying alone must be a Singapore Citizen aged at least 35 (or 21 if orphaned or widowed), and may buy with another unmarried Singapore Citizen who meets the age requirement. Passage 3 adds the general resale-flat eligibility framework and family nucleus rules. Passage 10 confirms the Singles scheme applies to Singapore citizens who are unmarried, widowed or divorced, aged 35 and above, buying on their own. Passage 6 supports that singles may buy resale flats on their own and describes grant treatment for 2- to 4-room resale flats. This is enough to give a grounded conditional answer about single-person resale purchase and the main eligibility conditions for a 2-room resale flat in Yishun, while noting that outcome may still depend on general resale checks such as HFE and quotas.",
+    "trace": [
+      {
+        "step": "RETRIEVE",
+        "query": "Can a single person buy an HDB resale flat, and what eligibility conditions apply for a 2-room resale purchase in Yishun?"
+      },
+      {
+        "step": "ASSESS_EVIDENCE",
+        "sufficient": true,
+        "answer_mode": "conditional",
+        "reason": "The passages provide direct policy support that a single person can buy an HDB resale flat, subject to eligibility rules. Passage 7 states that an unmarried buyer staying alone must be a Singapore Citizen aged at least 35 (or 21 if orphaned or widowed), and may buy with another unmarried Singapore Citizen who meets the age requirement. Passage 3 adds the general resale-flat eligibility framework and family nucleus rules. Passage 10 confirms the Singles scheme applies to Singapore citizens who are unmarried, widowed or divorced, aged 35 and above, buying on their own. Passage 6 supports that singles may buy resale flats on their own and describes grant treatment for 2- to 4-room resale flats. This is enough to give a grounded conditional answer about single-person resale purchase and the main eligibility conditions for a 2-room resale flat in Yishun, while noting that outcome may still depend on general resale checks such as HFE and quotas.",
+        "relevant_indices": [
+          3,
+          6,
+          7,
+          10
+        ],
+        "missing_user_information": [
+          "Whether the buyer is a Singapore Citizen or Singapore Permanent Resident",
+          "Whether the buyer is unmarried, widowed, divorced, or orphaned",
+          "Buyer age at HFE application",
+          "Whether the buyer is buying alone or with another eligible person",
+          "Whether HDB approves the buyer under the HFE assessment",
+          "Whether the specific Yishun flat satisfies resale constraints such as Ethnic Integration Policy and SPR quota"
+        ]
+      },
+      {
+        "step": "ANSWER_READY"
+      }
+    ]
+  },
+  "agent_errors": {},
+  "answer": {
+    "answer": "No \u2014 that premise is not correct. A single person can buy an HDB resale flat if they are a Singapore Citizen who is unmarried, widowed or divorced, aged 35 and above, and buying on their own; they must also apply for an HFE letter, which determines eligibility under prevailing rules [3][1].\n\nFor a single buying a resale flat alone, HDB says the buyer must be a Singapore Citizen aged at least 35, or 21 if orphaned or widowed, at the time of the HFE application [1]. More generally, the buyer and occupiers must qualify under an eligibility scheme, and HDB may apply prevailing rules such as property ownership or disposal conditions and any wait-out period [1]. HDB also states the flat bought must be owner-occupied, and the buyer can purchase only one flat [1]. Please check the latest official page before acting, as eligibility is subject to HDB\u2019s current assessment [1][3].\n\nFor price context, in the available HDB resale transaction data for Yishun 2-room flats, the lowest recorded resale price was $318,000, based on 54 deals from 2025-10 to 2026-09, with the data as of 2026-10.",
+    "declined": false,
+    "cited": [
+      1,
+      3
+    ],
+    "sources": [
+      {
+        "n": 1,
+        "title": "Terms and Conditions - Sale and Purchase of An HDB Resale Flat",
+        "url": "https://www.hdb.gov.sg/e-resale/resale-purchase-of-an-hdb-resale-flat",
+        "effective_date": null
+      },
+      {
+        "n": 3,
+        "title": "Singles",
+        "url": "https://www.hdb.gov.sg/buying-a-flat/flat-grant-and-loan-eligibility/singles",
+        "effective_date": null
+      }
+    ],
+    "events": []
+  },
+  "self_check": {
+    "verdict": "weak",
+    "problems": [
+      {
+        "rule": "A2",
+        "issue": "The price statement about the lowest recorded resale price, period, and 54 deals is taken from the price facts but has no citation at all, while the answer only cites passages [1][3].",
+        "target": "synthesis"
+      },
+      {
+        "rule": "A5",
+        "issue": "The answer gives a resale price from the price facts but does not include the town and flat type alongside the quoted period and number of deals in the same sentence.",
+        "target": "synthesis"
+      }
+    ],
+    "retry": []
+  },
+  "attempts": 1,
+  "feedback": null,
+  "steps": [
+    {
+      "step": "router",
+      "seconds": 3.69,
+      "output": {
+        "route": "both",
+        "check_premise": true,
+        "answerable": true,
+        "reason": "Assumes singles cannot buy resale flats, a claim about eligibility that must be checked against policy, while the cheapest 2-room in Yishun comes from past resale transactions (R3).",
+        "tasks": [
+          {
+            "id": "policy_1",
+            "agent": "policy",
+            "question": "Can a single person buy an HDB resale flat, and what eligibility conditions apply for a 2-room resale purchase in Yishun?",
+            "required_elements": [
+              "Whether singles may buy HDB resale flats",
+              "Relevant eligibility conditions for a single buyer purchasing a resale flat"
+            ]
+          },
+          {
+            "id": "price_1",
+            "agent": "price",
+            "question": "What is the lowest recorded resale price for a 2-room flat in Yishun in the available transaction data?",
+            "required_elements": [
+              "Lowest recorded resale price",
+              "Relevant transaction month",
+              "Matching transaction count or confirmation it is the minimum in the dataset"
+            ]
+          }
+        ]
+      },
+      "events": []
+    },
+    {
+      "step": "policy_agent",
+      "stub": false,
+      "seconds": 6.68,
+      "task_id": "policy_1",
+      "attempt": 1
+    },
+    {
+      "step": "price_agent",
+      "stub": false,
+      "seconds": 2.05,
+      "task_id": "price_1",
+      "attempt": 1
+    },
+    {
+      "step": "synthesis",
+      "seconds": 5.04,
+      "events": []
+    },
+    {
+      "step": "self_check",
+      "seconds": 3.47,
+      "verdict": "weak",
+      "problems": [
+        {
+          "rule": "A2",
+          "issue": "The sentence giving the lowest recorded resale price and period uses price facts but provides no citation or source-style attribution required for supported statements.",
+          "target": "synthesis"
+        },
+        {
+          "rule": "A5",
+          "issue": "The price statement omits that the figure comes from the price facts as of 2026-10 and does not clearly present it as the available transaction data context.",
+          "target": "synthesis"
+        }
+      ],
+      "retry": [
+        "synthesis"
+      ]
+    },
+    {
+      "step": "synthesis",
+      "seconds": 5.84,
+      "events": [],
+      "feedback": "A reviewer found these problems in your previous draft. Write the answer again, following all the answer rules, and fix them:\n- (A2) The sentence giving the lowest recorded resale price and period uses price facts but provides no citation or source-style attribution required for supported statements.\n- (A5) The price statement omits that the figure comes from the price facts as of 2026-10 and does not clearly present it as the available transaction data context."
+    },
+    {
+      "step": "self_check",
+      "seconds": 2.58,
+      "verdict": "weak",
+      "problems": [
+        {
+          "rule": "A2",
+          "issue": "The price statement about the lowest recorded resale price, period, and 54 deals is taken from the price facts but has no citation at all, while the answer only cites passages [1][3].",
+          "target": "synthesis"
+        },
+        {
+          "rule": "A5",
+          "issue": "The answer gives a resale price from the price facts but does not include the town and flat type alongside the quoted period and number of deals in the same sentence.",
+          "target": "synthesis"
+        }
+      ],
+      "retry": []
+    }
+  ],
+  "usage": [
+    {
+      "step": "router",
+      "input_tokens": 2076,
+      "output_tokens": 197
+    },
+    {
+      "step": "policy_assessor",
+      "input_tokens": 3979,
+      "output_tokens": 350,
+      "calls": 1,
+      "task_id": "policy_1",
+      "attempt": 1
+    },
+    {
+      "step": "price_filters",
+      "input_tokens": 1043,
+      "output_tokens": 48,
+      "task_id": "price_1",
+      "attempt": 1
+    },
+    {
+      "step": "synthesis",
+      "input_tokens": 2796,
+      "output_tokens": 286
+    },
+    {
+      "step": "self_check",
+      "input_tokens": 2918,
+      "output_tokens": 100
+    },
+    {
+      "step": "synthesis",
+      "input_tokens": 2890,
+      "output_tokens": 285
+    },
+    {
+      "step": "self_check",
+      "input_tokens": 2917,
+      "output_tokens": 114
+    }
+  ],
+  "cost_usd": 0.067248,
+  "seconds": 27.4957
+}

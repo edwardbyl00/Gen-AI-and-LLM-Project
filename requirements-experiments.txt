@@ -1,0 +1,5 @@
+# Optional experiment tracking and local process measurements.
+# Install after requirements.txt; verified with the project's Python 3.14 venv.
+mlflow==3.17.2
+psutil==7.2.2
+XlsxWriter==3.3.1

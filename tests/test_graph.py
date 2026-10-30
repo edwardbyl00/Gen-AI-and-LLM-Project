@@ -71,7 +71,7 @@ SETTINGS = {"max_retries": 1, "llm_check": True}
 def graph(record=RECORD, policy=None, price=None, synth=None, check=None,
           settings=SETTINGS, **kwargs):
     """Build the graph with a fake router, agents, synthesis and review."""
-    return build_graph(fake_route(record, **kwargs), price_fn=price or Spy(PRICE),
+    return build_graph(fake_route(record, **kwargs), decompose=False, price_fn=price or Spy(PRICE),
                        policy_fn=policy or Spy(), synth_fn=synth or FakeSynth(),
                        check_fn=check or FakeCheck(), self_check_settings=settings)
 
@@ -84,7 +84,7 @@ def steps_named(state, name):
 
 def test_supervisor_receives_question_and_date():
     route = fake_route(RECORD)
-    run("Can I use CPF?", today="2026-10-25", app=build_graph(route, price_fn=Spy(), policy_fn=Spy(), synth_fn=FakeSynth(), check_fn=FakeCheck(), self_check_settings=SETTINGS))
+    run("Can I use CPF?", today="2026-10-25", app=build_graph(route, decompose=False, price_fn=Spy(), policy_fn=Spy(), synth_fn=FakeSynth(), check_fn=FakeCheck(), self_check_settings=SETTINGS))
     assert route.calls == [("Can I use CPF?", "2026-10-25")]
 
 
@@ -111,7 +111,7 @@ def test_p2_safety_checks_run_inside_the_node():
 
     raw = {"route": "none", "check_premise": True, "answerable": False, "reason": "r"}
     route_fn = partial(safe_route, router=lambda question, **kwargs: dict(raw))
-    state = run("q", today="2026-10-28", app=build_graph(route_fn, price_fn=Spy(), policy_fn=Spy(), synth_fn=FakeSynth(), check_fn=FakeCheck(), self_check_settings=SETTINGS))
+    state = run("q", today="2026-10-28", app=build_graph(route_fn, decompose=False, price_fn=Spy(), policy_fn=Spy(), synth_fn=FakeSynth(), check_fn=FakeCheck(), self_check_settings=SETTINGS))
     assert state["routing"]["route"] == "policy"
     assert state["routing"]["check_premise"] is True
     assert [e["code"] for e in state["routing_events"]] == ["invalid_combo"]
@@ -121,7 +121,7 @@ def test_routing_errors_propagate():
     def broken(question, **kwargs):
         raise ValueError("No model set")
     with pytest.raises(ValueError):
-        run("q", today="2026-10-25", app=build_graph(broken, price_fn=Spy(), policy_fn=Spy(), synth_fn=FakeSynth(), check_fn=FakeCheck(), self_check_settings=SETTINGS))
+        run("q", today="2026-10-25", app=build_graph(broken, decompose=False, price_fn=Spy(), policy_fn=Spy(), synth_fn=FakeSynth(), check_fn=FakeCheck(), self_check_settings=SETTINGS))
 
 
 # ---------- routing condition ----------

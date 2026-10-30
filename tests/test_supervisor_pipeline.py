@@ -42,7 +42,7 @@ class Spy:
 ])
 def test_route_decides_which_agents_are_called(route, price_called, policy_called):
     price, policy = Spy(), Spy()
-    bundle = handle_question("q", today="2026-10-19", route_fn=fake_route(route),
+    bundle = handle_question("q", decompose=False, today="2026-10-19", route_fn=fake_route(route),
                              price_fn=price, policy_fn=policy)
     assert bool(price.calls) is price_called
     assert bool(policy.calls) is policy_called
@@ -51,13 +51,13 @@ def test_route_decides_which_agents_are_called(route, price_called, policy_calle
 
 def test_agents_receive_the_question_and_date():
     policy = Spy()
-    handle_question("Can I use CPF?", today="2026-10-19",
+    handle_question("Can I use CPF?", decompose=False, today="2026-10-19",
                     route_fn=fake_route("policy"), policy_fn=policy, price_fn=Spy())
     assert policy.calls == [("Can I use CPF?", "2026-10-19")]
 
 
 def test_agent_error_is_recorded_not_raised():
-    bundle = handle_question("q", today="2026-10-19", route_fn=fake_route("both"),
+    bundle = handle_question("q", decompose=False, today="2026-10-19", route_fn=fake_route("both"),
                              price_fn=Spy(error=RuntimeError("down")), policy_fn=Spy())
     assert bundle["price_result"] is None
     assert "RuntimeError" in bundle["agent_errors"]["price"]
@@ -66,13 +66,13 @@ def test_agent_error_is_recorded_not_raised():
 
 def test_strict_mode_raises_agent_errors():
     with pytest.raises(RuntimeError):
-        handle_question("q", today="2026-10-19", route_fn=fake_route("price"),
+        handle_question("q", decompose=False, today="2026-10-19", route_fn=fake_route("price"),
                         price_fn=Spy(error=RuntimeError("down")),
                         policy_fn=Spy(), strict=True)
 
 
 def test_step_log_records_router_and_agents():
-    bundle = handle_question("q", today="2026-10-19", route_fn=fake_route("both"),
+    bundle = handle_question("q", decompose=False, today="2026-10-19", route_fn=fake_route("both"),
                              price_fn=Spy(), policy_fn=Spy())
     assert [s["step"] for s in bundle["steps"]] == ["router", "price_agent", "policy_agent", "synthesis"]
 
@@ -97,7 +97,7 @@ def test_token_usage_is_collected_per_call():
     record_usage(log, "router", SimpleNamespace(usage=SimpleNamespace(prompt_tokens=900, completion_tokens=40)))
     record_usage(None, "router", None)  # no log given: nothing happens
     assert log == [{"step": "router", "input_tokens": 900, "output_tokens": 40}]
-    bundle = handle_question("q", today="2026-10-22", route_fn=fake_route("none"))
+    bundle = handle_question("q", decompose=False, today="2026-10-22", route_fn=fake_route("none"))
     assert bundle["usage"] == []  # fakes make no model calls
     assert bundle["cost_usd"] == 0  # nothing used, so nothing costed
 
