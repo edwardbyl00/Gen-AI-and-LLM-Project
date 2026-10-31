@@ -11,13 +11,12 @@ Supervisor and P3 runs append local usage history to `logs/usage/runs.csv`
 Open these CSVs in Excel or another spreadsheet app. See the
 [usage log guide](Docs/usage_logging.md) for columns and settings.
 
-For parameter/configuration experiments, add `--mlflow` to the ablation runner.
-It records effective A/B settings, model/retrieval/review parameters, API cost,
-latency, local CPU/memory and later team grades in one UI. See the
-[MLflow experiment guide](Docs/mlflow_experiments.md) for setup and comparison.
+The ablation runner saves effective A/B settings, API cost, latency, local
+CPU/memory measurements and reviewed quality scores in local JSON/CSV reports.
+See the [evaluation guide](Docs/supervisor_ablation.md) for setup and comparison.
 
-Router decomposition (on by default via `supervisor.decompose` in
-`config.yaml`; pass `decompose=False` to run the plain baseline) and paired
+Router decomposition (currently off via `supervisor.decompose: false` in
+`config.yaml`; pass `decompose=True` to enable focused tasks) and paired
 A/B evaluation are described in the [supervisor ablation and unseen-question
 guide](Docs/supervisor_ablation.md), including the team's input format,
 blinded grading and cost/quality comparison. The P3 graph uses the same

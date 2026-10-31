@@ -3,7 +3,20 @@
 `scripts/evaluate_agentic_answers.py` scores every pilot answer with
 `src/ground_truth_judge.py` (and optionally `src/llm_judge.py`). Neither judge
 has been checked for bias or agreement with a human reviewer. This is that
-check, via `scripts/validate_llm_judge.py`.
+check, via `python -m agents.supervisor.judge_tools`.
+
+The reference-judge validation and pre-pass commands live in that module — `swap-check` and
+`human-check` below validate whether the judge can be trusted; `prepass`
+(documented separately, in
+[stage_evaluation.md](stage_evaluation.md#judge-gated-review-llm-as-judge-first-then-human))
+*uses* the judge, as a pre-pass before a human stage reviewer. Validate first,
+with the commands below, before relying on `prepass` at scale.
+
+The separate `scripts/judge_ablation_answers.py` offers an ungated,
+faithfulness-style first read of saved batch answers. Its scores are not the
+verified-reference rubric or human grades; see
+[the stage-review guide](stage_evaluation.md) for its limitations and display
+alongside the compact workbook's Review columns.
 
 | Risk | What we check | Cost |
 | --- | --- | --- |
@@ -32,7 +45,7 @@ which both checks below load.
 ## Evidence-order sensitivity (`swap-check`)
 
 ```sh
-python scripts/validate_llm_judge.py swap-check --n 5 --threshold 1
+python -m agents.supervisor.judge_tools swap-check --n 5 --threshold 1
 ```
 
 For each of the first `--n` (question, system) pairs in the judged results,
@@ -51,7 +64,7 @@ trusted at face value until the prompt or rubric is revised.
 Two steps: emit a template, have a reviewer fill it in, then score it.
 
 ```sh
-python scripts/validate_llm_judge.py human-check emit-template \
+python -m agents.supervisor.judge_tools human-check emit-template \
     --out evaluation/agentic/human_label_sample.csv
 ```
 
@@ -67,7 +80,7 @@ blind grading is wanted.
 Once filled in:
 
 ```sh
-python scripts/validate_llm_judge.py human-check score \
+python -m agents.supervisor.judge_tools human-check score \
     --labels evaluation/agentic/human_label_sample.csv
 ```
 

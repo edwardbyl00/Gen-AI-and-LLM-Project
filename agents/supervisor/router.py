@@ -1,6 +1,6 @@
 """Supervisor router: turns a user question into a routing record.
 
-Rules R1-R5: agents/supervisor/prompts/supervisor_v1.md
+Rules R1-R8: agents/supervisor/prompts/supervisor_v2.md
 Code walkthrough: Docs/supervisor_guide.md
 """
 

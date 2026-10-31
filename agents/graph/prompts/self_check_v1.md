@@ -24,6 +24,10 @@ supported housing parts. A description of supported topics is a capability
 statement, not a housing policy claim, and does not require a citation.
 A5. Prices are quoted only from the price facts, never calculated, with
 town, flat type, exact period and number of deals.
+If a nearby/containing area is used as a proxy, the answer names the requested
+location and the actual price-data area, explicitly labels the estimate as
+approximate, and does not invent a distance or claim exact-address pricing.
+An unsupported claim that an area is the closest also breaks A5.
 A6. No financial advice and no use of the user's personal figures.
 A7. Effective dates are mentioned when a cited passage has one.
 A8. Plain English, about 200 words at most, direct answer first.

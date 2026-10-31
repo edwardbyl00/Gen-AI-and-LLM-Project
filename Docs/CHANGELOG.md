@@ -11,6 +11,282 @@ diff already shows the what. Mark whether it's still uncommitted.
 
 ---
 
+## 2026-10-31 — Added an ungated first-read judge and count-based citation precision
+
+**Status:** implementation committed in `b629268`/`e85bbc2`; changelog entry uncommitted
+
+**Who:** Kay, Cooper and Ed
+
+- Added `scripts/judge_ablation_answers.py`, which scores every execution in a
+  saved ablation run with the existing faithfulness-style judge
+  (`src/llm_judge.py`), using only the question, the final answer and the
+  policy evidence actually supplied to synthesis. Unlike
+  `agents.supervisor.judge_tools prepass`'s gated ground-truth judge, it needs
+  no verified reference and is not restricted to the `policy` route, so it can
+  give a first read before references exist. Output is a separate
+  `*_llm_judge_scores.json`, read only by the Excel export below.
+- Surfaced the judge's five rubric criteria (`evidence_support`,
+  `policy_currency`, `citation_relevance`, `unsupported_claims`,
+  `appropriate_abstention`) as individual numeric columns in the stage-review
+  workbook's Review sheet, instead of one packed text cell, so they sort,
+  filter and pivot.
+- Added citation precision to the same sheet and to Summary: valid cited
+  passage numbers over everything the model attempted to cite, reconstructed
+  from synthesis's recorded `invalid_citation` events. This is a plain count,
+  not a judgement call, and reads "NA" rather than 0 when nothing was cited.
+
+**Why:** before a human has graded `review.csv` or verified references, the
+team still wanted a fast, auditable first read on the saved batch — part of it
+from an LLM judge (clearly labelled unvalidated, per
+[llm_judge_validation.md](llm_judge_validation.md)), part of it a genuine
+count that needs no model call at all.
+
+**Verified:** 13 tests passed covering the judge script and the workbook
+export (judge/no-judge paths, sheet layout, citation counts); full suite 336
+passed. One real judge batch call was made against the saved six-question,
+two-variant run (12 executions, ≈$0.08), producing
+`evaluation/ablation/new_questions_v1_llm_judge_scores.json`; no new live
+pipeline inference was run.
+
+---
+
+## 2026-10-31 — Removed the unused v1 prompt files
+
+**Status:** uncommitted
+
+**Who:** Kay, Cooper and Ed
+
+- Deleted `agents/supervisor/prompts/supervisor_v1.md` and `synthesis_v1.md`:
+  neither is loaded (`router.py`/`synthesis.py` both point at `_v2.md`), and
+  the supervisor guide's own prompt-change convention of keeping an old
+  version "for comparison" had left them stale once v2 diverged.
+- Fixed the docstring pointers in `router.py` and `synthesis.py` that still
+  named `supervisor_v1.md`/`synthesis_v1.md` as the live rules reference, and
+  corrected the supervisor guide's prompt table (stale `R1–R5`/`A1–A8` ranges,
+  "v1 kept for comparison" notes that no longer applied).
+- Left historical mentions of the v1 filenames alone (the archived price-agent
+  synthesis review and a frozen evaluation-results snapshot both name the
+  prompt version that was actually in effect for that record at the time).
+
+**Why:** a prompt file nothing loads, and a docstring pointing at it as if it
+were live, is exactly the kind of drift this cleanup pass was trying to catch.
+
+**Verified:** full suite passed with both files removed (confirmed no code or
+live documentation reference remained).
+
+---
+
+## 2026-10-31 — Added a clarification step and a structured answered/unanswered breakdown
+
+**Status:** implementation committed in `adc122f`; changelog entry uncommitted
+
+**Who:** Kay, Cooper and Ed
+
+- Added `needs_clarification`/`clarifying_question` to the router's routing
+  record (rule R7): the router asks one short, specific question instead of
+  guessing when a question is genuinely too unclear to route — not merely
+  broad, vague on timing, or otherwise answerable with a best guess.
+  `safe_route()` now forces `route=none` and clears `check_premise`/
+  `answerable` whenever it's set; `tasks_for_route()` independently refuses to
+  select any agent in that case too, so a caller that bypasses `safe_route()`'s
+  repair still can't accidentally gather evidence before the question is
+  resolved.
+- `synthesise()` short-circuits on `needs_clarification` before any model call
+  or evidence gathering, returning the clarifying question as the answer with
+  `declined=True`.
+- Added a structured `cannot_answer` list (`{part, reason}`) to the synthesis
+  output (rule A9), alongside the existing declined flag and prose
+  explanation, for every decline path: a full scope miss, a partial answer on
+  a mixed question, and the new clarification case. `format_answer()` and the
+  Streamlit UI (`ui/app.py`) render it as its own "Can't answer" section/
+  callout instead of leaving it folded into the answer prose.
+
+**Why:** for a policy question, the user should see plainly what was answered,
+what wasn't, and why — not have to read it out of a paragraph — and the
+system should ask back rather than guess when the question itself is unclear.
+
+**Verified:** 98 offline tests passed across routing checks, synthesis, the
+sequential pipeline and the P3 graph, including that neither agent nor the
+model is called when a question needs clarification. No live model
+classification was tested.
+
+---
+
+## 2026-10-31 — Refreshed current documentation against code and configuration
+
+**Status:** uncommitted
+
+**Who:** Kay, Cooper and Ed
+
+- Corrected decomposition defaults in the pipeline map, supervisor guide,
+  ablation guide and root README: the current config selects baseline A;
+  callers can enable focused tasks and the paired evaluator runs both variants.
+- Updated routing/synthesis diagrams for clarification and deterministic scope
+  responses, documented current return fields and report modules, and corrected
+  the graph map so self-check runs before the final answer is returned.
+- Documented persisted chunk fields versus normalized evidence, capture-date
+  limits, candidate preservation and what policy abstention can establish.
+  Marked historical synthesis findings and P5 pilot scores as historical rather
+  than current independently verified results.
+- Updated stage-review instructions for the saved six-question development
+  batch, unverified references, compact workbook and separate judge costs.
+  New command examples use a fresh batch name instead of reusing saved outputs.
+- Fixed the broken historical report link, clarified optional dependencies and
+  the actual folder layout, and added a documentation ownership/update checklist
+  to [MAINTENANCE.md](MAINTENANCE.md).
+- Aligned the current guides across pipeline overview, supervisor operation,
+  batch/stage evaluation, policy RAG, chunk handoff, judge validation and team
+  maintenance. Kept the root README consistent with those guides and labelled
+  the older price/synthesis review as an archive.
+
+**Why:** current guides should match executable behavior, distinguish saved
+results from current settings, and give the team a repeatable way to update
+documentation alongside future changes.
+
+**Verified:** all 118 local links and their heading anchors passed the audit;
+12 documented CLI help commands passed. Checked current config, chunk schema
+and saved-run counts, and ran whitespace/diff checks. No pipeline or judge
+inference was run.
+
+---
+
+## 2026-10-31 — Allowed explicitly disclosed nearby-area price estimates
+
+**Status:** uncommitted
+
+**Who:** Kay, Cooper and Ed
+
+- Added R8 to the active supervisor prompt: historical resale-price requests
+  may use a supported containing/nearby town as an approximate geographic proxy
+  when exact-location figures are unavailable and the location relationship can
+  be established reliably. Added a routing example and an explicit R5 exception.
+- Aligned decomposition, synthesis and self-check instructions: preserve the
+  requested place, name the proxy area, retain flat type/period and transaction
+  count, and clearly label the estimate. Exact-address requests remain unanswered
+  when only nearby context is available; unknown geography must not be guessed.
+- Updated the supervisor guide. This prompt change does not add geocoding or a
+  distance-search tool; claims such as "closest" or "within 1 km" still require
+  supporting location information. Prices must come from actual agent results.
+
+**Why:** useful area-level price context should be available with clear limits
+instead of silently substituting another area or presenting a proxy as exact.
+
+**Verified:** 93 offline tests passed across routing, synthesis, decomposition,
+price agents and graph integration. No live location matching or model calls
+were run, and no price estimates were fabricated for verification.
+
+---
+
+## 2026-10-31 — Reduced stage-review sheets and added agent-question breakdowns
+
+**Status:** uncommitted
+
+**Who:** Kay, Cooper and Ed
+
+- Reduced the stage-review workbook from five sheets to Summary, Review and
+  Agentic Details. Merged routing/evidence checks and optional judge context
+  into Review; kept usage with the agent breakdown instead of a separate tab.
+  Omitted the details sheet when no tasks or usage were recorded.
+- Added the original question, actual focused agent questions, required answer
+  elements, task IDs, attempts, decisions/reasons, follow-up policy searches,
+  evidence IDs, errors and timing. Preserved baseline unsplit inputs and separate
+  retries; missing historical details remain unknown rather than inferred.
+- Linked summary human-grade counts and correctness means to the editable
+  Review cells. Stage-cost summaries now use saved manifest pricing.
+- Regenerated the existing review workbook from saved results without rerunning
+  inference or judge calls, retaining all 12 executions and 22 agent attempts.
+
+**Why:** fewer tabs make the report easier to present, while the focused-query
+table shows what the agentic workflow actually asked each agent to resolve.
+
+**Verified:** 36 export/diagnostic tests passed, covering merged judge/check
+data, preserved usage totals, focused questions, retries, unknown evidence,
+optional sheets and linked summary formulas. Visually checked all three sheets.
+
+---
+
+## 2026-10-31 — Removed MLflow and retained local evaluation reports
+
+**Status:** uncommitted
+
+**Who:** Kay, Cooper and Ed
+
+- Removed the tracking client, batch lifecycle hooks, grade publishing, CLI
+  flags, configuration, pinned dependency and dedicated setup guide. Deleted
+  the local tracking database/artifact directory and uninstalled all three
+  tracking packages from the project environment. No tracking server was running.
+- Moved reusable configuration/provenance helpers into `experiment_metadata.py`.
+  Kept paired evaluation, local CPU/memory measurements, grading, comparison,
+  Excel export, tabular reports and CSV question/usage history working locally.
+  The sampling interval now lives under `experiment_measurements` in config.
+- Replaced service-specific tests with local batch/metadata regression tests
+  and updated documentation and the consolidated test runner.
+- Removed retired tracking metadata from the saved evaluation manifest and
+  recorded its previous hash and an explicit cleanup note. Updated the linked
+  diagnostic manifest hash; question answers, evidence and usage records were
+  preserved. Removed the obsolete integration changelog entry and ignore rules.
+
+**Why:** simplify the project around local evaluation and presentation reports
+without requiring a separate experiment-tracking service.
+
+**Verified:** 195 offline tests passed with the tracking packages uninstalled,
+covering batch execution, configuration drift, failed-run usage retention,
+grading, Excel exports, supervisor/P3, diagnostics and CSV logging. Batch CLI
+dry-run and diff checks passed. No model API calls were made.
+
+---
+
+## 2026-10-31 — Consolidated the routing practice questions
+
+**Status:** uncommitted
+
+**Who:** Kay, Cooper and Ed
+
+- Merged five unique P1 questions into `data/labels/practice_routing.csv`,
+  producing one active CSV with 59 unique question IDs and question texts.
+  Preserved the original 54 rows and all current labels. Folded P1's separate
+  premise explanations into `rationale` to retain the existing nine-column schema.
+- Removed the merged `practice_routing_P1.csv` and the empty, outdated
+  `routing_labels.csv` placeholder. Updated the supervisor guide to use the
+  consolidated dataset and keep new held-out questions separate from practice.
+- Refreshed `data/labels/Questionaire.xlsx` from the consolidated CSV using
+  Python, as explicitly requested. The workbook now contains the same 59
+  questions and nine current fields, replacing the outdated labels and IDs in
+  the previous review copy. Added wrapped text, row filters, frozen headers/IDs,
+  label validation and a source-CSV hash. The CSV remains the evaluation input;
+  workbook edits are not automatically synced back.
+
+**Why:** a single active practice dataset avoids scattered questions and
+outdated schemas without changing the evaluation scripts' default input path.
+
+**Verified:** checked that all original rows survived unchanged, all five P1
+questions and their explanations were retained, and no duplicate IDs or question
+texts were introduced. Six routing-evaluation tests passed. Read back all 59
+Excel rows and nine fields and compared them exactly against the CSV; checked
+the table/filter range and frozen header, and visually inspected the workbook.
+No model calls ran.
+
+---
+
+## 2026-10-31 — Removed the obsolete routing-label history folder
+
+**Status:** uncommitted
+
+**Who:** Kay, Cooper and Ed
+
+- Deleted the archived routing-label CSV and its empty `data/labels/history/`
+  folder. Updated the supervisor guide to refer to Git history for previous
+  labels and question-ID mappings.
+
+**Why:** the archive was not used by the app or evaluation scripts, and Git
+already preserves its historical contents. Active routing labels remain in
+`data/labels/practice_routing.csv`.
+
+**Verified:** checked that the folder was removed and no active documentation
+links to the deleted archive remain.
+
+---
+
 ## 2026-10-31 — Added tabular evaluation reports for presentation
 
 **Status:** implementation committed in `adc122f`; changelog entry uncommitted
@@ -143,50 +419,6 @@ and synthesis model calls. Live model classification was not tested.
 nothing in the codebase reading the files back, so they were safe to clean
 up; keeping one merged results CSV instead of four separate ones makes it
 possible to compare runs across prompt versions without juggling files.
-
----
-
-## 2026-10-29 — Added MLflow parameter, cost and compute experiment tracking
-
-**Status:** uncommitted
-
-- Added optional MLflow tracking to the existing paired evaluator with one
-  parent per batch and child runs per question/variant/repeat. Preserved local
-  JSON/CSV exports and linked them through `mlflow.json` and child run IDs.
-- Stored original questions/IDs, answers, decomposed tasks, retrieved evidence
-  and errors in each child run's `result.json` artifact; the parent manifest
-  includes the question set. These are experiment artifacts, not a chat-history
-  view. Reference answers and grades are not passed to pipeline inference.
-- Saved searchable model/request, retrieval, price and self-check parameters,
-  applied A/B overrides, setup IDs, full configuration/prompt snapshots,
-  source/data hashes, code revision, package versions and machine information.
-- Logged reported API tokens/calls/configured-rate USD cost and stage totals,
-  errors/retries, latency, local process CPU time and sampled RSS memory.
-  These local measurements do not claim provider CPU/GPU, energy or billing.
-- Added `score --publish-mlflow` to attach independent team grades to original
-  runs without repeating inference. Added per-variant `comparison.csv` exports
-  and a `compare` command that filters by quality thresholds and marks cost/
-  latency/CPU/memory trade-offs rather than declaring the cheapest answer best.
-- Added config-drift checks to prevent settings changing within a batch and a
-  cached-model guard for fresh-process configuration experiments. Kept model
-  grading optional; tracking itself makes no LLM calls.
-- Installed pinned optional dependencies from `requirements-experiments.txt`,
-  initialized the local SQLite store, and added the
-  [MLflow experiment guide](mlflow_experiments.md). Local tracking storage is
-  ignored by Git; normal single-question CLI runs retain CSV logging.
-- Clarified that MLflow records evaluator runs enabled through `--mlflow` or
-  `experiment_tracking.enabled`; standalone supervisor/P3 CLI calls continue
-  to save question/consumption history in CSV without creating MLflow runs.
-
-**Why:** the team needs a unified record linking actual setup parameters and
-independently reviewed quality to API cost and local resource use, so a cheaper
-configuration can be assessed against answer quality rather than token count alone.
-
-**Verified:** 180 offline tests passed, including real SQLite MLflow parameters,
-metrics, artifacts, grade updates, failure handling, configuration drift and
-quality-constrained comparison. Dependency checks passed. The local MLflow
-health/UI endpoints returned HTTP 200. No model API calls were made for this
-integration's verification; no best-performing configuration is claimed yet.
 
 ---
 
@@ -330,7 +562,8 @@ fixed now for consistency with `router.py` and `evidence_assessor.py`.
 
 **Status:** committed in `a006695`
 
-Added [reports/routing_report.md](../reports/routing_report.md), summarizing
+Added the historical `reports/routing_report.md` (removed with generated
+reports on 31 October 2026), summarizing
 the saved 54-question routing evaluations, the v2 prompt changes and remaining
 errors involving procedures, personal-finance routing and implicit premises.
 The report covers routing only, not final-answer accuracy or decomposition.
@@ -388,9 +621,10 @@ router prompt `supervisor_v2.md` and synthesis prompt `synthesis_v2.md`
   the sources are silent.
 - **Labels:** `practice_routing.csv` now has `check_premise` and
   `premise_false` (is the claim actually false?), with a
-  `premise_rationale` at that stage. Later cleanup moved label history to
-  `data/labels/history/practice_routing_label_history.csv`; the active file
-  now has nine columns. Drafted labels: 12 premises, 5 known false, 1 known true, 6 to verify.
+  `premise_rationale` at that stage. Later cleanup separated the historical
+  labels from the active file, which now has nine columns. The separate archive
+  was removed on 31 October 2026; previous labels remain available in Git history.
+  Drafted labels: 12 premises, 5 known false, 1 known true, 6 to verify.
 - **Scores:** `evaluate.py` reports premise detection, myths among them and
   false alarms; myth acceptance in `score_answers.py` uses rows where
   `premise_false` is TRUE. Older answer sheets with `label_false_belief`

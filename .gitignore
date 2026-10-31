@@ -247,8 +247,6 @@ data/vector_db/
 
 # Local question and API usage history
 logs/usage/
-logs/mlflow/
-mlruns/
 
 # Scratch exports (e.g. ad hoc excel_export.py output); canonical experiment
 # output lives under evaluation/ablation/<run>/experiment.xlsx instead.

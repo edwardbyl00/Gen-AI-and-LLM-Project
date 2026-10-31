@@ -1,4 +1,15 @@
-# Price-agent review of synthesis rules (synthesis_v1.md, routing branch)
+# Historical price-agent review of synthesis rules
+
+This is an archived review of the former `synthesis_v1.md` prompt, retained
+for rationale. The v1 file has since been removed; current behavior is defined
+by [synthesis_v2.md](../agents/supervisor/prompts/synthesis_v2.md) and the
+[supervisor guide](supervisor_guide.md). It is not a current implementation checklist.
+
+As checked on 31 October 2026, `build_context()` includes both `mean_price` and
+`note`, so the first finding below has been addressed. R8 now also permits
+explicitly disclosed nearby-area price proxies when the location relationship
+is reliable. The other proposed wording and capture-date display should not
+be assumed implemented merely because they appear in this historical review.
 
 Reviewer: P1 (price agent). Focus: how synthesis uses price facts.
 

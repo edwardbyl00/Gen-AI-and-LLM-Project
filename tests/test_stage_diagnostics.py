@@ -187,11 +187,48 @@ def test_interrupted_experiment_cannot_appear_as_complete(tmp_path):
         prepare(run_dir, refs, tmp_path / "partial")
 
 
+def test_prepare_merges_precomputed_judge_scores_without_calling_a_model(tmp_path):
+    run_dir = tmp_path / "runs"
+    run_dir.mkdir()
+    (run_dir / "manifest.json").write_text(json.dumps({"today": "2026-10-31"}))
+    (run_dir / "runs.jsonl").write_text(
+        json.dumps(record(candidates=["gold"])) + "\n"
+        + json.dumps(record(review_id="r2", question_id="Q2", question="Unjudged?")) + "\n"
+    )
+    refs = tmp_path / "refs.json"
+    refs.write_text(json.dumps([reference(), reference(question_id="Q2", question="Unjudged?")]))
+    judge_scores = tmp_path / "judge_scores.json"
+    judge_scores.write_text(json.dumps({
+        "max_score": 10,
+        "scores": {"r1": {"total_score": 7, "reason": "Mostly grounded"}},
+        "skipped": [{"review_id": "r2", "reason": "not_eligible_for_ground_truth_judge"}],
+    }))
+    out = tmp_path / "review"
+    report = prepare(run_dir, refs, out, judge_scores_path=judge_scores)
+
+    judged, unjudged = report["rows"][0], report["rows"][1]
+    assert judged["judge_total_score"] == 7
+    assert judged["judge_reason"] == "Mostly grounded"
+    assert unjudged["judge_total_score"] is None
+    assert unjudged["judge_reason"] == ""
+
+    with (out / "review.csv").open(newline="", encoding="utf-8-sig") as stream:
+        rows = list(csv.DictReader(stream))
+    assert rows[0]["judge_total_score"] == "7"
+    assert rows[0]["judge_reason"] == "Mostly grounded"
+    assert rows[1]["judge_total_score"] == ""
+
+    text = (out / "report.md").read_text()
+    assert "7/10" in text
+    assert "Not judged" in text
+
+
 def test_prepared_report_has_readable_stage_and_quality_tables(tmp_path):
     _, _, out = setup_report(tmp_path)
     text = (out / "report.md").read_text()
     assert "| Run | Routing | Policy coverage |" in text
-    assert "| Run | Evidence relevance | Faithfulness | Correctness |" in text
+    assert "| Run | LLM-judge score | Evidence relevance | Faithfulness | Correctness |" in text
+    assert "Not judged" in text
     assert "| Q1 / B\\_decomposition / repeat 1 | Pass: policy (expected: policy) |" in text
     assert "ABSTAIN — Missing rule" in text
     assert "Pending" in text and "Unknown" in text

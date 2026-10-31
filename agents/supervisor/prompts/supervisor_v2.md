@@ -77,7 +77,8 @@ whose current facts are useful context.
 R5. If the question is about HDB or CPF housing but the sources do not hold
 the answer (for example BTO launch prices), set answerable to false. Only
 route to a source if it holds the same kind of thing the user asked about;
-do not substitute similar but different data.
+do not substitute similar but different data. R8 permits an explicitly
+disclosed geographic proxy for approximate historical resale prices only.
 
 R6. Filter unrelated content. If the entire request is outside HDB resale
 transactions and HDB/CPF housing policies, use route "none", check_premise
@@ -94,6 +95,30 @@ that the sources can fill in (e.g. no date, or "typical" prices). Example
 of genuine ambiguity: "Can I use it for my flat?" with no antecedent for
 "it". When in doubt, prefer routing normally over asking for clarification.
 
+R8. Nearby-area price estimates. If a resale-price question names a street,
+school, landmark or small area without an exact match in the transaction
+data, allow an approximate estimate using its containing town or the closest
+supported HDB area that can be reliably identified from the location
+information available. Route to "price", or "both" if policy is also needed.
+Keep the requested flat type and period. Prefer exact-location data when
+available. Never choose a cheaper area merely because its prices are lower.
+
+Make the substitution explicit in the routing reason and any price task:
+preserve the requested location, name the town/area used, explain the
+location relationship and require the final answer to call the figure an
+"approximate area-level estimate based on nearby historical resale data".
+It must not be presented as the exact price at the requested address, a
+current listing price or a valuation of a particular flat.
+
+Set answerable true when this disclosed estimate satisfies the request.
+If the user requires an exact address-level price that cannot be obtained,
+set answerable false and offer nearby-area figures only as context. If the
+location or a suitable nearby area cannot be identified reliably, ask for
+the address/neighbourhood or explain the missing location information;
+do not guess the geography. Do not claim an area is the closest, or within
+a particular distance, without supporting location information. R1 and R4
+still apply: this does not permit personal affordability advice or forecasts.
+
 ## Examples
 
 Question: "What is the Minimum Occupation Period for a resale flat?"
@@ -101,6 +126,9 @@ Question: "What is the Minimum Occupation Period for a resale flat?"
 
 Question: "What was the median resale price of a 3-room flat in Ang Mo Kio in 2023?"
 {"route": "price", "check_premise": false, "answerable": true, "reason": "Asks for a statistic from past resale transactions with a clear town, flat type and year.", "needs_clarification": false, "clarifying_question": null}
+
+Question: "Roughly what do 4-room resale flats near my school cost? The school is in Bedok."
+{"route": "price", "check_premise": false, "answerable": true, "reason": "Use Bedok town-level historical resale prices as an explicitly labelled area-level estimate for the school location supplied by the user; this is not an exact price or a verified distance-based search (R8).", "needs_clarification": false, "clarifying_question": null}
 
 Question: "Can a first-time couple get a CPF housing grant for a resale flat, and what do 4-room flats in Jurong West usually sell for?"
 {"route": "both", "check_premise": false, "answerable": true, "reason": "Needs a grant rule from the policy pages and typical prices from resale transactions.", "needs_clarification": false, "clarifying_question": null}

@@ -1,30 +1,34 @@
 """
-Validate the LLM-as-judge used in scripts/evaluate_agentic_answers.py.
+All LLM-as-judge tooling in one place: run it, trust it.
 
-Two checks, run separately so the (paid) swap-check never blocks the
-(free) human-check:
+    prepass      Judge-gated stage review pre-pass (see stage_evaluation.md).
+                 Scores verified, policy-route executions in a saved ablation
+                 run and writes judge_scores.json for
+                 `agents.supervisor.diagnostics prepare --judge-scores`.
 
-1. swap-check
-   Order-sensitivity probe. A pointwise judge has no "answer A vs
-   answer B" position to swap, so the equivalent bias here is evidence
-   order: re-run the ground-truth judge on the same (question, answer)
-   pair with the retrieved evidence list reversed, and flag any pair
-   whose total_score moves by more than --threshold points. A judge
-   that is actually reading the evidence for content, not position,
-   should be stable under this reversal.
+    swap-check   Evidence-order sensitivity probe (see llm_judge_validation.md).
+                 Re-judges the fixed 10-question pilot from
+                 scripts/evaluate_agentic_answers.py with evidence reversed,
+                 flagging any score that moves.
 
-2. human-check
-   Agreement with a human grader. `emit-template` writes a CSV with
-   one row per (question, system) already scored by the judge, with
-   blank human_<field> columns for a reviewer to fill in. `score`
-   reads the filled-in CSV back and reports exact-match rate and mean
-   absolute error per rubric field against the judge's own scores.
+    human-check  Agreement with a human grader on that same pilot: emit a
+                 template of judge scores with blank human_* columns, then
+                 score a filled-in copy against the judge.
+
+This is the only module in the judge-gated workflow that calls a model;
+`agents.supervisor.diagnostics` stays fully offline and only ever reads what
+this module writes.
 
 Usage:
-    python scripts/validate_llm_judge.py swap-check --n 5
-    python scripts/validate_llm_judge.py human-check emit-template \
+    python -m agents.supervisor.judge_tools prepass evaluation/ablation/new_questions_v1 \
+        --references evaluation/ablation/new_questions_v1_references.json \
+        --out evaluation/ablation/new_questions_v1_judge_scores.json
+
+    python -m agents.supervisor.judge_tools swap-check --n 5 --threshold 1
+
+    python -m agents.supervisor.judge_tools human-check emit-template \
         --out evaluation/agentic/human_label_sample.csv
-    python scripts/validate_llm_judge.py human-check score \
+    python -m agents.supervisor.judge_tools human-check score \
         --labels evaluation/agentic/human_label_sample.csv
 """
 
@@ -35,7 +39,7 @@ import statistics
 import sys
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SRC = PROJECT_ROOT / "src"
 
 if str(PROJECT_ROOT) not in sys.path:
@@ -44,41 +48,147 @@ if str(PROJECT_ROOT) not in sys.path:
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+from agents.supervisor.diagnostics import diagnose, load_references  # noqa: E402
 from ground_truth_judge import (  # noqa: E402
     GROUND_TRUTH_RUBRIC,
     judge_against_ground_truth,
+    max_score,
 )
 
-RESULTS_PATH = (
+RUBRIC_FIELDS = list(GROUND_TRUTH_RUBRIC.keys())
+
+PILOT_RESULTS_PATH = (
     PROJECT_ROOT
     / "evaluation"
     / "agentic"
     / "agentic_vs_baseline_pilot_10q_judged.json"
 )
 
-GROUND_TRUTH_PATH = (
+PILOT_GROUND_TRUTH_PATH = (
     PROJECT_ROOT
     / "evaluation"
     / "retrieval"
     / "ground_truth_40q.csv"
 )
 
-RUBRIC_FIELDS = list(GROUND_TRUTH_RUBRIC.keys())
+
+# ---------------------------------------------------------------- #
+# prepass: judge-gated stage review, scores an arbitrary ablation run
+# ---------------------------------------------------------------- #
+
+def eligible(row):
+    """Only judge verified, policy-only executions the rubric was built for."""
+    return (
+        row["reference_verified"]
+        and row["coverage_status"] != "UNKNOWN"
+        and row["actual_route"] == "policy"
+        and bool(row["policy_outcomes"])
+        and not row["execution_error"]
+    )
 
 
-def load_results():
-    if not RESULTS_PATH.exists():
+def judge_row(row, reference):
+    decision = row["policy_outcomes"][0]["decision"]
+
+    supporting_evidence = (
+        reference.get("supporting_evidence")
+        or reference.get("reference_answer", "")
+    )
+
+    return judge_against_ground_truth(
+        question=row["question"],
+        answer=row["answer"],
+        decision=decision,
+        declined=row["answer_declined"],
+        evidence=row["supplied_policy_evidence"],
+        coverage_status=row["coverage_status"],
+        supporting_evidence=supporting_evidence,
+        required_conditions=reference.get("required_conditions", ""),
+        review_notes=reference.get("review_notes", ""),
+    )
+
+
+def run_prepass(run_dir, references_path, out_path):
+    run_dir = Path(run_dir)
+    refs = load_references(references_path)
+
+    records = [
+        json.loads(line)
+        for line in (run_dir / "runs.jsonl").read_text().splitlines()
+        if line.strip()
+    ]
+
+    scores = {}
+    skipped = []
+
+    for record in records:
+        reference = refs.get(record["question_id"])
+
+        if reference is None:
+            skipped.append(
+                {
+                    "review_id": record["review_id"],
+                    "reason": "no_matching_reference",
+                }
+            )
+            continue
+
+        row = diagnose(record, reference, None)
+
+        if not eligible(row):
+            skipped.append(
+                {
+                    "review_id": row["review_id"],
+                    "reason": "not_eligible_for_ground_truth_judge",
+                }
+            )
+            continue
+
+        print(f"Judging {row['review_id']} ({row['question_id']})...")
+
+        judgement = judge_row(row, reference)["judgement"]
+        scores[row["review_id"]] = judgement
+
+    out_path = Path(out_path)
+
+    out_path.write_text(
+        json.dumps(
+            {
+                "max_score": max_score(),
+                "scores": scores,
+                "skipped": skipped,
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    print(
+        f"Judged {len(scores)}/{len(records)} executions; "
+        f"skipped {len(skipped)}."
+    )
+    print(f"Wrote {out_path}")
+
+
+# ---------------------------------------------------------------- #
+# swap-check / human-check: validate the judge against the fixed pilot
+# ---------------------------------------------------------------- #
+
+def load_pilot_results():
+    if not PILOT_RESULTS_PATH.exists():
         raise SystemExit(
-            f"No results file at {RESULTS_PATH}. "
+            f"No results file at {PILOT_RESULTS_PATH}. "
             "Run scripts/evaluate_agentic_answers.py --judge first."
         )
 
-    with RESULTS_PATH.open(encoding="utf-8") as f:
+    with PILOT_RESULTS_PATH.open(encoding="utf-8") as f:
         return json.load(f)
 
 
-def load_ground_truth_rows():
-    with GROUND_TRUTH_PATH.open(
+def load_pilot_ground_truth_rows():
+    with PILOT_GROUND_TRUTH_PATH.open(
         encoding="utf-8-sig",
         newline="",
     ) as f:
@@ -88,9 +198,9 @@ def load_ground_truth_rows():
         }
 
 
-def iter_system_results(results):
+def iter_pilot_system_results(results):
     """Yield (question_id, system_name, row, system_result) for each
-    scored (question, system) pair in a results file."""
+    scored (question, system) pair in a pilot results file."""
 
     for row in results:
         for system_name in ("baseline", "agentic"):
@@ -102,16 +212,12 @@ def iter_system_results(results):
             yield row["question_id"], system_name, row, system_result
 
 
-# ---------------------------------------------------------------- #
-# 1. swap-check: evidence-order sensitivity
-# ---------------------------------------------------------------- #
-
 def run_swap_check(n, threshold):
-    results = load_results()
-    gt_rows = load_ground_truth_rows()
+    results = load_pilot_results()
+    gt_rows = load_pilot_ground_truth_rows()
 
-    pairs = list(iter_system_results(results))[:n] if n else list(
-        iter_system_results(results)
+    pairs = list(iter_pilot_system_results(results))[:n] if n else list(
+        iter_pilot_system_results(results)
     )
 
     report = []
@@ -202,12 +308,8 @@ def run_swap_check(n, threshold):
     print(f"Wrote {out_path}")
 
 
-# ---------------------------------------------------------------- #
-# 2. human-check: agreement with a human grader
-# ---------------------------------------------------------------- #
-
 def emit_template(out_path):
-    results = load_results()
+    results = load_pilot_results()
 
     fieldnames = (
         ["question_id", "system", "question"]
@@ -219,7 +321,7 @@ def emit_template(out_path):
 
     rows = []
 
-    for question_id, system_name, row, system_result in iter_system_results(
+    for question_id, system_name, row, system_result in iter_pilot_system_results(
         results
     ):
         judgement = system_result.get(
@@ -257,7 +359,7 @@ def emit_template(out_path):
         f"Wrote {len(rows)} rows to {out_path}\n"
         f"Fill in the human_* columns (0/1/2 per field), "
         f"then run:\n"
-        f"  python scripts/validate_llm_judge.py human-check score "
+        f"  python -m agents.supervisor.judge_tools human-check score "
         f"--labels {out_path}"
     )
 
@@ -358,13 +460,25 @@ def score_against_human(labels_path):
     print(f"\nWrote {out_path}")
 
 
+# ---------------------------------------------------------------- #
+# CLI
+# ---------------------------------------------------------------- #
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    sub = parser.add_subparsers(dest="command", required=True)
+    commands = parser.add_subparsers(dest="command", required=True)
 
-    swap = sub.add_parser(
+    prepass = commands.add_parser(
+        "prepass",
+        help="Judge-gated stage review pre-pass over a saved ablation run.",
+    )
+    prepass.add_argument("run_dir", type=Path)
+    prepass.add_argument("--references", type=Path, required=True)
+    prepass.add_argument("--out", type=Path, required=True)
+
+    swap = commands.add_parser(
         "swap-check",
-        help="Re-judge with evidence order reversed; flag instability.",
+        help="Re-judge the fixed pilot with evidence order reversed.",
     )
     swap.add_argument(
         "--n",
@@ -379,9 +493,9 @@ def main():
         help="Score-point delta that counts as unstable (default 1).",
     )
 
-    human = sub.add_parser(
+    human = commands.add_parser(
         "human-check",
-        help="Compare judge scores against a human-labeled sample.",
+        help="Compare judge scores on the fixed pilot against a human sample.",
     )
     human_sub = human.add_subparsers(
         dest="human_command", required=True
@@ -409,7 +523,9 @@ def main():
 
     args = parser.parse_args()
 
-    if args.command == "swap-check":
+    if args.command == "prepass":
+        run_prepass(args.run_dir, args.references, args.out)
+    elif args.command == "swap-check":
         run_swap_check(args.n, args.threshold)
     elif args.command == "human-check":
         if args.human_command == "emit-template":

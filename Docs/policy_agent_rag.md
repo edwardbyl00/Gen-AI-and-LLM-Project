@@ -2,7 +2,10 @@
 
 ## Status
 
-The policy agent's agentic RAG implementation and evaluation are complete.
+This guide records the P5 implementation and its historical evaluation
+checkpoint, with current supervisor integration notes checked on 31 October
+2026. The pilot scores below are saved development results, not a benchmark
+of the latest supervisor prompts or the new question-list evaluation.
 
 The final P5 contribution extends the policy RAG pipeline with evidence assessment, targeted self-correction, reassessment, safe abstention, supervisor integration, regression tests, and efficiency telemetry.
 
@@ -36,7 +39,10 @@ P5 implemented BM25, BGE dense retrieval, Reciprocal Rank Fusion, query coverage
 | Recall@10 | 0.467 | 0.427 | -0.040 |
 | MRR@10 | 0.473 | 0.477 | +0.004 |
 
-Hybrid retrieval did not improve aggregate performance, so dense retrieval remained the stronger default backbone.
+Dense retrieval was the stronger experimental baseline on these metrics.
+The current supervisor's real policy adapter calls the hybrid retrieval path
+with dense retrieval and the LLM assessor enabled; the historical comparison
+does not mean the live adapter runs dense-only retrieval.
 
 ### Evidence assessment and self-correction
 `src/evidence_assessor.py` evaluates whether retrieved evidence is sufficient for a grounded answer. It distinguishes missing policy evidence from missing user-specific information, allowing conditional answers when the policy evidence is adequate.
@@ -54,6 +60,13 @@ Web-specific syntax such as `site:hdb.gov.sg` and `site:cpf.gov.sg` is removed b
 
 ### Safe abstention
 If no usable evidence is retrieved, or evidence remains insufficient after self-correction, the agent returns `ABSTAIN` instead of allowing unsupported policy claims.
+
+The assessor judges supplied candidates, not the full corpus. An `ABSTAIN`
+therefore does not prove that supporting evidence does not exist elsewhere.
+`retrieved_evidence` now preserves candidates even when selected `evidence`
+is cleared, allowing offline review to separate corpus gaps, retrieval misses
+and evidence-selection issues. Policy decisions/reasons are also saved in
+the shared steps and [CSV usage logs](usage_logging.md).
 
 ### Supervisor integration
 P5 is integrated through `agents/supervisor/adapters.py` with configuration-driven retrieval limits. P1 price functionality remains outside P5 scope.
@@ -113,7 +126,10 @@ Agentic decisions:
 | Average assessor tokens | 6,005.2/question |
 | Average assessor latency | 6.073 s/question |
 
-The agentic system improved quality on both judge lenses, but required additional LLM calls, tokens, and latency.
+The pilot's model-judge scores were higher on both lenses, with additional
+LLM calls, tokens and latency. These are unvalidated judge observations, not
+independently established correctness or a current system-wide improvement;
+see [judge validation](llm_judge_validation.md) and [stage review](stage_evaluation.md).
 
 The reported **USD 0.1776** is the cost of the LLM-as-judge evaluation calls only and should not be interpreted as the full production cost of the agentic pipeline.
 
@@ -134,7 +150,9 @@ Naive hybrid retrieval did not outperform the dense baseline consistently. The m
 
 **retrieve → assess → self-correct/decompose → reassess → answer or abstain**
 
-This improved final answer quality while providing a safer mechanism for insufficient evidence. The trade-off was higher latency and token usage.
+The historical pilot suggests a benefit on its model-judge measures while
+providing an explicit insufficient-evidence decision. The observed trade-off
+was higher latency and token usage; independent review is still needed.
 
 ## Limitations
 

@@ -1,8 +1,20 @@
 # Question-list evaluation and failure diagnosis
 
-Use the team's new question list to assess the complete answer and trace what
-went well or failed at each stage. No new question list has been supplied yet.
-The tools below prepare references and review saved runs without calling models.
+Use a question list to assess the complete answer and trace what went well or
+failed at each stage. Checked on 31 October 2026: the saved `new_questions_v1`
+development batch contains six unique questions and 12 graph executions across
+A and B, with 22 recorded agent attempts. Its references are still unverified,
+so it does not establish routing accuracy, retrieval recall or correctness.
+
+The saved manifest records that batch's actual questions and settings; mutable
+input CSVs and current prompts may have changed since inference. The compact
+review workbook is at
+`evaluation/ablation/new_questions_v1/compact_review/review.xlsx`.
+It is a generated local artifact and may not exist in a fresh clone.
+
+Reference preparation, diagnostics, summary and report export are offline.
+Pipeline inference and the optional judge passes make model calls; judge
+passes are separate steps with their own costs.
 
 | Area | What we check | Evidence for the assessment |
 | --- | --- | --- |
@@ -28,20 +40,20 @@ irrelevant, missing evidence, missing user information and dataset boundary.
 Keep every question, including difficult cases and failures.
 
 Copy the fill-in template and replace the example rows with the real list.
-`--out` below (`evaluation/ablation/new_questions_v1`) is created fresh by the
+`--out` below is created fresh by the
 batch runner in the next step and must not already exist, so keep the
 questions file and the generated references file one level up, in
 `evaluation/ablation/` itself:
 
 ```sh
 mkdir -p evaluation/ablation
-cp evaluation/templates/unseen_evaluation_questions.template.csv evaluation/ablation/new_questions_v1_questions.csv
+cp evaluation/templates/unseen_evaluation_questions.template.csv evaluation/ablation/team_questions_v2_questions.csv
 ```
 
 Generate a separate reviewer reference file:
 
 ```sh
-python -m agents.supervisor.diagnostics template evaluation/ablation/new_questions_v1_questions.csv --out evaluation/ablation/new_questions_v1_references.json
+python -m agents.supervisor.diagnostics template evaluation/ablation/team_questions_v2_questions.csv --out evaluation/ablation/team_questions_v2_references.json
 ```
 
 For each question, the reviewer fills in the expected route, reference answer,
@@ -75,21 +87,58 @@ Use the existing [batch runner](supervisor_ablation.md). This example runs both
 decomposition variants through the full graph and its current self-check loop:
 
 ```sh
-python -m agents.supervisor.ablation run evaluation/ablation/new_questions_v1_questions.csv --pipeline graph --out evaluation/ablation/new_questions_v1 --today 2026-10-31 --repeats 1 --dry-run
+python -m agents.supervisor.ablation run evaluation/ablation/team_questions_v2_questions.csv --pipeline graph --out evaluation/ablation/team_questions_v2 --today 2026-10-31 --repeats 1 --dry-run
 ```
 
 The dry run validates the input and schedule. Remove `--dry-run` to execute the
 experiment once the question list and references are ready. One repeat means two
 pipeline executions per question (A and B), each potentially making multiple
 model calls. Use a fresh directory for each experiment and report repeats
-separately from unique question count. The current work has not executed a live
-question-list experiment.
+separately from unique question count. The commands below illustrate a fresh
+batch; do not overwrite the saved development batch to rerun changed prompts.
 
-After inference, prepare the diagnostic report:
+## Judge-gated review: LLM-as-judge first, then human
+
+After inference, optionally run the LLM-as-judge pre-pass before the diagnostic
+report. This makes additional judge calls after pipeline inference;
+`agents.supervisor.diagnostics` stays fully offline. It scores each verified,
+policy-route execution with `src/ground_truth_judge.py`'s rubric and writes a
+`judge_scores.json`:
 
 ```sh
-python -m agents.supervisor.diagnostics prepare evaluation/ablation/new_questions_v1 --references evaluation/ablation/new_questions_v1_references.json --chunks data/processed/chunks.jsonl --out evaluation/ablation/new_questions_v1/stage_review
+python -m agents.supervisor.judge_tools prepass evaluation/ablation/team_questions_v2 --references evaluation/ablation/team_questions_v2_references.json --out evaluation/ablation/team_questions_v2_judge_scores.json
 ```
+
+Unverified references, price-only or mixed price+policy routes, and failed
+executions are skipped and listed under `skipped` in the output, since the
+rubric was written to score a single policy answer, not a price result or a
+mixed answer as a whole. Skipped rows simply show "Not judged" later; nothing
+else about the review changes for them.
+
+The judge's score and reason are **context for the reviewer, not a
+replacement for independent grading**. They appear in `review.csv` as
+`judge_total_score` / `judge_reason`, and in `report.md`'s answer-quality
+table, both ahead of the still-blank human grade columns. Seeing the judge's
+number before grading is a known anchoring risk: a reviewer who is unsure may
+unconsciously drift toward the judge's score rather than forming an
+independent one. If that risk matters more than the convenience, skip
+`--judge-scores` below and grade blind instead, or compare a sample of grades
+done with and without it visible.
+
+Prepare the diagnostic report, with or without the pre-pass:
+
+```sh
+python -m agents.supervisor.diagnostics prepare evaluation/ablation/team_questions_v2 --references evaluation/ablation/team_questions_v2_references.json --chunks data/processed/chunks.jsonl --judge-scores evaluation/ablation/team_questions_v2_judge_scores.json --out evaluation/ablation/team_questions_v2/stage_review
+```
+
+Drop `--judge-scores` to produce the same report with every row shown as "Not
+judged" — the rest of the workflow, including `summarise`, is unaffected
+either way; the judge's score is never read back into `GRADES` or any scored
+metric, only displayed.
+
+Before relying on these scores, check that the judge itself is trustworthy —
+see [llm_judge_validation.md](llm_judge_validation.md) for the evidence-order
+and human-agreement checks that calibrate it.
 
 The command produces:
 
@@ -100,7 +149,10 @@ The command produces:
   supplied policy passages, policy decisions/reasons/trace, price results,
   abstention flags and diagnostic observations. It records the input-file hashes.
 - `review.csv`: one row per execution with blank quality scores and fields for
-  what went well, what went wrong, the recommended fix and reviewer notes.
+  what went well, what went wrong, the recommended fix and reviewer notes. If
+  `--judge-scores` was supplied, `judge_total_score` and `judge_reason` are
+  filled in next to the still-blank human grade columns; otherwise they are
+  blank for every row.
 
 When the saved manifest has the batch schedule, an incomplete or duplicated
 schedule is rejected. Recorded execution failures remain in the review;
@@ -142,6 +194,40 @@ Review query constraints, task-level coverage and price-agent filters in the
 full `runs.jsonl` bundles as well. Prior policy attempts remain in the step log;
 the earlier usage-log flag also records abstentions before a successful retry.
 
+### Alternative: judge without verified references
+
+The gated `judge_tools prepass` above only scores rows with a verified
+reference (`ground_truth_verified: true`), a known `coverage_status`, route
+`policy`, and no execution error — by design, since its rubric
+(`src/ground_truth_judge.py`) compares the answer against that reference.
+Before any references are filled in, every row is skipped as
+`not_eligible_for_ground_truth_judge`.
+
+To get a first read before references are ready, `scripts/judge_ablation_answers.py`
+scores every execution with an answer and policy evidence, regardless of
+route, coverage or reference state, using the ungated faithfulness-style
+judge (`src/llm_judge.py`, the same one used for the P5 pilot in
+`scripts/evaluate_agentic_answers.py`). It rates `evidence_support`,
+`policy_currency`, `citation_relevance`, `unsupported_claims` and
+`appropriate_abstention` (0-2 each) against the evidence actually supplied
+to synthesis, not against a reference answer:
+
+```sh
+python -m scripts.judge_ablation_answers evaluation/ablation/team_questions_v2
+```
+
+This makes one real judge call per execution (paid) and writes
+`evaluation/ablation/<run-name>_llm_judge_scores.json` (`--out` to choose a
+different path), with one entry per `review_id` holding the rubric fields,
+`reason`, token usage/cost and the question/variant/category. It is
+separate from `review.csv` and from the gated `judge_scores.json`: it does
+not fill in any blank grade column, and `diagnostics summarise` never reads
+it. Treat it as a fast first read to compare against human grades later,
+the way the pilot's judge-vs-human check works — and, per
+[llm_judge_validation.md](llm_judge_validation.md), this judge has not been
+validated for bias or human agreement either, so don't report its numbers
+as the scored result.
+
 ## Review and report
 
 Grade `evidence_relevance`, `faithfulness`, `correctness`, `completeness` and
@@ -165,10 +251,61 @@ Failed executions receive zero quality scores, rather than being excluded or
 marked NA. Keep missing grades blank and explain ambiguous questions rather
 than inventing a reference answer. Prefer a second reviewer and adjudication.
 
+### Review in a spreadsheet
+
+`review.csv` opens directly in Excel/Numbers, but for a formatted workbook
+combining it with the stage checks and both judge-score files, build one
+with `agents.supervisor.stage_review_excel` (also wired as
+`agents.supervisor.diagnostics export-excel`); it never calls a model, only
+reads what `prepare` and `judge_ablation_answers.py` already wrote:
+
+```sh
+python -m agents.supervisor.diagnostics export-excel evaluation/ablation/team_questions_v2/stage_review \
+    --llm-judge-scores evaluation/ablation/team_questions_v2_llm_judge_scores.json \
+    --out evaluation/ablation/team_questions_v2/stage_review/review.xlsx
+```
+
+`--llm-judge-scores` is optional; omit it if that file doesn't exist yet.
+The workbook has at most three sheets:
+
+- **Summary**: opens first. Per variant/category — execution and question counts,
+  human-graded count, mean correctness (`Pending` until `Review` is
+  graded), `Policy ANSWER_READY`/`ABSTAIN` counts (a retrieval-success
+  proxy that needs no verified reference), mean reference candidate/supplied
+  recall (`Unknown` until references are verified), the ungated judge's
+  mean total score, and token/cost totals. A second table, "Tokens by
+  stage", sums reported usage across all executions, split by variant, using
+  saved manifest pricing. Human-graded counts and mean correctness reference
+  the Review cells through formulas, so they update when grades are edited.
+- **Review**: one row per execution, combining the original question/answer,
+  route, policy outcome, optional judge scores, the shaded human-grade columns
+  and reviewer findings. Expand the grouped columns on the right for routing,
+  coverage, recall, policy reasons, diagnostic flags and full judge details.
+  No separate checks or judge sheets are created. Blank optional judge columns
+  are omitted when no scores/errors are supplied.
+- **Agentic Details**: created only when tasks or usage are recorded. Its first
+  table shows the original question alongside each focused price/policy question,
+  required answer elements, task ID, agent, execution attempt, decision/reason,
+  recorded follow-up searches, evidence IDs, errors and duration. This makes the
+  breakdown of agentic/decomposed questions explicit. Baseline runs show the
+  original unsplit question; missing details are marked unknown/not recorded.
+  Retries remain separate, and earlier attempts do not borrow later evidence.
+  A second table retains each stage's calls and tokens, including router,
+  synthesis and self-check, with a bold TOTAL row per execution. These totals
+  are the saved execution totals, not additional calls to sum again.
+
+Workbook edits are for review/presentation. To run `summarise`, transfer the human
+grades and notes into the original `review.csv` while preserving its machine
+column names and review IDs; the exporter does not import edited workbooks.
+
+None of the correctness, candidate-recall or supplied-recall figures are
+real scores yet on an unverified/ungraded run — they report what's
+knowable right now, the same caveat as the rest of this doc.
+
 Save a reviewed copy of `review.csv`, then summarise:
 
 ```sh
-python -m agents.supervisor.diagnostics summarise evaluation/ablation/new_questions_v1/stage_review/diagnostics.json path/to/reviewed.csv --out evaluation/ablation/new_questions_v1/stage_review/summary.json
+python -m agents.supervisor.diagnostics summarise evaluation/ablation/team_questions_v2/stage_review/diagnostics.json path/to/reviewed.csv --out evaluation/ablation/team_questions_v2/stage_review/summary.json
 ```
 
 The report includes per-variant and per-category metrics, diagnostic-flag counts,

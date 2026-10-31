@@ -1,0 +1,223 @@
+{
+  "model": "gpt-5.4-2026-03-05",
+  "max_score": 10,
+  "scores": {
+    "0210b8d346e5bdcf": {
+      "evidence_support": 1,
+      "policy_currency": 2,
+      "citation_relevance": 1,
+      "unsupported_claims": 0,
+      "appropriate_abstention": 2,
+      "total_score": 6,
+      "reason": "The answer correctly abstains from giving a personal savings amount and is well supported on loan/downpayment, CPF usage, HFE/Letter of Offer, OA retention, option fee/deposit, and existence of grants. However, it introduces unsupported specifics: it says bank-loan buyers may use OA for the rest of the downpayment (not stated in the cited evidence), claims singles grants may be used to offset purchase price or reduce housing loan while referencing multiple grants though the supplied evidence explicitly states this usage only for the Singles Grant, and mentions 'nearby-town resale prices' and 'MITB is not one of the HDB towns in the resale data' without any supporting evidence provided. The cited passages are partly direct but not fully sufficient for all claims.",
+      "usage": {
+        "input_tokens": 4847,
+        "output_tokens": 218,
+        "cost_usd": 0.015388
+      },
+      "latency_seconds": 4.284,
+      "question_id": "1",
+      "variant": "B_decomposition",
+      "category": "mixed"
+    },
+    "51684608981beb54": {
+      "evidence_support": 0,
+      "policy_currency": 0,
+      "citation_relevance": 0,
+      "unsupported_claims": 0,
+      "appropriate_abstention": 1,
+      "total_score": 1,
+      "reason": "No evidence was supplied, so none of the answer\u2019s factual claims can be verified. The answer introduces unsupported specifics such as MITB not being an HDB town, 0 resale deals for 2025-10 to 2026-09, and the absence of median/mean/min/max prices. Because there are no retrieved passages, policy currency and citation relevance cannot be satisfied. The answer does partially abstain by stating it cannot determine how much the user needs to save from the official sources available.",
+      "usage": {
+        "input_tokens": 523,
+        "output_tokens": 167,
+        "cost_usd": 0.003812
+      },
+      "latency_seconds": 3.307,
+      "question_id": "1",
+      "variant": "A_baseline",
+      "category": "mixed"
+    },
+    "d6110d7d59256bd0": {
+      "evidence_support": 1,
+      "policy_currency": 2,
+      "citation_relevance": 2,
+      "unsupported_claims": 1,
+      "appropriate_abstention": 2,
+      "total_score": 8,
+      "reason": "Most of the answer is directly supported: HFE first, financing requirements, EIP/SPR quota checks, HDB Flat Portal via Singpass, eligibility requiring SC/SPR status, age 21, single-alone buyer must be SC 35+, SPR 3-year rule, one-flat owner-occupation rule, continuous occupation, and 5-year MOP restrictions. However, the statement that a foreigner who has just moved to Singapore cannot be confirmed to buy an HDB resale flat is not directly stated in the cited passages; it is only inferable from the SC/SPR eligibility rules. Also, saying there are 'further restrictions on renting out and buying other residential property' is broadly supported, but the answer omits some nuance and the exact disposal rules. No dates conflict, and the answer appropriately avoids overclaiming where evidence is indirect.",
+      "usage": {
+        "input_tokens": 2544,
+        "output_tokens": 238,
+        "cost_usd": 0.00993
+      },
+      "latency_seconds": 3.886,
+      "question_id": "2",
+      "variant": "B_decomposition",
+      "category": "policy"
+    },
+    "4d02937774e0794c": {
+      "evidence_support": 0,
+      "policy_currency": 0,
+      "citation_relevance": 0,
+      "unsupported_claims": 2,
+      "appropriate_abstention": 2,
+      "total_score": 4,
+      "reason": "No evidence was supplied, so factual support, policy currency, and citation relevance cannot be established. The answer largely avoids making unsupported factual claims and appropriately abstains, explicitly stating that the official sources provided are insufficient.",
+      "usage": {
+        "input_tokens": 457,
+        "output_tokens": 108,
+        "cost_usd": 0.002763
+      },
+      "latency_seconds": 2.221,
+      "question_id": "2",
+      "variant": "A_baseline",
+      "category": "policy"
+    },
+    "45e208d9b1a9b49c": {
+      "evidence_support": 1,
+      "policy_currency": 1,
+      "citation_relevance": 2,
+      "unsupported_claims": 0,
+      "appropriate_abstention": 2,
+      "total_score": 6,
+      "reason": "The core financing claims are supported: HDB loan requires 20% downpayment payable via CPF OA, and bank loan requires 25% with at least 5% cash; OTP deposit of $2 to $5,000 and HDB caps on option fee/deposit are also supported. However, the answer introduces unsupported price-context claims about Choa Chu Kang/Yew Tee median resale prices, date range, deal counts, and that Yew Tee is included, none of which appear in the evidence. Because evidence does not provide Yew Tee-specific flat price, the answer appropriately abstains from giving an exact dollar downpayment.",
+      "usage": {
+        "input_tokens": 1775,
+        "output_tokens": 193,
+        "cost_usd": 0.007333
+      },
+      "latency_seconds": 3.517,
+      "question_id": "3",
+      "variant": "A_baseline",
+      "category": "mixed"
+    },
+    "2f7da32a6ef34616": {
+      "evidence_support": 0,
+      "policy_currency": 0,
+      "citation_relevance": 0,
+      "unsupported_claims": 0,
+      "appropriate_abstention": 2,
+      "total_score": 2,
+      "reason": "No evidence was supplied, so none of the answer's factual claims (including the Choa Chu Kang/Yew Tee price statistics and statements about lacking policy passages) can be verified from the record. With no retrieved passages, citation relevance and policy currency cannot be established. However, the answer does appropriately abstain from giving a down payment amount.",
+      "usage": {
+        "input_tokens": 500,
+        "output_tokens": 134,
+        "cost_usd": 0.00326
+      },
+      "latency_seconds": 3.28,
+      "question_id": "3",
+      "variant": "B_decomposition",
+      "category": "mixed"
+    },
+    "8f4b8bcff703079f": {
+      "evidence_support": 0,
+      "policy_currency": 1,
+      "citation_relevance": 0,
+      "unsupported_claims": 0,
+      "appropriate_abstention": 1,
+      "total_score": 2,
+      "reason": "The only supplied evidence supports the CPF-transfer points: a transferee may apply to use their CPF to pay amounts the transferor must refund upon a non-sale transfer, subject to Board approval, and CPF refund principles for a share transfer. However, the answer makes multiple claims about HDB housing loans, HFE validity, resale-flat loan applications, and grants in HFE using citations [4][5], but no Evidence 4 or 5 is supplied. Those key parts are unsupported by the provided evidence. The answer does abstain somewhat on whether the HFE grant can be used for a transfer, but it still introduces unsupported HDB/HFE details not grounded in the evidence. Policy currency cannot be fully verified because the supplied evidence has no effective dates beyond source documents, though the answer does not obviously rely on an outdated version for the CPF portions.",
+      "usage": {
+        "input_tokens": 1473,
+        "output_tokens": 237,
+        "cost_usd": 0.007238
+      },
+      "latency_seconds": 4.704,
+      "question_id": "4",
+      "variant": "B_decomposition",
+      "category": "policy"
+    },
+    "6decf18353a4a2be": {
+      "evidence_support": 2,
+      "policy_currency": 2,
+      "citation_relevance": 2,
+      "unsupported_claims": 2,
+      "appropriate_abstention": 2,
+      "total_score": 10,
+      "reason": "No evidence was supplied. The answer explicitly states that it cannot confirm the questions from the official sources provided, does not guess, and limits itself to an abstention. With no retrieved passages available, there is no policy-version conflict or irrelevant citation issue to identify.",
+      "usage": {
+        "input_tokens": 461,
+        "output_tokens": 118,
+        "cost_usd": 0.002922
+      },
+      "latency_seconds": 2.316,
+      "question_id": "4",
+      "variant": "A_baseline",
+      "category": "policy"
+    },
+    "618d50b363abda03": {
+      "evidence_support": 1,
+      "policy_currency": 1,
+      "citation_relevance": 1,
+      "unsupported_claims": 0,
+      "appropriate_abstention": 0,
+      "total_score": 3,
+      "reason": "The CPF-use portion is largely supported: OA can be used for resale flat purchase, downpayment, instalments, stamp/legal fees, and HPS premiums (Evidence 3), with HDB-loan OA retention and required use of remaining OA (Evidence 1/4), occupiers not allowed to use CPF and refund with accrued interest on sale/withdrawal (Evidence 2), lease/usage-limit and cash-after-limit rules (Evidence 1/4/6), BRS-dependent withdrawal limits for resale flats with HDB loan (Evidence 5), and bank-vs-HDB downpayment rules (Evidence 8). However, the answer cites a Tampines 4-room resale price summary for 2025-10 to 2026-09 with median/mean/range/deal count, but no such pricing evidence is supplied. There is also some overstatement in saying the lease rule is specifically 'up to age 95' without fully reflecting the dated/conditional nuances in Evidence 7. Because the answer includes unsupported market data instead of abstaining, unsupported_claims and appropriate_abstention score poorly.",
+      "usage": {
+        "input_tokens": 2934,
+        "output_tokens": 293,
+        "cost_usd": 0.01173
+      },
+      "latency_seconds": 4.213,
+      "question_id": "5",
+      "variant": "B_decomposition",
+      "category": "false_premise"
+    },
+    "bdd7876d2fbb3e35": {
+      "evidence_support": 0,
+      "policy_currency": 0,
+      "citation_relevance": 0,
+      "unsupported_claims": 0,
+      "appropriate_abstention": 2,
+      "total_score": 2,
+      "reason": "No evidence was supplied at all, so none of the factual claims about CPF rules or Tampines 4-room resale prices can be verified from the provided evidence. The answer appropriately abstains on the CPF policy question, but it also introduces specific resale statistics without any supporting evidence.",
+      "usage": {
+        "input_tokens": 452,
+        "output_tokens": 121,
+        "cost_usd": 0.002945
+      },
+      "latency_seconds": 2.197,
+      "question_id": "5",
+      "variant": "A_baseline",
+      "category": "false_premise"
+    },
+    "f0cbb41c08778862": {
+      "evidence_support": 1,
+      "policy_currency": 1,
+      "citation_relevance": 2,
+      "unsupported_claims": 0,
+      "appropriate_abstention": 1,
+      "total_score": 5,
+      "reason": "The evidence directly supports that eligible singles (Singapore citizens, unmarried/widowed/divorced, aged 35+) can buy resale flats, should apply for an HFE letter, and may qualify for Singles Grant for 2- to 4-room resale flats. The cited HDB passages are relevant. However, the answer introduces an unsupported market-data claim that the cheapest 2-room resale flat in Yishun was $190,000 based on 392 deals from 2017-01 to 2026-10; no such price evidence is supplied. The answer also says it could not find an official passage stating a separate eligibility rule specific to a 2-room resale flat, which is a reasonable abstention, but it still partially answers the price question without evidence. Effective dates are not provided in the evidence, so policy currency can only be rated partial.",
+      "usage": {
+        "input_tokens": 1759,
+        "output_tokens": 240,
+        "cost_usd": 0.007997
+      },
+      "latency_seconds": 3.473,
+      "question_id": "6",
+      "variant": "B_decomposition",
+      "category": "false_premise"
+    },
+    "447476ae433e3c90": {
+      "evidence_support": 0,
+      "policy_currency": 0,
+      "citation_relevance": 0,
+      "unsupported_claims": 0,
+      "appropriate_abstention": 2,
+      "total_score": 2,
+      "reason": "No evidence passages were supplied. Therefore none of the answer's factual claims about resale prices, dates, number of deals, or policy can be verified from the provided evidence. The answer does appropriately abstain on the singles-policy claim and on identifying a currently available cheapest unit, but it still introduces unsupported transaction statistics.",
+      "usage": {
+        "input_tokens": 466,
+        "output_tokens": 128,
+        "cost_usd": 0.003085
+      },
+      "latency_seconds": 2.554,
+      "question_id": "6",
+      "variant": "A_baseline",
+      "category": "false_premise"
+    }
+  },
+  "errors": []
+}

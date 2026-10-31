@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from agents.supervisor.experiment_tracking import effective_params, snapshot_settings
+from agents.supervisor.experiment_metadata import effective_params, snapshot_settings
 
 GRADES = ('correctness', 'completeness', 'groundedness', 'appropriate_abstention')
 

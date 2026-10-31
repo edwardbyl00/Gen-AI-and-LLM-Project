@@ -9,9 +9,8 @@ evaluation boundary with the team before running a held-out set; results must
 name the entry point. Historical runs made before P3 integration used only the
 supervisor path and should not be pooled with graph runs.
 
-Optional `--mlflow` tracking joins configuration parameters, per-question results,
-API cost, local CPU/memory, latency and later team grades. See the
-[MLflow experiment guide](mlflow_experiments.md). Existing JSON/CSV exports remain.
+Local JSON/CSV reports join configuration parameters, per-question results,
+API cost, local CPU/memory, latency and later team grades.
 
 For routing, corpus availability, retrieval, evidence selection, faithfulness
 and correctness diagnostics on a new question list, use the separate
@@ -37,8 +36,9 @@ experiments, after freezing the A/B design.
 ## Run a single question
 
 Both entry points read `supervisor.decompose` in `config.yaml` (currently
-`true`; `false` if the key is omitted entirely). Callers can override it per
-request without changing shared config:
+`false`, checked on 31 October 2026; omission also defaults to `false`). Enable
+`decompose=True` for focused tasks. Callers can override it per request without
+changing shared config; the paired runner explicitly executes both settings:
 
 ```python
 from agents.supervisor.pipeline import handle_question
@@ -59,7 +59,7 @@ python -m agents.graph.graph "Since singles can't buy resale flats, what's the c
 ```
 
 There is one decomposition step inside the router, not a second P3 planner.
-For this example, the policy task should verify the eligibility claim while
+With decomposition enabled, the policy task should verify the eligibility claim while
 the price task asks for historical transaction statistics. The policy assessor
 receives only its focused question. A successful split does not guarantee
 sufficient evidence; genuine policy abstentions remain possible. A minimum
@@ -161,13 +161,14 @@ Output files:
 | `grading_blind.csv` | Shuffled answers and citations with blank quality grades; hides variant/repeat |
 | `review_key.csv` | Mapping from review IDs to variants/repeats; keep away from reviewers until grading |
 | `comparison.csv` | Per-variant settings, cost/latency/local compute and quality after grading |
-| `mlflow.json` | MLflow parent/child run IDs and store URI, when tracking is enabled |
 
 Run IDs are reproducible from the question ID, repeat and seed; blinding is for
 practical reviewer workflow, not cryptographic secrecy. Reviewers should receive
 only the blind sheet, rubric and independent references. A separate coordinator
-should retain the key and full traces. No automated judge runs in this version,
-so inference totals exclude reviewer/judge costs by construction.
+should retain the key and full traces. The ablation runner itself does not
+invoke an automated judge. Optional saved-run judge tools are documented in
+[stage_evaluation.md](stage_evaluation.md); their calls and costs are separate
+from pipeline inference totals.
 
 ## Grade and compare
 
@@ -243,7 +244,7 @@ experiment. Start a fresh directory for a complete comparable run.
 `agents/supervisor/excel_export.py` builds a formatted `.xlsx` workbook from
 saved results. It never runs inference — it only reads `manifest.json`,
 `runs.jsonl` and any graded CSV/JSON already on disk. Install the optional
-dependency first (shared with MLflow/psutil):
+dependencies first (local measurements and Excel export):
 
 ```sh
 python -m pip install -r requirements-experiments.txt
@@ -285,13 +286,13 @@ no saved config snapshot, compute measurement or grades.
 ## Local compute measurement
 
 `agents/supervisor/compute_metrics.py` records this Python process's CPU-time
-delta and sampled peak RSS for every `ablation run` execution (regardless of
-`--mlflow`), using `experiment_tracking.memory_sampling_interval_seconds` from
+delta and sampled peak RSS for every `ablation run` execution, using
+`experiment_measurements.memory_sampling_interval_seconds` from
 `config.yaml` as the sampling interval; `machine_info()` records the Python
 version, platform, CPU count and total RAM once per batch into
-`manifest.json`. These describe the local process only, not the hosted
-model's compute — see the fuller caveats in
-[mlflow_experiments.md](mlflow_experiments.md#measurements-and-their-limits).
+`manifest.json`. These describe the local process only. They do not measure
+the hosted model's CPU/GPU, memory, energy or provider billing. RSS is sampled
+and can miss brief peaks; local measurement overhead is included in timings.
 
 There is no separate CLI for this; it runs automatically inside
 `run_experiment()`. To measure a block of code directly from Python:

@@ -8,7 +8,6 @@ import math
 import random
 import statistics
 import sys
-import warnings
 import time
 from collections import defaultdict
 from datetime import datetime
@@ -18,7 +17,7 @@ from zoneinfo import ZoneInfo
 import yaml
 
 from agents.supervisor.compute_metrics import ProcessMeasurement, machine_info
-from agents.supervisor.experiment_tracking import MLflowBatch, effective_params, provenance, publish_grades
+from agents.supervisor.experiment_metadata import effective_params, provenance
 from agents.supervisor.pipeline import handle_question
 from agents.supervisor.router import CONFIG_FILE, PROJECT_ROOT, estimate_cost_usd
 from agents.supervisor.synthesis import format_answer
@@ -175,8 +174,7 @@ def compare_experiments(run_dirs, min_correctness=0.8, min_completeness=0.8):
                                        float(r["mean_cost_usd"] or "inf")))
 
 def run_experiment(questions, out_dir, today, repeats=1, seed=42, answer_fn=None,
-                   pipeline="supervisor", mlflow=None, tracking_uri=None,
-                   experiment_name=None, run_name=None, excel=False):
+                   pipeline="supervisor", excel=False):
     if repeats < 1:
         raise ValueError("repeats must be positive")
     if pipeline not in PIPELINES:
@@ -193,13 +191,12 @@ def run_experiment(questions, out_dir, today, repeats=1, seed=42, answer_fn=None
             loaded = sys.modules.get(name)
             if loaded is not None and getattr(loaded, "MODEL", None) != settings.get("llm", {}).get("model"):
                 raise RuntimeError("Policy assessor cached a different model; restart Python for this setup")
-    options = settings.get("experiment_tracking", {})
+    options = settings.get("experiment_measurements", {})
     pricing = settings.get("llm", {}).get("pricing", {})
     pricing_known = all(isinstance(pricing.get(key), (int, float))
                         and not isinstance(pricing.get(key), bool)
                         and math.isfinite(pricing[key]) and pricing[key] >= 0
                         for key in ("input_per_1m", "output_per_1m"))
-    track = options.get("enabled", False) if mlflow is None else mlflow
     interval = options.get("memory_sampling_interval_seconds", 0.1)
     if interval <= 0:
         raise ValueError("memory_sampling_interval_seconds must be positive")
@@ -236,94 +233,77 @@ def run_experiment(questions, out_dir, today, repeats=1, seed=42, answer_fn=None
                 "pipeline": pipeline, "scope": PIPELINES[pipeline],
                 "cost_note": "Configured rates, recorded calls only; unreported SDK retries may be missing"}
     (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-    tracker = MLflowBatch(manifest, out_dir, tracking_uri=tracking_uri,
-                          experiment_name=experiment_name, run_name=run_name) if track else None
-    try:
-        rng = random.Random(seed)
-        schedule = []
-        for repeat in range(1, repeats + 1):
-            for question in questions:
-                variants = list(VARIANTS)
-                rng.shuffle(variants)
-                schedule.extend((repeat, question, variant) for variant in variants)
-        records = []
-        # Flush each result so interrupted paid runs retain completed calls.
-        with (out_dir / "runs.jsonl").open("w", encoding="utf-8") as stream:
-            for index, (repeat, question, variant) in enumerate(schedule, 1):
-                print(f"[{index}/{len(schedule)}] {question['question_id']} repeat={repeat} {variant}", flush=True)
-                if CONFIG_FILE.read_text() != config_text:
-                    raise RuntimeError("config.yaml changed during the experiment; start a new run directory")
-                review_id = hashlib.sha256(
-                    f"{pipeline}:{seed}:{question['question_id']}:{repeat}:{variant}".encode()).hexdigest()[:16]
-                child_id = tracker.begin_question(question, repeat, variant, review_id, VARIANTS[variant]) if tracker else None
-                start = time.perf_counter()
-                record = {**question, "repeat": repeat, "variant": variant, "pipeline": pipeline}
-                reported_usage = []
-                measurement = ProcessMeasurement(interval)
-                with measurement:
-                    try:
-                        bundle = answer_fn(question["question"], today=today, decompose=VARIANTS[variant],
-                                           usage_log=reported_usage)
-                        usage = bundle.get("usage", [])
-                        record.update(bundle=bundle, error=None,
-                                      answer=format_answer(bundle["answer"]),
-                                      input_tokens=sum(u.get("input_tokens") or 0 for u in usage),
-                                      output_tokens=sum(u.get("output_tokens") or 0 for u in usage),
-                                      model_calls=sum(u.get("calls", 1) for u in usage),
-                                      cost_usd=bundle.get("cost_usd") if pricing_known else None,
-                                      usage_incomplete=not pricing_known or not usage or any(u.get("input_tokens") is None or
-                                          u.get("output_tokens") is None for u in usage) or
-                                          bool(bundle.get("agent_errors")) or
-                                          any(s.get("error") for s in bundle.get("steps", [])))
-                    except Exception as error:
-                        record.update(error=f"{type(error).__name__}: {error}", answer="[Pipeline execution failed]",
-                                      partial_usage=reported_usage,
-                                      input_tokens=sum(u.get("input_tokens") or 0 for u in reported_usage)
-                                          if reported_usage else None,
-                                      output_tokens=sum(u.get("output_tokens") or 0 for u in reported_usage)
-                                          if reported_usage else None,
-                                      model_calls=sum(u.get("calls", 1) for u in reported_usage)
-                                          if reported_usage else None,
-                                      cost_usd=estimate_cost_usd(reported_usage, settings.get("llm", {}).get("pricing"))
-                                      if reported_usage and pricing_known else None, usage_incomplete=True)
-                record["seconds"] = round(time.perf_counter() - start, 4)
-                record["review_id"] = review_id
-                record["compute"] = measurement.metrics
-                record["config_changed"] = CONFIG_FILE.read_text() != config_text
-                if child_id:
-                    record["mlflow_run_id"] = child_id
-                stream.write(json.dumps(record, ensure_ascii=False) + "\n")
-                stream.flush()
-                records.append(record)
-                if tracker:
-                    tracker.complete_question(child_id, record)
-                if record["config_changed"]:
-                    raise RuntimeError("config.yaml changed during inference; experiment is not comparable")
-        blinded = [{"review_id": r["review_id"], "question_id": r["question_id"],
-                    "question": r["question"], "answer": r["answer"],
-                    **{g: "" for g in GRADES}, "reviewer_notes": ""} for r in records]
-        rng.shuffle(blinded)
-        write_csv(out_dir / "grading_blind.csv", blinded,
-                  ["review_id", "question_id", "question", "answer", *GRADES, "reviewer_notes"])
-        write_csv(out_dir / "review_key.csv", [{k: r[k] for k in
-                  ("review_id", "question_id", "repeat", "variant")} for r in records],
-                  ["review_id", "question_id", "repeat", "variant"])
-        summaries = aggregate(records)
-        (out_dir / "efficiency.json").write_text(json.dumps(summaries, indent=2), encoding="utf-8")
-        save_comparison(out_dir, records, manifest)
-        if excel:
-            from agents.supervisor.excel_export import export_workbook
-            export_workbook([out_dir], out_dir / "experiment.xlsx")
-        if tracker:
-            tracker.finish(summaries)
-        return records
-    except BaseException:
-        if tracker:
-            try:
-                tracker.abort()
-            except Exception as error:
-                warnings.warn(f"Could not mark MLflow experiment failed: {error}", RuntimeWarning)
-        raise
+    rng = random.Random(seed)
+    schedule = []
+    for repeat in range(1, repeats + 1):
+        for question in questions:
+            variants = list(VARIANTS)
+            rng.shuffle(variants)
+            schedule.extend((repeat, question, variant) for variant in variants)
+    records = []
+    # Flush each result so interrupted paid runs retain completed calls.
+    with (out_dir / "runs.jsonl").open("w", encoding="utf-8") as stream:
+        for index, (repeat, question, variant) in enumerate(schedule, 1):
+            print(f"[{index}/{len(schedule)}] {question['question_id']} repeat={repeat} {variant}", flush=True)
+            if CONFIG_FILE.read_text() != config_text:
+                raise RuntimeError("config.yaml changed during the experiment; start a new run directory")
+            review_id = hashlib.sha256(
+                f"{pipeline}:{seed}:{question['question_id']}:{repeat}:{variant}".encode()).hexdigest()[:16]
+            start = time.perf_counter()
+            record = {**question, "repeat": repeat, "variant": variant, "pipeline": pipeline}
+            reported_usage = []
+            measurement = ProcessMeasurement(interval)
+            with measurement:
+                try:
+                    bundle = answer_fn(question["question"], today=today, decompose=VARIANTS[variant],
+                                       usage_log=reported_usage)
+                    usage = bundle.get("usage", [])
+                    record.update(bundle=bundle, error=None,
+                                  answer=format_answer(bundle["answer"]),
+                                  input_tokens=sum(u.get("input_tokens") or 0 for u in usage),
+                                  output_tokens=sum(u.get("output_tokens") or 0 for u in usage),
+                                  model_calls=sum(u.get("calls", 1) for u in usage),
+                                  cost_usd=bundle.get("cost_usd") if pricing_known else None,
+                                  usage_incomplete=not pricing_known or not usage or any(u.get("input_tokens") is None or
+                                      u.get("output_tokens") is None for u in usage) or
+                                      bool(bundle.get("agent_errors")) or
+                                      any(s.get("error") for s in bundle.get("steps", [])))
+                except Exception as error:
+                    record.update(error=f"{type(error).__name__}: {error}", answer="[Pipeline execution failed]",
+                                  partial_usage=reported_usage,
+                                  input_tokens=sum(u.get("input_tokens") or 0 for u in reported_usage)
+                                      if reported_usage else None,
+                                  output_tokens=sum(u.get("output_tokens") or 0 for u in reported_usage)
+                                      if reported_usage else None,
+                                  model_calls=sum(u.get("calls", 1) for u in reported_usage)
+                                      if reported_usage else None,
+                                  cost_usd=estimate_cost_usd(reported_usage, settings.get("llm", {}).get("pricing"))
+                                  if reported_usage and pricing_known else None, usage_incomplete=True)
+            record["seconds"] = round(time.perf_counter() - start, 4)
+            record["review_id"] = review_id
+            record["compute"] = measurement.metrics
+            record["config_changed"] = CONFIG_FILE.read_text() != config_text
+            stream.write(json.dumps(record, ensure_ascii=False) + "\n")
+            stream.flush()
+            records.append(record)
+            if record["config_changed"]:
+                raise RuntimeError("config.yaml changed during inference; experiment is not comparable")
+    blinded = [{"review_id": r["review_id"], "question_id": r["question_id"],
+                "question": r["question"], "answer": r["answer"],
+                **{g: "" for g in GRADES}, "reviewer_notes": ""} for r in records]
+    rng.shuffle(blinded)
+    write_csv(out_dir / "grading_blind.csv", blinded,
+              ["review_id", "question_id", "question", "answer", *GRADES, "reviewer_notes"])
+    write_csv(out_dir / "review_key.csv", [{k: r[k] for k in
+              ("review_id", "question_id", "repeat", "variant")} for r in records],
+              ["review_id", "question_id", "repeat", "variant"])
+    summaries = aggregate(records)
+    (out_dir / "efficiency.json").write_text(json.dumps(summaries, indent=2), encoding="utf-8")
+    save_comparison(out_dir, records, manifest)
+    if excel:
+        from agents.supervisor.excel_export import export_workbook
+        export_workbook([out_dir], out_dir / "experiment.xlsx")
+    return records
 
 
 def score_experiment(run_dir, grading_path, excel=False):
@@ -390,17 +370,10 @@ def main():
     run.add_argument("--seed", type=int, default=42)
     run.add_argument("--dry-run", action="store_true")
     run.add_argument("--pipeline", choices=PIPELINES, default="supervisor")
-    tracking = run.add_mutually_exclusive_group()
-    tracking.add_argument("--mlflow", action="store_true", default=None)
-    tracking.add_argument("--no-mlflow", action="store_false", dest="mlflow")
-    run.add_argument("--tracking-uri")
-    run.add_argument("--experiment-name")
-    run.add_argument("--run-name")
     run.add_argument("--excel", action="store_true")
     score = commands.add_parser("score")
     score.add_argument("run_dir", type=Path)
     score.add_argument("grading", type=Path)
-    score.add_argument("--publish-mlflow", action="store_true")
     score.add_argument("--excel", action="store_true")
     excel = commands.add_parser("export-excel")
     excel.add_argument("run_dirs", nargs="*", type=Path)
@@ -424,8 +397,6 @@ def main():
         return
     if args.command == "score":
         scores = score_experiment(args.run_dir, args.grading, excel=args.excel)
-        if args.publish_mlflow:
-            publish_grades(args.run_dir, args.grading, scores)
         print(json.dumps(scores, indent=2))
         return
     questions = load_questions(args.questions)
@@ -437,15 +408,13 @@ def main():
         print(json.dumps({"questions": len(questions), "pipeline_runs": len(questions) * args.repeats * 2,
                           "variants": VARIANTS, "today": args.today,
                           "pipeline": args.pipeline, "scope": PIPELINES[args.pipeline],
-                          "mlflow": args.mlflow if args.mlflow is not None else preview.get("experiment_tracking", {}).get("enabled", False),
                           "excel": args.excel,
                           "effective_variant_parameters": {v: effective_params(preview, args.pipeline, d)
                                                            for v, d in VARIANTS.items()},
                           "llm": preview.get("llm", {}), "policy_top_k": preview.get("agents", {}).get("policy_top_k")}, indent=2))
         return
     run_experiment(questions, args.out, args.today, args.repeats, args.seed, pipeline=args.pipeline,
-                   mlflow=args.mlflow, tracking_uri=args.tracking_uri,
-                   experiment_name=args.experiment_name, run_name=args.run_name, excel=args.excel)
+                   excel=args.excel)
     print(f"Saved {args.out}. Grade grading_blind.csv, then use the score command.")
 
 

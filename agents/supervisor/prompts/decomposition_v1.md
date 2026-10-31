@@ -24,6 +24,16 @@ needed to interpret the policy (for example that the purchase is resale).
 For comparisons, separate price tasks may request different towns or periods;
 do not ask an agent to produce a statistic its interface cannot supply.
 
+For the geographic price proxy allowed by R8, preserve the requested
+location and explicitly name the supported containing/nearby town in the
+price task. State the location basis instead of silently changing the place.
+Required elements must include the proxy town, requested flat type and
+period, transaction count and an explicit approximate-area disclosure.
+Do not invent a nearby town, a distance or an exact-address price. If the
+location relationship is unknown, retain that limitation rather than
+creating a guessed price task. An exact-price request remains unanswerable
+when only area-level context can be supplied.
+
 The set of task agents must match route: price -> price only; policy -> policy
 only; both -> at least one of each; none -> empty tasks. For an unanswerable
 question, retain the original question and limitations in the routing reason;

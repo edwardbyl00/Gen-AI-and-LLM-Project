@@ -1,6 +1,6 @@
 """Synthesis: turn the pipeline's bundle into the final answer.
 
-Answer rules A1-A9: agents/supervisor/prompts/synthesis_v1.md
+Answer rules A1-A9: agents/supervisor/prompts/synthesis_v2.md
 Code walkthrough: Docs/supervisor_guide.md
 
 The model writes the answer text and lists the passage numbers it cited.

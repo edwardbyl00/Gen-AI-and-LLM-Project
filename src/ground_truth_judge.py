@@ -54,6 +54,13 @@ GROUND_TRUTH_RUBRIC = {
 }
 
 
+def max_score():
+    return sum(
+        criterion["score_range"][1]
+        for criterion in GROUND_TRUTH_RUBRIC.values()
+    )
+
+
 def _load_model():
     with CONFIG_PATH.open(
         "r",

@@ -112,6 +112,6 @@ history totals to ablation totals.
 Offline tests disable persistent logging by default so fixture questions do not
 enter the user's history. Logging tests enable it only in temporary directories.
 
-For a unified experiment UI, the [MLflow integration](mlflow_experiments.md)
-records the same executions with configuration snapshots, local compute metrics
-and later quality grades. It keeps CSV as an export, not another billable run.
+The [batch evaluator](supervisor_ablation.md) also saves configuration snapshots,
+local compute metrics and later quality grades in local JSON/CSV reports. These
+describe the same executions as usage history, not additional billable runs.

@@ -2,14 +2,14 @@
 
 The supervisor takes a question, selects the evidence it needs, and writes an answer with sources.
 
-Scope: P2 routing, orchestration, synthesis, agent adapters and evaluation. Reviewed against the local code on 25 October 2026; specialist implementation details remain in their own guides.
+Scope: P2 routing, orchestration, synthesis, agent adapters and evaluation. Reviewed against the local code on 31 October 2026; specialist implementation details remain in their own guides.
 
 Start with `handle_question()` in [pipeline.py](../agents/supervisor/pipeline.py). The routing and synthesis prompts define the decision rules; the tables below explain the returned fields.
 
-The flow below is the A baseline. `config.yaml`'s `supervisor.decompose` is
-now `true` by default, which adds router-generated focused tasks, per-task
-execution and synthesis from all task results (B); pass `decompose=False` to
-run the baseline instead. See the [ablation and unseen-question
+The flow below is the A baseline. `config.yaml` currently sets
+`supervisor.decompose: false`. Pass `decompose=True` to add router-generated
+focused tasks, per-task execution and synthesis from all task results (B).
+The paired evaluator runs both variants explicitly. See the [ablation and unseen-question
 guide](supervisor_ablation.md) for its interfaces, paired evaluation commands
 and team grading workflow. P3's graph (`agents/graph/graph.py`) uses the same
 `agents/supervisor/tasks.py` routing/task helpers and config flag, then adds
@@ -44,7 +44,11 @@ Token tracking runs alongside the flow: routing, pricing, policy assessment and 
 
 For example, **“Can I use CPF for a resale flat?”** should route to `policy`. The policy agent searches for relevant passages. Synthesis receives those passages and writes the answer. Code attaches the sources using passage metadata.
 
-Routing and synthesis each call the model. The real price agent calls the model to extract filters (or write SQL); the policy agent can call the model to assess evidence. Routing retries can add calls too.
+Routing calls the model. Synthesis calls it for relevant, sufficiently clear
+questions; clarification requests and route `none` use deterministic responses
+without a synthesis call. The real price agent calls the model to extract filters
+(or write SQL); the policy agent can call the model to assess evidence. Routing
+retries can add calls too.
 
 ### Detailed flow: routing checks
 
@@ -62,7 +66,10 @@ flowchart TD
     RETRY -->|Yes| AGAIN[Start attempt 2]
     AGAIN --> CALL
     RETRY -->|No| FALLBACK[Return SAFE_FALLBACK and events]
-    VALID -->|Yes| MYTH{Route none and check_premise true?}
+    VALID -->|Yes| CLARIFY{Needs clarification?}
+    CLARIFY -->|Yes| PAUSE[Set route none; clear premise and answerable flags]
+    PAUSE --> DONE
+    CLARIFY -->|No| MYTH{Route none and check_premise true?}
     MYTH -->|Yes| POLICY[Set route to policy and log fix]
     MYTH -->|No| ANSWERABLE{Route none and answerable true?}
     POLICY --> ANSWERABLE
@@ -148,16 +155,30 @@ flowchart TD
     ABSTAIN --> EMPTY[Adapter returns empty evidence]
 ```
 
-The self-correction stage happens at most once, although it can search several suggested queries. Retrieval/assessment exceptions follow the pipeline's agent-error branch.
+The self-correction stage happens at most once, using at most two suggested
+queries from the real assessor. It checks the relevance and sufficiency of
+supplied passages; it cannot establish that no evidence exists elsewhere in
+the corpus. Missing user facts can still permit a conditional answer. Raw
+`retrieved_evidence` is retained separately from the selected `evidence`, so
+abstention does not hide the retrieved candidates. Policy steps record the
+decision and reason; [usage logging](usage_logging.md) explains the CSV fields.
+Retrieval/assessment exceptions follow the pipeline's agent-error branch.
 
 ### Detailed flow: synthesis and citations
 
-In `synthesis.py`, missing evidence is described in model context. Answering or declining is a model decision guided by the prompt, rather than a Python if/else check on evidence alone.
+In `synthesis.py`, a clarification request returns the requested clarification
+without a model call, and route `none` returns the fixed scope response. For
+other routes, missing evidence is described in model context and answering or
+declining is a model decision guided by the prompt.
 
 ```mermaid
 flowchart TD
-    BUNDLE[Bundle] --> CONTEXT["build_context()<br/>Include facts, passages and missing-source notes"]
-    CONTEXT --> MODEL["synthesise(): model returns<br/>answer, cited and declined"]
+    BUNDLE[Bundle] --> CLARIFY{Needs clarification?}
+    CLARIFY -->|Yes| ASK[Return clarifying question; no model call]
+    CLARIFY -->|No| SCOPE{Route none?}
+    SCOPE -->|Yes| DECLINE[Return scope response and supported topics; no model call]
+    SCOPE -->|No| CONTEXT["build_context()<br/>Include facts, passages and missing-source notes"]
+    CONTEXT --> MODEL["synthesise(): model returns<br/>answer, cited, declined and cannot_answer"]
     MODEL --> OK{Synthesis succeeds?}
     OK -->|No| STRICT{strict=True?}
     STRICT -->|Yes| ERR[Raise error to caller]
@@ -174,6 +195,8 @@ flowchart TD
     NEXT -->|No| SOURCES[Build source list from kept numbers]
     SOURCES --> RETURN[Pipeline returns bundle with answer]
     FALLBACK --> RETURN
+    ASK --> RETURN
+    DECLINE --> RETURN
     RETURN --> FORMAT["Caller uses format_answer()<br/>to display answer and sources"]
 ```
 
@@ -193,6 +216,11 @@ All files below are in `agents/supervisor/`.
 | [synthesis.py](../agents/supervisor/synthesis.py) | `synthesise()`, `format_answer()` | Writes the answer, checks citation numbers and formats sources |
 | [evaluate.py](../agents/supervisor/evaluate.py) | `run()`, `score()` | Compares routing predictions with labelled questions |
 | [score_answers.py](../agents/supervisor/score_answers.py) | `answer_all()`, `score_sheet()` | Generates answer grading sheets and scores reviewed grades |
+| [usage_log.py](../agents/supervisor/usage_log.py) | `track_run()`, `append_run()` | Saves local run/call CSV history and policy abstention outcomes |
+| [ablation.py](../agents/supervisor/ablation.py) | `run_experiment()`, `score_experiment()` | Runs paired A/B batches and scores independent grades |
+| [diagnostics.py](../agents/supervisor/diagnostics.py) | `prepare()`, `summarise()` | Diagnoses saved stages and builds tabular review reports offline |
+| [stage_review_excel.py](../agents/supervisor/stage_review_excel.py) | `export_workbook()` | Builds the compact Summary / Review / Agentic Details workbook from saved outputs |
+| [judge_tools.py](../agents/supervisor/judge_tools.py) | `run_prepass()`, `run_swap_check()`, `score_against_human()` | Supports reference-gated judging and judge validation; see the specialist guides |
 
 Call `handle_question()` for a complete answer, or `safe_route()` for routing with checks. The router CLI calls `route_question()` directly and is useful for inspecting one raw classification.
 
@@ -210,6 +238,18 @@ The router returns six fields:
 | `clarifying_question` | A short, specific question to resolve the ambiguity, or `null` when `needs_clarification` is false |
 
 A grant amount needs policy evidence. A historical resale price needs transaction evidence. An unanswerable question can still route to an agent for related context.
+
+**R8: nearby-area price estimates.** When an exact street/landmark price is
+unavailable, an approximate historical resale-price estimate may use its
+containing town or a reliably identified nearby supported area. The routing
+reason and price task must retain the requested location and name the proxy
+area. The final answer must explicitly describe the substitution, flat type,
+period and transaction count, and label it an approximate area-level estimate.
+An exact-address request remains unanswerable when only nearby context exists.
+Missing location information must be clarified; the prompt does not add a
+geocoding or distance-search capability, and it must not invent which area is
+closest. Prices still come from transaction results, with no affordability
+advice, invented valuations or forecasts.
 
 `safe_route()` follows this sequence:
 
@@ -282,7 +322,7 @@ A **bundle** is the dictionary created inside `handle_question()` in [pipeline.p
 | `question`, `today` | Original question and date shared by the stages |
 | `routing` | Checked routing decision |
 | `price_result`, `policy_result` | Agent output, or `None` if skipped/failed |
-| `agent_errors` | Failures keyed by agent name |
+| `agent_errors` | Failures keyed by agent name in A, task ID in B |
 | `steps` | Stage timings, events, errors and stub flags |
 | `usage` | Router, price, policy-assessor and synthesis input/output token counts |
 | `cost_usd` | Estimated cost of recorded usage, added after synthesis |
@@ -316,7 +356,11 @@ This documents the configured calculation, not verified current API prices or an
 
 ### What the citation check guarantees
 
-Synthesis receives numbered passages and returns `answer`, `cited` and `declined`. Code removes invalid/duplicate numbers from `cited` and builds the source list from the corresponding passage metadata.
+For model-written answers, synthesis receives numbered passages and returns
+`answer`, `cited`, `declined` and `cannot_answer` (each unanswered part and its
+reason). Code adds sources, events and the clarification flag. Code removes
+invalid/duplicate numbers from `cited` and builds the source list from the
+corresponding passage metadata.
 
 This checks that citation numbers refer to supplied passages. It does not verify claim support, remove invalid markers inside answer text, or prevent invented links in model-written prose. Answer rules are mainly prompt instructions.
 
@@ -355,7 +399,9 @@ Model settings live under `llm` in `config.yaml`. Optional request settings set 
 
 ### Label questions
 
-Add rows to [practice_routing.csv](../data/labels/practice_routing.csv) for tuning. Reserve [routing_labels.csv](../data/labels/routing_labels.csv) for held-out evaluation.
+Add rows to [practice_routing.csv](../data/labels/practice_routing.csv) for tuning. This is the consolidated practice dataset: 54 existing questions and five P1 questions, with stable IDs and the current labels preserved. P1 premise explanations are retained in `rationale`. Keep independently written held-out questions in a separate evaluation file; do not reuse these practice questions as an unseen benchmark.
+
+[Questionaire.xlsx](../data/labels/Questionaire.xlsx) is the matching Excel review copy, with the same 59 questions and nine fields. The CSV remains the evaluation input; edits in Excel are not automatically synced back to it.
 
 The practice CSV uses these nine columns. Keep every header, even if optional cells are blank.
 
@@ -375,9 +421,9 @@ The practice CSV uses these nine columns. Keep every header, even if optional ce
 
 `check_premise` is not a truth judgement. A normal question such as “What happens to my CPF when I sell?” does not by itself assert a false rule. User age/income and service availability do not count as premises under v2. Verify `premise_false` using sources, never infer it just because the router flagged a claim. Unverified rows are excluded from myth acceptance, so report that denominator with the score.
 
-Label the actual question: a forecast may be unanswerable even when historical facts provide context. Keep prompt examples out of practice and held-out sets. Label history is stored separately in [practice_routing_label_history.csv](../data/labels/history/practice_routing_label_history.csv).
+Label the actual question: a forecast may be unanswerable even when historical facts provide context. Keep prompt examples out of practice and held-out sets. Previous labels and question-ID mappings are available in Git history.
 
-The held-out `routing_labels.csv` still has the old `false_belief` header and no questions. Before using it with the current evaluator, adopt the practice file's v2 headers and add independently reviewed questions.
+The empty legacy held-out placeholder was removed. For routing-only evaluation of a new held-out set, use the same nine-column schema above with independently reviewed labels. For end-to-end evaluation, follow the [stage evaluation workflow](stage_evaluation.md) and keep reference answers separate from inference inputs.
 
 ### Check routing
 
@@ -422,7 +468,12 @@ If scores worsen, inspect routing, retrieved evidence, agent failures, synthesis
 | `score_answers run` | `evaluation/answers/answers_<timestamp>.csv`: question/labels, route, answer with sources, citation count, errors, stub flags, total tokens, estimated USD, seconds and grading columns |
 | `score_answers score` | Prints metrics from reviewed grades; no new report file |
 
-The answer CSV is a summary, not the full bundle: it does not export all retrieved passages, agent traces or per-stage usage. Exports are UTF-8; in Excel use Data → From Text/CSV and choose UTF-8 if curly punctuation appears garbled. No dashboard is implemented in this supervisor scope.
+The answer CSV is a summary, not the full bundle: it does not export all
+retrieved passages, agent traces or per-stage usage. Use the
+[stage-review workflow](stage_evaluation.md) for those details and the compact
+Excel report. The [pipeline map](end_to_end_overview.md) links the demo UI.
+Exports are UTF-8; in Excel use Data → From Text/CSV and choose UTF-8 if curly
+punctuation appears garbled.
 
 Record the code revision, prompts, label revision, agent modes and configured rates alongside each evaluated run. Output filenames contain minute-level timestamps; repeating the same export within a minute can overwrite its earlier file.
 
@@ -432,15 +483,19 @@ Compare v1 `false_belief` and v2 `check_premise` as different tasks. Route/answe
 
 | Prompt | Used by |
 | --- | --- |
-| [supervisor_v2.md](../agents/supervisor/prompts/supervisor_v2.md) | Router: rules R1–R5 and routing examples (v1 kept for comparison) |
-| [synthesis_v2.md](../agents/supervisor/prompts/synthesis_v2.md) | Synthesis: answer rules A1–A8 (v1 kept for comparison) |
+| [supervisor_v2.md](../agents/supervisor/prompts/supervisor_v2.md) | Router: rules R1–R8 and routing examples |
+| [synthesis_v2.md](../agents/supervisor/prompts/synthesis_v2.md) | Synthesis: answer rules A1–A9 |
+| [decomposition_v1.md](../agents/supervisor/prompts/decomposition_v1.md) | Additional focused-task instructions when decomposition is enabled |
 
 1. Decide which routing or answer rule needs to change and update its explanation alongside the prompt.
-2. Copy the prompt to a new version, edit it, and update `PROMPT_FILE` in `router.py` or `synthesis.py`. Keep old versions for comparison.
+2. Edit the active prompt for incremental changes, or create a named new version when the experiment calls for one and update `PROMPT_FILE` in `router.py` or `synthesis.py`. Git history and saved fingerprints preserve obsolete versions; removed v1 routing/synthesis files are not runtime dependencies.
 3. If reply fields change, update the JSON schema, prompt, consuming code and tests together. Wording changes alone do not require a schema change.
 4. Run supervisor tests, then the relevant live evaluation. Tests with fakes do not measure prompt quality.
 
-Prompts are read at call time and `{today}` is replaced with the shared date. Code enforces the two routing repairs and citation-number checks; other routing/answer rules depend mainly on the model following instructions.
+Prompts are read at call time and `{today}` is replaced with the shared date.
+Code enforces the clarification/routing repairs, deterministic scope and
+clarification responses, and citation-number checks. Other routing/answer rules
+depend mainly on the model following instructions.
 
 ## 6. Troubleshooting
 

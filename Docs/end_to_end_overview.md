@@ -5,6 +5,12 @@ across every phase and links out to the doc that owns the detail. When a
 phase's behavior changes, update that phase's own doc; only update this one
 if a stage is added, removed, or its entry point moves.
 
+Checked against the local code and configuration on **31 October 2026**.
+The current configuration uses baseline routing (`supervisor.decompose: false`),
+real policy retrieval with `policy_top_k: 10`, price approach A and one graph
+self-check retry with LLM review enabled. A/B evaluation overrides decomposition
+per execution. Read [config.yaml](../config.yaml) for the applied local settings.
+
 ## 1. From raw documents to a queryable index (P4 → P5 infra)
 
 Runs ahead of time, not per question. Only needed again if the source
@@ -38,16 +44,20 @@ flowchart TD
     Q[Question] --> ROUTE["Supervisor router<br/>agents/supervisor/router.py"]
     ROUTE --> SAFE["safe_route() checks/repairs<br/>agents/supervisor/checks.py"]
     SAFE --> TASKS{"decompose?<br/>supervisor.decompose in config.yaml"}
-    TASKS -->|"false (A)"| ONE["One task per selected agent"]
-    TASKS -->|"true (B, default)"| MANY["Router's focused per-agent tasks"]
+    TASKS -->|"false (A, current default)"| ONE["One task per selected agent"]
+    TASKS -->|"true (B)"| MANY["Router's focused per-agent tasks"]
     ONE --> EXEC
     MANY --> EXEC["execute_task() per task<br/>agents/supervisor/tasks.py"]
     EXEC --> PRICE["Price agent (P1)<br/>agents/price/"]
     EXEC --> POLICY["Policy agent (P5)<br/>src/policy_agent.py<br/>retrieve -> assess -> self-correct -> reassess"]
     PRICE --> SYNTH
     POLICY --> SYNTH["Synthesis: write answer, check citations<br/>agents/supervisor/synthesis.py"]
-    SYNTH --> OUT[Answer with sources]
-    OUT -.->|"--pipeline graph adds"| CHECK["P3 self-check loop<br/>agents/graph/graph.py, self_check.py<br/>retries only the failed task(s)"]
+    SYNTH --> MODE{Graph entry point?}
+    MODE -->|No| OUT[Answer with sources]
+    MODE -->|Yes| CHECK["P3 self-check loop<br/>agents/graph/graph.py, self_check.py"]
+    CHECK -->|Pass or retry limit reached| OUT
+    CHECK -.->|Revise answer| SYNTH
+    CHECK -.->|Retry failed task| EXEC
 ```
 
 | Stage | Code | Docs |
@@ -70,9 +80,9 @@ guide explains how to choose between them.
 | --- | --- | --- |
 | Demo UI | `streamlit run ui/app.py` | [ui/README.md](../ui/README.md) |
 | Per-run token/cost history (CSV) | `logs/usage/` | [usage_logging.md](usage_logging.md) |
-| Optional experiment tracking | MLflow | [mlflow_experiments.md](mlflow_experiments.md) |
 | Routing/answer evaluation runs | `evaluation/results/`, `evaluation/answers/` | [supervisor_guide.md §4](supervisor_guide.md#4-evaluate-label-run-grade-score) |
 | Paired A/B decomposition evaluation | `evaluation/ablation/` | [supervisor_ablation.md](supervisor_ablation.md) |
+| Per-stage diagnosis and compact Excel review, optionally judge-assisted | A chosen review directory under `evaluation/ablation/<run>/` | [stage_evaluation.md](stage_evaluation.md) |
 | LLM-as-judge bias/agreement checks | `evaluation/agentic/judge_swap_check.json`, `human_label_sample.csv` | [llm_judge_validation.md](llm_judge_validation.md) |
 
 ## 4. Setup and conventions

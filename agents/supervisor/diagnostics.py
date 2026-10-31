@@ -84,9 +84,18 @@ def presentation_report(report):
              recall(r, "reference_candidate_recall"), recall(r, "reference_supplied_recall"),
              "\n".join(f"{o['task_id']}: {o.get('decision') or 'unknown'} — {o.get('reason') or 'no reason recorded'}"
                        for o in r["policy_outcomes"]) or "Not run / not recorded"] for r in rows])]
-    sections += ["## Answer quality by execution", _table([
-        "Run", "Evidence relevance", "Faithfulness", "Correctness", "Completeness", "Appropriate abstention"
-    ], [[label(r), *(_score(r, grade) for grade in GRADES)] for r in rows])]
+    def judge(row):
+        if row.get("judge_total_score") is None:
+            return "Not judged"
+        max_score = report.get("judge_max_score")
+        return f"{row['judge_total_score']}/{max_score}" if max_score else str(row["judge_total_score"])
+
+    sections += ["## Answer quality by execution", "LLM-judge score is a pre-pass for reviewer context, "
+                 "not a substitute for the independent grades to its right.",
+        _table([
+        "Run", "LLM-judge score", "Evidence relevance", "Faithfulness", "Correctness", "Completeness",
+        "Appropriate abstention"
+    ], [[label(r), judge(r), *(_score(r, grade) for grade in GRADES)] for r in rows])]
 
     flag_counts = Counter(flag for r in rows for flag in r["diagnostic_flags"])
     sections += ["## Diagnostic observations", "Flags are investigation leads, not confirmed causes. "
@@ -242,9 +251,17 @@ def diagnose(record, reference, corpus_ids):
         **{grade: "" for grade in GRADES}}
 
 
-def prepare(run_dir, references_path, out_dir, chunks_path=None):
+def load_judge_scores(path):
+    """Read a pre-computed judge_tools.py prepass output; never calls a model."""
+    return json.loads(Path(path).read_text())
+
+
+def prepare(run_dir, references_path, out_dir, chunks_path=None, judge_scores_path=None):
     run_dir, out_dir = Path(run_dir), Path(out_dir)
     refs = load_references(references_path)
+    judge_payload = load_judge_scores(judge_scores_path) if judge_scores_path else {}
+    judge_scores = judge_payload.get("scores", {})
+    judge_max_score = judge_payload.get("max_score")
     records = [json.loads(line) for line in (run_dir / "runs.jsonl").read_text().splitlines() if line.strip()]
     if not records or len({r["review_id"] for r in records}) != len(records):
         raise ValueError("Saved runs must be nonempty with unique review IDs")
@@ -268,15 +285,20 @@ def prepare(run_dir, references_path, out_dir, chunks_path=None):
         ref = refs.get(record["question_id"])
         if ref is None or " ".join(ref["question"].split()) != " ".join(record["question"].split()):
             raise ValueError(f"Missing or different reference question: {record['question_id']}")
-        rows.append(diagnose(record, ref, corpus_ids))
+        row = diagnose(record, ref, corpus_ids)
+        judgement = judge_scores.get(row["review_id"])
+        row["judge_total_score"] = judgement.get("total_score") if judgement else None
+        row["judge_reason"] = judgement.get("reason", "") if judgement else ""
+        rows.append(row)
     out_dir.mkdir(parents=True, exist_ok=False)
     report = {"run_directory": str(run_dir.resolve()), "references_sha256": digest(references_path),
               "chunks_sha256": digest(chunks_path) if chunks_path else None,
               "manifest_sha256": digest(run_dir / "manifest.json"), "runs_sha256": digest(run_dir / "runs.jsonl"),
-              "query_date": manifest.get("today"), "rows": rows}
+              "query_date": manifest.get("today"), "judge_max_score": judge_max_score, "rows": rows}
     (out_dir / "diagnostics.json").write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
     (out_dir / "report.md").write_text(presentation_report(report), encoding="utf-8")
-    columns = ["review_id", "question_id", "question", "answer", *GRADES,
+    columns = ["review_id", "question_id", "question", "answer",
+               "judge_total_score", "judge_reason", *GRADES,
                "what_went_well", "what_went_wrong", "recommended_fix", "reviewer_notes"]
     with (out_dir / "review.csv").open("w", newline="", encoding="utf-8-sig") as stream:
         writer = csv.DictWriter(stream, fieldnames=columns)
@@ -340,16 +362,29 @@ def main():
     prep.add_argument("run_dir", type=Path)
     prep.add_argument("--references", type=Path, required=True)
     prep.add_argument("--chunks", type=Path)
+    prep.add_argument("--judge-scores", type=Path,
+        help="Pre-computed LLM-judge scores from agents.supervisor.judge_tools prepass; "
+             "merged into review.csv as context, never calls a model here.")
     prep.add_argument("--out", type=Path, required=True)
     summary = commands.add_parser("summarise")
     summary.add_argument("report", type=Path)
     summary.add_argument("review", type=Path)
     summary.add_argument("--out", type=Path, required=True)
+    export = commands.add_parser("export-excel")
+    export.add_argument("stage_dir", type=Path,
+        help="A stage-review directory, as written by 'prepare' (has review.csv, diagnostics.json)")
+    export.add_argument("--llm-judge-scores", type=Path, default=None,
+        help="Output of scripts/judge_ablation_answers.py, included alongside review and diagnostic columns")
+    export.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     if args.command == "template":
         references_template(args.questions, args.out)
     elif args.command == "prepare":
-        prepare(args.run_dir, args.references, args.out, args.chunks)
+        prepare(args.run_dir, args.references, args.out, args.chunks, args.judge_scores)
+    elif args.command == "export-excel":
+        from agents.supervisor.stage_review_excel import export_workbook
+        path = export_workbook(args.stage_dir, args.out, llm_judge_scores=args.llm_judge_scores)
+        print(f"Wrote {path}")
     else:
         result = summarise(args.report, args.review)
         markdown_path = args.out.with_suffix(".md")
