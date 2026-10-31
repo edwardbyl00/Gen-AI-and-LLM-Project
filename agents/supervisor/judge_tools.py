@@ -114,7 +114,7 @@ def run_prepass(run_dir, references_path, out_path):
 
     records = [
         json.loads(line)
-        for line in (run_dir / "runs.jsonl").read_text().splitlines()
+        for line in (run_dir / "runs.jsonl").read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
 
@@ -301,7 +301,7 @@ def run_swap_check(n, threshold):
     )
 
     out_path.write_text(
-        json.dumps(report, indent=2),
+        json.dumps(report, indent=2, ensure_ascii=False),
         encoding="utf-8",
     )
 
@@ -453,6 +453,7 @@ def score_against_human(labels_path):
                 "n_total_score_disagreements": len(disagreements),
             },
             indent=2,
+            ensure_ascii=False,
         ),
         encoding="utf-8",
     )
