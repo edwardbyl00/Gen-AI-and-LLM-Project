@@ -1,0 +1,9 @@
+question_id,question,category
+EXAMPLE_PRICE,"What was the average resale price of 4-room flats in Tampines in 2023?",price
+EXAMPLE_POLICY,"What housing grants can first-time couples receive when buying an HDB resale flat?",policy
+EXAMPLE_MIXED,"What was the average resale price of 4-room flats in Tampines in 2023, and which housing grants can first-time couples receive for a resale purchase?",mixed
+EXAMPLE_FALSE_PREMISE,"Since HDB abolished the ethnic integration policy in 2022, can any buyer purchase any unit regardless of race?",false_premise
+EXAMPLE_IRRELEVANT,"What is the weather forecast for Singapore this week?",irrelevant
+EXAMPLE_MISSING_EVIDENCE,"What was the median resale price of 4-room flats in Tampines in 2030?",missing_evidence
+EXAMPLE_MISSING_USER_INFO,"Am I eligible for the Enhanced CPF Housing Grant?",missing_user_information
+EXAMPLE_DATASET_BOUNDARY,"What was the resale price of the flat at Block 123 Example Street on 2023-01-01?",dataset_boundary

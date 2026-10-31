@@ -27,10 +27,21 @@ Save the supplied list with unique `question_id`, `question` and optional
 irrelevant, missing evidence, missing user information and dataset boundary.
 Keep every question, including difficult cases and failures.
 
+Copy the fill-in template and replace the example rows with the real list.
+`--out` below (`evaluation/ablation/new_questions_v1`) is created fresh by the
+batch runner in the next step and must not already exist, so keep the
+questions file and the generated references file one level up, in
+`evaluation/ablation/` itself:
+
+```sh
+mkdir -p evaluation/ablation
+cp evaluation/templates/unseen_evaluation_questions.template.csv evaluation/ablation/new_questions_v1_questions.csv
+```
+
 Generate a separate reviewer reference file:
 
 ```sh
-python -m agents.supervisor.diagnostics template path/to/new_questions.csv --out path/to/references.json
+python -m agents.supervisor.diagnostics template evaluation/ablation/new_questions_v1_questions.csv --out evaluation/ablation/new_questions_v1_references.json
 ```
 
 For each question, the reviewer fills in the expected route, reference answer,
@@ -64,7 +75,7 @@ Use the existing [batch runner](supervisor_ablation.md). This example runs both
 decomposition variants through the full graph and its current self-check loop:
 
 ```sh
-python -m agents.supervisor.ablation run path/to/new_questions.csv --pipeline graph --out evaluation/ablation/new_questions_v1 --today 2026-10-31 --repeats 1 --dry-run
+python -m agents.supervisor.ablation run evaluation/ablation/new_questions_v1_questions.csv --pipeline graph --out evaluation/ablation/new_questions_v1 --today 2026-10-31 --repeats 1 --dry-run
 ```
 
 The dry run validates the input and schedule. Remove `--dry-run` to execute the
@@ -77,7 +88,7 @@ question-list experiment.
 After inference, prepare the diagnostic report:
 
 ```sh
-python -m agents.supervisor.diagnostics prepare evaluation/ablation/new_questions_v1 --references path/to/references.json --chunks data/processed/chunks.jsonl --out evaluation/ablation/new_questions_v1/stage_review
+python -m agents.supervisor.diagnostics prepare evaluation/ablation/new_questions_v1 --references evaluation/ablation/new_questions_v1_references.json --chunks data/processed/chunks.jsonl --out evaluation/ablation/new_questions_v1/stage_review
 ```
 
 The command produces:
