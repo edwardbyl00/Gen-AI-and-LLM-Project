@@ -1,6 +1,6 @@
-# P4 → P5 RAG Handoff Contract
+# Data preparation → policy agent RAG handoff contract
 
-P4 will provide cleaned policy documents/chunks for P5 to use.
+The data-preparation stage provides cleaned policy documents/chunks for the policy agent to use.
 
 ## Required fields
 
@@ -28,7 +28,7 @@ Each document/chunk should contain:
   "text": "..."
 }
 
-## P4 responsibility
+## Data-preparation responsibility
 
 - collect official HDB / CPF / SSO documents
 - clean the documents
@@ -36,7 +36,7 @@ Each document/chunk should contain:
 - provide metadata
 - build the vanilla retrieval/index
 
-## P5 responsibility
+## Policy-agent responsibility
 
 - date/effective-date handling
 - advanced retrieval

@@ -68,6 +68,12 @@ div.stButton > button:focus-visible { outline: 3px solid #E8A33D; outline-offset
 .ag-status { font-size: .95rem; color: #486581; margin: .25rem 0 .5rem; }
 .ag-status b { color: #0F7C7A; }
 .ag-status.ag-declined b { color: #9F580A; }
+.ag-status.ag-clarify b { color: #3E63DD; }
+
+.ag-cannot { background: #FFFBEA; border: 1px solid #F3D9A4; border-radius: 10px;
+  padding: .7rem .9rem; margin: .6rem 0; font-size: .92rem; color: #102A43; }
+.ag-cannot b { color: #9F580A; }
+.ag-cannot ul { margin: .3rem 0 0; padding-left: 1.2rem; }
 
 .ag-strip { background: #FFFFFF; border: 1px solid #D9E2EC; border-radius: 12px;
   padding: 1.1rem 1.25rem 1.4rem; margin: 1rem 0; }
@@ -210,7 +216,10 @@ def show_main(bundle):
     with st.container(border=True):
         st.markdown(plain_text(answer["answer"]))
     price = bundle.get("price_result")
-    if answer.get("declined"):
+    if answer.get("needs_clarification"):
+        status = ('<div class="ag-status ag-clarify"><b>Need more detail.</b> '
+                  "The question is too unclear to search the right sources yet.</div>")
+    elif answer.get("declined"):
         status = ('<div class="ag-status ag-declined"><b>Not fully answered.</b> '
                   "The sources I have could not answer the whole question.</div>")
     elif price and price.get("n_deals"):
@@ -219,6 +228,14 @@ def show_main(bundle):
     else:
         status = '<div class="ag-status"><b>Answered.</b></div>'
     st.markdown(status, unsafe_allow_html=True)
+    cannot_answer = answer.get("cannot_answer") or []
+    if cannot_answer:
+        items = "".join(
+            f"<li>{html.escape(item['part'])}: {html.escape(item['reason'])}</li>"
+            for item in cannot_answer
+        )
+        st.markdown(f'<div class="ag-cannot"><b>Can\'t answer</b><ul>{items}</ul></div>',
+                   unsafe_allow_html=True)
     if price:
         st.markdown(price_strip_html(price), unsafe_allow_html=True)
 

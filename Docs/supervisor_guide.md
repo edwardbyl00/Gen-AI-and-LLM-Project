@@ -198,7 +198,7 @@ Call `handle_question()` for a complete answer, or `safe_route()` for routing wi
 
 ### Routing fields and safety checks
 
-The router returns four fields:
+The router returns six fields:
 
 | Field | Meaning |
 | --- | --- |
@@ -206,23 +206,41 @@ The router returns four fields:
 | `check_premise` | The question states or assumes a claim about rules or prices that must be checked against evidence (it may be true or false; the router does not decide). Facts about the user's own situation do not count |
 | `answerable` | Whether the actual question can be answered from the available sources |
 | `reason` | The model's explanation for its decision |
+| `needs_clarification` | True only when the question is too unclear or underspecified to route with confidence (rule R7); a vague-but-routable question is not enough |
+| `clarifying_question` | A short, specific question to resolve the ambiguity, or `null` when `needs_clarification` is false |
 
 A grant amount needs policy evidence. A historical resale price needs transaction evidence. An unanswerable question can still route to an agent for related context.
 
 `safe_route()` follows this sequence:
 
 1. Call the router.
-2. If a retryable error occurs or the record is malformed, try once more. After two unsuccessful attempts, return `SAFE_FALLBACK`: `route=none`, `check_premise=False`, `answerable=False`.
+2. If a retryable error occurs or the record is malformed, try once more. After two unsuccessful attempts, return `SAFE_FALLBACK`: `route=none`, `check_premise=False`, `answerable=False`, `needs_clarification=False`, `clarifying_question=None`.
 3. Repair known contradictions and return `(record, events)`.
 
 | Contradiction | Repair |
 | --- | --- |
+| `needs_clarification=True` | Force `route=none`, `check_premise=False`, `answerable=False` — nothing is searched until the user answers |
 | `route=none`, `check_premise=True` | Set `route=policy` so evidence can be checked |
 | `route=none`, `answerable=True` | Set `answerable=False` |
 
-The first repair runs before the second. If both contradictions occur, the result is `policy` and remains answerable.
+The clarification repair runs first, then the `check_premise` repair, then the `answerable` repair. If both of the latter two contradictions occur, the result is `policy` and remains answerable.
 
 Retries cover malformed replies, refusals, connection/timeouts, rate limits and server errors. Setup errors such as a wrong key or invalid model propagate to the caller. Events record malformed attempts and repairs.
+
+`needs_clarification`/`clarifying_question` are optional for backward compatibility: a caller supplying its own `route_fn` that skips `safe_route()` (as some tests do) can omit them, and they default to "no clarification needed". Because that caller also bypasses the repair above, `tasks_for_route()` (`agents/supervisor/tasks.py`) carries its own `needs_clarification` guard, returning no tasks regardless of `route`, so clarification is enforced before either agent runs even when the repair didn't.
+
+### Showing what was and wasn't answered
+
+Synthesis always reports, alongside the answer text, which parts of the question it could not answer and why — not just as prose (A3, A4), but as a structured `cannot_answer` list of `{"part", "reason"}` objects that a caller can render as a distinct "Can't answer" section (`format_answer()` does this for CLI output; `ui/app.py`'s `show_main()` renders it as a callout). It is empty when every part of the question was answered.
+
+| Situation | `answer` | `declined` | `needs_clarification` | `cannot_answer` |
+| --- | --- | --- | --- | --- |
+| Fully answered | the answer | `False` | `False` | `[]` |
+| Partly answered (e.g. mixed question, one part out of scope) | the answered part plus an inline note (A4) | `True` | `False` | one entry per unanswered part, each with its reason |
+| Out of scope entirely (`route=none`) | `SCOPE_ANSWER` | `True` | `False` | one entry naming the whole question, reason "outside the sources I have" |
+| Question too unclear to route | the `clarifying_question` | `True` | `True` | `[]` |
+
+The unclear-question case short-circuits `synthesise()` before any model call or evidence gathering: see `needs_clarification` above.
 
 ### Agent configuration and integration
 
@@ -269,7 +287,7 @@ A **bundle** is the dictionary created inside `handle_question()` in [pipeline.p
 | `usage` | Router, price, policy-assessor and synthesis input/output token counts |
 | `cost_usd` | Estimated cost of recorded usage, added after synthesis |
 | `usage_tracking` | Saved usage run ID and paths to summary/stage CSVs, when logging succeeds |
-| `answer` | Answer text, `declined`, valid `cited` numbers, `sources` and citation events |
+| `answer` | Answer text, `declined`, valid `cited` numbers, `sources`, citation events, `needs_clarification` and the structured `cannot_answer` list (see below) |
 
 With default `strict=False`, agent errors are recorded and processing continues; synthesis errors produce a fallback answer. With `strict=True`, those errors are raised. The pipeline CLI uses strict mode. Routing errors that escape `safe_route()` propagate in either mode.
 

@@ -118,6 +118,9 @@ def test_agent_self_corrects_after_decomposition(
 
     assert result["decision"] == "ANSWER_READY"
 
+    assert [item["chunk_id"] for item in result["retrieval"]["retrieved_evidence"]] == [
+        "A_c0001", "B_c0001"]
+
     assert [
         item["chunk_id"]
         for item in result["retrieval"]["evidence"]
@@ -225,6 +228,8 @@ def test_agent_abstains_when_self_correction_fails(
     assert result["decision"] == "ABSTAIN"
 
     assert result["retrieval"]["evidence"] == []
+    assert [item["chunk_id"] for item in result["retrieval"]["retrieved_evidence"]] == [
+        "A_c0001", "B_c0001"]
 
     steps = [
         item["step"]

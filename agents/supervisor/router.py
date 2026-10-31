@@ -1,7 +1,7 @@
 """Supervisor router: turns a user question into a routing record.
 
 Rules R1-R5: agents/supervisor/prompts/supervisor_v1.md
-Code walkthrough: Docs/p2_supervisor_code.md
+Code walkthrough: Docs/supervisor_guide.md
 """
 
 import json
@@ -65,8 +65,11 @@ ROUTING_SCHEMA = {
             "check_premise": {"type": "boolean"},
             "answerable": {"type": "boolean"},
             "reason": {"type": "string"},
+            "needs_clarification": {"type": "boolean"},
+            "clarifying_question": {"type": ["string", "null"]},
         },
-        "required": ["route", "check_premise", "answerable", "reason"],
+        "required": ["route", "check_premise", "answerable", "reason",
+                     "needs_clarification", "clarifying_question"],
         "additionalProperties": False,
     },
 }

@@ -134,6 +134,9 @@ def run_policy_agent(
         })
 
     evidence = retrieval.get("evidence", [])
+    # Preserve candidates for offline diagnosis even when the evidence gate
+    # later removes them from the passages supplied to synthesis.
+    retrieval["retrieved_evidence"] = list(evidence)
 
     # Step 3: Stop immediately when retrieval found no evidence.
     if not evidence:
@@ -264,6 +267,7 @@ def run_policy_agent(
                 evidence,
                 extra_evidence,
             )
+            retrieval["retrieved_evidence"] = list(combined_evidence)
 
             second_assessment = assessor_fn(
                 question,

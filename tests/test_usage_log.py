@@ -1,6 +1,7 @@
 """CSV consumption accounting and public entry-point integration; no API calls."""
 
 import csv
+import json
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -150,3 +151,95 @@ def test_logging_io_failure_does_not_replace_answer(tmp_path, monkeypatch):
     with pytest.warns(RuntimeWarning, match="could not be saved"):
         result = handle_question("Question", route_fn=route, synth_fn=lambda b: synth(b, b["usage"]), decompose=False)
     assert result["answer"]["answer"] == "Fixture"
+
+
+@pytest.mark.parametrize("pipeline", ["supervisor", "graph"])
+@pytest.mark.parametrize("decompose", [False, True])
+def test_policy_abstention_without_model_usage_reaches_steps_and_csv(
+        tmp_path, monkeypatch, pipeline, decompose):
+    monkeypatch.setattr(usage_log, "load_config", lambda: settings(tmp_path))
+    reason = "No relevant policy evidence was retrieved."
+
+    def policy_route(question, **kwargs):
+        record = {"route": "policy", "check_premise": False,
+                  "answerable": False, "reason": "Missing policy coverage"}
+        if decompose:
+            record["tasks"] = [{"id": "policy_1", "agent": "policy",
+                                "question": question, "required_elements": ["Policy rule"]}]
+        return record, []
+
+    def abstain(*args, **kwargs):
+        return {"decision": "ABSTAIN", "reason": reason, "evidence": []}
+
+    if pipeline == "supervisor":
+        result = handle_question("Unsupported housing policy?", route_fn=policy_route,
+                                 policy_fn=abstain, decompose=decompose,
+                                 synth_fn=lambda b: synth(b, b["usage"]))
+    else:
+        app = build_graph(route_fn=policy_route, policy_fn=abstain, synth_fn=synth,
+                          decompose=decompose,
+                          self_check_settings={"llm_check": False, "max_retries": 0})
+        result = run("Unsupported housing policy?", app=app, decompose=decompose)
+
+    step = next(s for s in result["steps"] if s["step"] == "policy_agent")
+    assert step["decision"] == "ABSTAIN" and step["reason"] == reason
+    row = read(result["usage_tracking"]["summary_csv"])[0]
+    assert row["policy_abstained"] == row["answer_declined"] == "True"
+    assert row["status"] == "completed"
+    assert json.loads(row["policy_outcomes"]) == [{
+        "task_id": "policy_1" if decompose else "policy", "attempt": 1,
+        "decision": "ABSTAIN", "reason": reason}]
+    assert all(c["stage"] != "policy_assessor" for c in read(result["usage_tracking"]["calls_csv"]))
+
+
+def test_policy_attempts_preserve_abstention_before_success(tmp_path):
+    bundle = fixture_bundle()
+    bundle["steps"] = [
+        {"step": "policy_agent", "task_id": "policy_1", "attempt": 1,
+         "decision": "ABSTAIN", "reason": "Insufficient evidence"},
+        {"step": "policy_agent", "task_id": "policy_1", "attempt": 2,
+         "decision": "ANSWER_READY", "reason": "Evidence found"},
+        {"step": "policy_agent", "task_id": "policy_2", "attempt": 1,
+         "decision": "ANSWER_READY", "reason": "Other policy supported"},
+    ]
+    bundle["answer"] = {"declined": False}
+    info = usage_log.append_run(bundle, "graph", config=settings(tmp_path))
+    row = read(info["summary_csv"])[0]
+    assert row["policy_abstained"] == "True" and row["answer_declined"] == "False"
+    outcomes = json.loads(row["policy_outcomes"])
+    assert len(outcomes) == 3
+    assert [o["decision"] for o in outcomes] == ["ABSTAIN", "ANSWER_READY", "ANSWER_READY"]
+    assert [o["attempt"] for o in outcomes] == [1, 2, 1]
+
+
+@pytest.mark.parametrize("decompose", [False, True])
+def test_old_trace_policy_decision_is_available_without_step_outcomes(tmp_path, decompose):
+    bundle = fixture_bundle()
+    result = {"decision": "ABSTAIN", "reason": "Missing evidence"}
+    bundle["policy_result"] = result
+    if decompose:
+        bundle["task_results"] = [{"task": {"id": "policy_2", "agent": "policy"},
+                                   "result": result, "attempt": 2}]
+    info = usage_log.append_run(bundle, "graph", config=settings(tmp_path))
+    row = read(info["summary_csv"])[0]
+    assert row["policy_abstained"] == "True"
+    assert json.loads(row["policy_outcomes"])[0]["reason"] == "Missing evidence"
+
+
+def test_old_run_header_is_upgraded_without_losing_history(tmp_path):
+    folder = tmp_path / "usage"
+    folder.mkdir()
+    path = folder / "runs.csv"
+    question = "'=Preserve original text, Unicode ✓\nand newlines"
+    with path.open("w", newline="", encoding="utf-8-sig") as stream:
+        writer = csv.DictWriter(stream, fieldnames=usage_log.LEGACY_RUN_COLUMNS)
+        writer.writeheader()
+        writer.writerow({"question": question, "run_id": "old-run", "input_tokens": 123})
+    info = usage_log.append_run(fixture_bundle(), "graph", config=settings(tmp_path))
+    old, new = read(info["summary_csv"])
+    assert old["question"] == question and old["run_id"] == "old-run"
+    assert old["input_tokens"] == "123"
+    assert old["policy_abstained"] == old["policy_outcomes"] == old["answer_declined"] == ""
+    assert new["run_id"] == info["run_id"]
+    assert list(old) == usage_log.RUN_COLUMNS
+    assert path.read_bytes().count(b'\xef\xbb\xbf') == 1

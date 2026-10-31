@@ -92,7 +92,8 @@ def handle_question(question, today=None, route_fn=safe_route,
         if strict:
             raise
         bundle["answer"] = {"answer": FALLBACK_ANSWER, "declined": True,
-                            "cited": [], "sources": [], "events": []}
+                            "cited": [], "sources": [], "events": [],
+                            "needs_clarification": False, "cannot_answer": []}
         steps.append({"step": "synthesis", "seconds": _since(start),
                       "error": f"{type(error).__name__}: {error}"})
     # Computed last: usage keeps growing until synthesis finishes above.

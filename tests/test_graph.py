@@ -117,6 +117,23 @@ def test_p2_safety_checks_run_inside_the_node():
     assert [e["code"] for e in state["routing_events"]] == ["invalid_combo"]
 
 
+def test_needs_clarification_bypasses_agents_and_model():
+    """An unclear question must not call either agent, and synthesis must
+    return the clarifying question without a model call."""
+    from agents.supervisor.synthesis import synthesise as real_synthesise
+
+    record = {"route": "both", "check_premise": False, "answerable": True,
+              "reason": "ambiguous referent", "needs_clarification": True,
+              "clarifying_question": "Which town and flat type did you mean?"}
+    price, policy = Spy(), Spy()
+    state = run("What about it?", today="2026-10-25",
+               app=graph(record=record, price=price, policy=policy, synth=real_synthesise))
+    assert price.calls == [] and policy.calls == []
+    assert state["answer"]["needs_clarification"] is True
+    assert state["answer"]["answer"] == "Which town and flat type did you mean?"
+    assert state["answer"]["declined"] is True
+
+
 def test_routing_errors_propagate():
     def broken(question, **kwargs):
         raise ValueError("No model set")

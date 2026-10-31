@@ -17,10 +17,12 @@ Input:  question, today, optional decompose override
 
 Decomposition is planned once by the shared supervisor router. P3 executes
 focused tasks per agent branch and retries failed task IDs without replanning.
-Output: routing (route, check_premise, answerable, reason), routing_events,
+Output: routing (route, check_premise, answerable, reason,
+        needs_clarification, clarifying_question), routing_events,
         price_result, policy_result, agent_errors, answer (answer, declined,
-        cited, sources, events), self_check (verdict, problems, retry),
-        attempts, steps (step log) and usage (token counts)
+        cited, sources, events, needs_clarification, cannot_answer),
+        self_check (verdict, problems, retry), attempts, steps (step log)
+        and usage (token counts)
 
 Usage (real model calls, needs OPENAI_API_KEY in .env; the policy agent
 also needs the local vector store in data/vector_db/):
@@ -46,11 +48,13 @@ from agents.graph.self_check import code_checks, feedback_text, llm_check, load_
 
 
 class Routing(TypedDict):
-    """The supervisor's record (Docs/p2_supervisor_code.md)."""
+    """The supervisor's record (Docs/supervisor_guide.md)."""
     route: Literal["price", "policy", "both", "none"]  # which agents to call
     check_premise: bool  # question makes a claim synthesis must check against the sources
     answerable: bool     # False means decline, offering related facts as context
     reason: str          # one sentence, cites a rule (R1-R5) where one applies
+    needs_clarification: NotRequired[bool]   # too unclear to route; ask the user instead
+    clarifying_question: NotRequired[Optional[str]]
     tasks: NotRequired[list]
 
 
@@ -175,7 +179,8 @@ def make_synthesis_node(synth_fn=synthesise):
             answer = call_synthesis(synth_fn, state, usage, state.get("feedback"))
         except Exception as error:
             answer = {"answer": FALLBACK_ANSWER, "declined": True,
-                      "cited": [], "sources": [], "events": []}
+                      "cited": [], "sources": [], "events": [],
+                      "needs_clarification": False, "cannot_answer": []}
             step = {"step": "synthesis", "seconds": round(time.perf_counter() - start, 2),
                     "error": f"{type(error).__name__}: {error}"}
             return {**task_update, "answer": answer, "steps": [step], "usage": usage}

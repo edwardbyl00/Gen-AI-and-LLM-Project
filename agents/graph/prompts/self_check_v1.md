@@ -19,6 +19,9 @@ A3. Missing information is admitted, never filled from memory.
 A4. If answerable = no, the answer says it cannot answer the main question
 and why, and offers any facts only as context, never as a prediction or
 recommendation.
+For mixed requests, it briefly declines the unrelated part and answers the
+supported housing parts. A description of supported topics is a capability
+statement, not a housing policy claim, and does not require a citation.
 A5. Prices are quoted only from the price facts, never calculated, with
 town, flat type, exact period and number of deals.
 A6. No financial advice and no use of the user's personal figures.

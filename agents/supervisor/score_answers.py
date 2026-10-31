@@ -145,7 +145,7 @@ if __name__ == "__main__":
         total_cost = sum(l["cost_usd"] for l in lines)
         print(f"Saved grading sheet: {save_sheet(lines)}")
         print(f"Estimated cost: ${total_cost:.4f} (router/synthesis/agents at "
-              "config.yaml's llm.pricing rate; see Docs/p2_supervisor_code.md)")
+              "config.yaml's llm.pricing rate; see Docs/supervisor_guide.md)")
         print("Next: fill in grade_declined and grade_myth_accepted, then run 'score'.")
     else:
         with open(path, newline="", encoding="utf-8") as f:

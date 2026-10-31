@@ -1,4 +1,4 @@
-# P1 review of synthesis rules (synthesis_v1.md, routing branch)
+# Price-agent review of synthesis rules (synthesis_v1.md, routing branch)
 
 Reviewer: P1 (price agent). Focus: how synthesis uses price facts.
 
@@ -38,7 +38,7 @@ Reviewer: P1 (price agent). Focus: how synthesis uses price facts.
 ## A7 (dates): conflict with the corpus
 
 7. P5 found that 0% of the 1,282 policy chunks have an `effective_date`
-   (Docs/p5_status.md on the `kay` branch). So A7 will almost never fire,
+   (Docs/policy_agent_rag.md on the `kay` branch). So A7 will almost never fire,
    and answers will have no dated sources, which the proposal promised.
    Suggest: when `effective_date` is missing, show the capture date as
    "retrieved on [date]" in the source list (built by code), and never call

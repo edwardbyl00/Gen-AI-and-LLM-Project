@@ -2,7 +2,7 @@
 
 AskGov SG routes HDB/CPF housing questions to policy retrieval, resale-price analysis, or both, then synthesizes an answer with policy sources. Pricing always uses the real agent; policy is currently configured as real.
 
-Start with the [end-to-end pipeline map](Docs/end_to_end_overview.md) for how the phases fit together, then the [P2 supervisor code guide](Docs/p2_supervisor_code.md) for the high-level flow, detailed decision branches, bundle, token/cost tracking and evaluation commands. See the [price-agent guide](agents/price/README.md) for P1 details and the [maintenance guide](Docs/MAINTENANCE.md) for team setup and Git conventions.
+Start with the [end-to-end pipeline map](Docs/end_to_end_overview.md) for how the phases fit together, then the [supervisor guide](Docs/supervisor_guide.md) for the high-level flow, detailed decision branches, bundle, token/cost tracking and evaluation commands. See the [price-agent guide](agents/price/README.md) for price-agent details and the [maintenance guide](Docs/MAINTENANCE.md) for team setup and Git conventions.
 
 The supervisor uses v2 prompts: routing flags `check_premise`, while synthesis checks the claim against retrieved evidence. Saved evaluations live under `evaluation/results/` and `evaluation/answers/`.
 
@@ -219,8 +219,8 @@ tests/test_p5_integration.py
 tests/run_all.py
 ```
 
-For the detailed P5 implementation and evaluation record, see:
+For the detailed policy-agent (agentic RAG) implementation and evaluation record, see:
 
 ```text
-Docs/p5_status.md
+Docs/policy_agent_rag.md
 ```

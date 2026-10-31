@@ -22,8 +22,8 @@ flowchart LR
 
 | Stage | Code | Docs |
 | --- | --- | --- |
-| Clean, dedupe, validate, chunk | [scripts/html_cleaning.py](../scripts/html_cleaning.py), [deduplication.py](../scripts/deduplication.py), [content_validation.py](../scripts/content_validation.py), [quality_check.py](../scripts/quality_check.py), [chunking.py](../scripts/chunking.py) | Handoff fields and responsibilities: [p4_p5_contract.md](p4_p5_contract.md) |
-| Embed and build the vector store | [scripts/generate_embeddings.py](../scripts/generate_embeddings.py), [scripts/build_chroma_db.py](../scripts/build_chroma_db.py) | Settings: `data_preparation.*` in [config.yaml](../config.yaml); build commands in [p2_supervisor_code.md](p2_supervisor_code.md#agent-configuration-and-integration) |
+| Clean, dedupe, validate, chunk | [scripts/html_cleaning.py](../scripts/html_cleaning.py), [deduplication.py](../scripts/deduplication.py), [content_validation.py](../scripts/content_validation.py), [quality_check.py](../scripts/quality_check.py), [chunking.py](../scripts/chunking.py) | Handoff fields and responsibilities: [data_prep_policy_handoff.md](data_prep_policy_handoff.md) |
+| Embed and build the vector store | [scripts/generate_embeddings.py](../scripts/generate_embeddings.py), [scripts/build_chroma_db.py](../scripts/build_chroma_db.py) | Settings: `data_preparation.*` in [config.yaml](../config.yaml); build commands in [supervisor_guide.md](supervisor_guide.md#agent-configuration-and-integration) |
 
 Output: `data/processed/chunks.jsonl` plus the gitignored, locally-built
 `data/embeddings/` and `data/vector_db/`.
@@ -52,10 +52,10 @@ flowchart TD
 
 | Stage | Code | Docs |
 | --- | --- | --- |
-| Route, check, decompose | [router.py](../agents/supervisor/router.py), [checks.py](../agents/supervisor/checks.py), [tasks.py](../agents/supervisor/tasks.py) | [p2_supervisor_code.md](p2_supervisor_code.md) |
+| Route, check, decompose | [router.py](../agents/supervisor/router.py), [checks.py](../agents/supervisor/checks.py), [tasks.py](../agents/supervisor/tasks.py) | [supervisor_guide.md](supervisor_guide.md) |
 | Price facts | [agents/price/](../agents/price/) | [agents/price/README.md](../agents/price/README.md) |
-| Policy evidence | [src/policy_agent.py](../src/policy_agent.py), [src/evidence_assessor.py](../src/evidence_assessor.py) | [p5_status.md](p5_status.md) |
-| Write and check the answer | [synthesis.py](../agents/supervisor/synthesis.py) | [p2_supervisor_code.md](p2_supervisor_code.md) |
+| Policy evidence | [src/policy_agent.py](../src/policy_agent.py), [src/evidence_assessor.py](../src/evidence_assessor.py) | [policy_agent_rag.md](policy_agent_rag.md) |
+| Write and check the answer | [synthesis.py](../agents/supervisor/synthesis.py) | [supervisor_guide.md](supervisor_guide.md) |
 | Optional: parallel branches + self-check | [agents/graph/graph.py](../agents/graph/graph.py), [self_check.py](../agents/graph/self_check.py) | [supervisor_ablation.md](supervisor_ablation.md) |
 
 Two entry points run this: `agents.supervisor.pipeline.handle_question()`
@@ -71,7 +71,7 @@ guide explains how to choose between them.
 | Demo UI | `streamlit run ui/app.py` | [ui/README.md](../ui/README.md) |
 | Per-run token/cost history (CSV) | `logs/usage/` | [usage_logging.md](usage_logging.md) |
 | Optional experiment tracking | MLflow | [mlflow_experiments.md](mlflow_experiments.md) |
-| Routing/answer evaluation runs | `evaluation/results/`, `evaluation/answers/` | [p2_supervisor_code.md §4](p2_supervisor_code.md#4-evaluate-label-run-grade-score) |
+| Routing/answer evaluation runs | `evaluation/results/`, `evaluation/answers/` | [supervisor_guide.md §4](supervisor_guide.md#4-evaluate-label-run-grade-score) |
 | Paired A/B decomposition evaluation | `evaluation/ablation/` | [supervisor_ablation.md](supervisor_ablation.md) |
 
 ## 4. Setup and conventions
@@ -83,7 +83,7 @@ get an environment that can run every stage above.
 ## 5. What this map leaves out
 
 Historical/background docs that don't describe current behavior:
-[p1_review_of_synthesis_rules.md](p1_review_of_synthesis_rules.md) (an early
-P1 review of synthesis rules), [p4_p5_contract.md](p4_p5_contract.md)'s
+[price_agent_synthesis_review.md](price_agent_synthesis_review.md) (an early
+P1 review of synthesis rules), [data_prep_policy_handoff.md](data_prep_policy_handoff.md)'s
 original scope split, and [CHANGELOG.md](CHANGELOG.md) (why things changed
 over time, not how the system works today).

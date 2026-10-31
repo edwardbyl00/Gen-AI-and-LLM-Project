@@ -1,8 +1,8 @@
-# P5 Status — Agentic RAG
+# Policy agent — Agentic RAG
 
 ## Status
 
-P5 implementation and evaluation are complete.
+The policy agent's agentic RAG implementation and evaluation are complete.
 
 The final P5 contribution extends the policy RAG pipeline with evidence assessment, targeted self-correction, reassessment, safe abstention, supervisor integration, regression tests, and efficiency telemetry.
 

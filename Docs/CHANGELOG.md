@@ -111,7 +111,7 @@ reported tokens and configured rates, not provider billing records.
 - Flipped `config.yaml`'s `supervisor.decompose` from `false` to `true`,
   making decomposition (B) the default for both entry points rather than
   opt-in; `decompose=False` still runs the plain baseline.
-- Updated `README.md`, `p2_supervisor_code.md` and `supervisor_ablation.md`
+- Updated `README.md`, `supervisor_guide.md` and `supervisor_ablation.md`
   to describe `tasks.py`, the P3 graph's decomposition support and the new
   default.
 
@@ -307,7 +307,7 @@ transactions, matching an independent count of the supplied CSV. Dataset:
 The policy side of the pipeline went from "returns one fake passage" to
 "real hybrid retrieval over the real HDB/CPF corpus, with an LLM evidence
 check." Current integration details are in the agent configuration section
-of [the supervisor guide](p2_supervisor_code.md#agent-configuration-and-integration).
+of [the supervisor guide](supervisor_guide.md#agent-configuration-and-integration).
 
 **What changed:**
 - Pulled in from a teammate's branch (`kay`) — not written here:
@@ -377,7 +377,7 @@ got a correctly-cited answer from real retrieved passages.
 
 **Status:** documented in `f9e2fae`, with later revisions
 
-Rewrote `Docs/p2_supervisor_code.md` from scratch in plain English (the
+Rewrote `Docs/supervisor_guide.md` from scratch in plain English (the
 previous version, along with `PROJECT_PROCESS.md`, `p2_supervisor_contract.md`
 and `routing_spec.md`, was deleted as part of an intentional docs cleanup).
 
@@ -410,7 +410,7 @@ tracking, `score_answers.py`) landed.
 
 These were already sitting as uncommitted changes when this log was
 started, and are documented here for completeness rather than invented
-after the fact — see `Docs/p2_supervisor_code.md` for the full detail.
+after the fact — see `Docs/supervisor_guide.md` for the full detail.
 
 - `router.py` / `synthesis.py` / `pipeline.py`: added a shared `usage_log`
   so every model call's token counts are recorded on the bundle

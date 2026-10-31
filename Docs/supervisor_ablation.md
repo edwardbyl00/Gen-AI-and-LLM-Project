@@ -13,6 +13,10 @@ Optional `--mlflow` tracking joins configuration parameters, per-question result
 API cost, local CPU/memory, latency and later team grades. See the
 [MLflow experiment guide](mlflow_experiments.md). Existing JSON/CSV exports remain.
 
+For routing, corpus availability, retrieval, evidence selection, faithfulness
+and correctness diagnostics on a new question list, use the separate
+[stage evaluation workflow](stage_evaluation.md) after saving the batch runs.
+
 B adds decomposition to the existing router call. Each task has an ID, target
 agent, focused question and required answer elements. Execution uses the focused
 question and preserves all task outputs for final synthesis. Repeated price or

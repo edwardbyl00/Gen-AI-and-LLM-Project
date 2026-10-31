@@ -84,6 +84,22 @@ def test_policy_top_k_comes_from_config(monkeypatch):
 
     assert captured["top_k"] == 10
 
+
+def test_supervisor_adapter_keeps_rejected_candidates_for_diagnosis(monkeypatch):
+    import policy_agent
+    from agents.supervisor.adapters import policy_real
+
+    candidate = {"chunk_id": "test_c0001", "text": "Related but insufficient evidence"}
+    monkeypatch.setattr(policy_agent, "run_policy_agent", lambda *args, **kwargs: {
+        "decision": "ABSTAIN", "reason": "Insufficient evidence",
+        "retrieval": {"retrieved_evidence": [candidate], "evidence": [candidate]},
+        "trace": [],
+    })
+    result = policy_real("Unsupported question?", "2026-10-31")
+    assert result["evidence"] == []
+    assert result["retrieved_evidence"] == [candidate]
+    assert result["decision"] == "ABSTAIN"
+
 def test_evaluation_pipeline_forwards_llm_assessor(
     monkeypatch,
 ):

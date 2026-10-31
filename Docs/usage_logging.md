@@ -27,6 +27,15 @@ whether execution completed, completed with errors, or failed; a completed run
 can still have a `weak` self-check. `retry_cycles` is P3's review-loop retry
 count, not the number of model calls, and is blank for the sequential pipeline.
 
+Filter `policy_abstained=True` to find runs where a policy attempt returned
+`ABSTAIN`. `policy_outcomes` stores each policy task's decision and reason as
+JSON, with its task ID and attempt number, including abstentions followed by
+successful retries. The returned bundle's `policy_agent` steps also contain
+`decision` and `reason`. `answer_declined` records the final answer's separate
+decline flag: a mixed question can have a policy abstention and still have
+supported price results. Abstention is an expected outcome, not an execution
+error. If no policy decision was reported, the policy columns are blank.
+
 Pricing rates and the configured model are saved in every summary row so future
 config changes do not obscure how that row was priced. `logged_at_sgt` is the
 append time in Singapore time; for imported traces it is the import time, not
@@ -56,7 +65,9 @@ usage_logging:
 
 Relative directories resolve against the repository root, independent of the
 shell's working directory. A different directory starts a separate history.
-Existing files are appended, not replaced, and a mismatched CSV header is
+Existing history is preserved. The previous `runs.csv` header is automatically
+upgraded atomically on the next write; the new outcome fields on historical rows
+remain blank because their values are unknown. Other mismatched CSV headers are
 reported rather than silently mixed with a new schema. Writes are serialized
 across threads/processes using a local file lock. Keep CSVs writable while
 running questions; if a viewer locks them, close it and reopen after the run.

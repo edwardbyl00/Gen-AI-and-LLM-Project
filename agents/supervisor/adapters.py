@@ -1,7 +1,7 @@
 """Adapters between the supervisor and the price and policy agents.
 
 Each adapter returns the shape pipeline.py and synthesis.py expect (see
-Docs/p2_supervisor_code.md). If an agent's own output changes, only its
+Docs/supervisor_guide.md). If an agent's own output changes, only its
 adapter changes.
 
 The price agent is always real now; there's no price stub. The policy

@@ -11,6 +11,11 @@ towns, flat types, dates, comparisons, relevant user conditions and claims to
 check. Never turn a user's unverified premise into an established fact. Do not
 invent constraints or silently replace an unsupported request with another one.
 Rules R1-R5 still apply, including the restriction on personal financial figures.
+R6 also applies: omit unrelated requests from task questions and required
+elements. For mixed requests, create tasks only for the supported housing
+parts and identify the unsupported parts in the routing reason. Preserve
+all conditions relevant to those housing parts. Entirely unrelated requests
+have route "none" and an empty tasks array.
 
 Price tasks ask only for historical resale transaction statistics or context.
 Policy tasks ask only for rules, procedures or eligibility, without asking the

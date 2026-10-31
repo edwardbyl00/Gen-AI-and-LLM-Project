@@ -4,7 +4,7 @@
 - retry once if the reply cannot be read, then use the safest fallback,
 - report every fix as an event, so evaluation can count them.
 
-Code walkthrough: Docs/p2_supervisor_code.md
+Code walkthrough: Docs/supervisor_guide.md
 """
 
 import json
@@ -21,6 +21,8 @@ SAFE_FALLBACK = {
     "check_premise": False,
     "answerable": False,
     "reason": "Router output could not be read; using the safest fallback.",
+    "needs_clarification": False,
+    "clarifying_question": None,
 }
 
 # Failures that mean "this attempt went wrong, try again":
@@ -39,8 +41,14 @@ RETRYABLE_ERRORS = (
 
 
 def is_well_formed(record):
-    """True if the record has all four fields with allowed values."""
-    return (
+    """True if the record has all four fields with allowed values.
+
+    needs_clarification/clarifying_question are optional for backward
+    compatibility (older callers/fakes omit them, and default to "no
+    clarification needed"); when present they must be well-typed, and a
+    true needs_clarification must come with a non-empty question.
+    """
+    if not (
         isinstance(record, dict)
         and all(field in record for field in REQUIRED_FIELDS)
         and record["route"] in ALLOWED_ROUTES
@@ -48,7 +56,20 @@ def is_well_formed(record):
         and isinstance(record["answerable"], bool)
         and isinstance(record["reason"], str)
         and record["reason"].strip() != ""
-    )
+    ):
+        return False
+
+    if "needs_clarification" in record:
+        needs_clarification = record["needs_clarification"]
+        if not isinstance(needs_clarification, bool):
+            return False
+        clarifying_question = record.get("clarifying_question")
+        if needs_clarification and not (
+            isinstance(clarifying_question, str) and clarifying_question.strip()
+        ):
+            return False
+
+    return True
 
 
 def fix_combinations(record):
@@ -56,7 +77,20 @@ def fix_combinations(record):
     fixed = dict(record)
     fixes = []
 
-    # Checked first: a premise to check needs evidence, so it gets a lookup.
+    # Checked first: an unclear question is routed nowhere until the user
+    # answers the clarifying question, regardless of the router's guesses.
+    if fixed.get("needs_clarification"):
+        if fixed["route"] != "none":
+            fixed["route"] = "none"
+            fixes.append("needs_clarification true: route set to none pending clarification")
+        if fixed["check_premise"]:
+            fixed["check_premise"] = False
+            fixes.append("needs_clarification true: check_premise set to false")
+        if fixed["answerable"]:
+            fixed["answerable"] = False
+            fixes.append("needs_clarification true: answerable set to false")
+
+    # Checked next: a premise to check needs evidence, so it gets a lookup.
     if fixed["route"] == "none" and fixed["check_premise"]:
         fixed["route"] = "policy"
         fixes.append("route none with check_premise true: route set to policy")

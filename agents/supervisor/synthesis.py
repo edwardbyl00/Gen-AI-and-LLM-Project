@@ -1,7 +1,7 @@
 """Synthesis: turn the pipeline's bundle into the final answer.
 
-Answer rules A1-A8: agents/supervisor/prompts/synthesis_v1.md
-Code walkthrough: Docs/p2_supervisor_code.md
+Answer rules A1-A9: agents/supervisor/prompts/synthesis_v1.md
+Code walkthrough: Docs/supervisor_guide.md
 
 The model writes the answer text and lists the passage numbers it cited.
 The code, not the model, builds the source list (titles, dates, links),
@@ -25,14 +25,37 @@ SYNTHESIS_SCHEMA = {
             "answer": {"type": "string"},
             "cited": {"type": "array", "items": {"type": "integer"}},
             "declined": {"type": "boolean"},
+            "cannot_answer": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "part": {"type": "string"},
+                        "reason": {"type": "string"},
+                    },
+                    "required": ["part", "reason"],
+                    "additionalProperties": False,
+                },
+            },
         },
-        "required": ["answer", "cited", "declined"],
+        "required": ["answer", "cited", "declined", "cannot_answer"],
         "additionalProperties": False,
     },
 }
 
 FALLBACK_ANSWER = ("Sorry, I couldn't put together an answer just now. "
                    "Please try again, or check the official HDB and CPF websites.")
+
+SCOPE_ANSWER = (
+    "I can't answer this question from my available sources. "
+    "My sources cover HDB resale transactions and HDB/CPF housing policies.\n\n"
+    "I can help with:\n"
+    "- Historical HDB resale prices, price ranges and transaction counts.\n"
+    "- HDB eligibility, housing grants, loans and CPF housing usage.\n"
+    "- HDB resale procedures and timelines.\n\n"
+    "Answers depend on the data and official policy pages available to me. "
+    "Please ask a question in one of these areas."
+)
 
 
 class SynthesisReplyError(Exception):
@@ -58,6 +81,7 @@ def build_context(bundle):
         f"- claim in the question to check: {yes_no(routing['check_premise'])}"
         + (" (check it against the sources; it may be true or false)" if routing["check_premise"] else ""),
         f"- answerable: {yes_no(routing['answerable'])}",
+        f"- routing reason: {routing.get('reason', 'not stated')}",
     ]
 
     task_results = bundle.get("task_results")
@@ -169,7 +193,30 @@ def check_citations(cited, passages):
 
 def synthesise(bundle, client=None, usage_log=None):
     """Write the answer for one bundle. Returns a dict with the answer,
-    the cited sources (built by code) and any events."""
+    the cited sources (built by code), the unanswered parts (if any, each
+    with a reason) and any events."""
+    routing = bundle["routing"]
+
+    # The question itself is too unclear to route: ask back instead of
+    # guessing which sources to search or generating a speculative answer.
+    if routing.get("needs_clarification"):
+        question_text = routing.get("clarifying_question") or (
+            "Could you clarify your question? I want to make sure I search "
+            "the right information.")
+        return {"answer": question_text, "declined": True,
+                "cited": [], "sources": [], "events": [],
+                "needs_clarification": True, "cannot_answer": []}
+
+    # Neither source is relevant: do not generate an answer from model
+    # knowledge or let unrelated retrieved material enter the response.
+    if routing["route"] == "none":
+        return {"answer": SCOPE_ANSWER, "declined": True,
+                "cited": [], "sources": [], "events": [],
+                "needs_clarification": False,
+                "cannot_answer": [{"part": bundle["question"],
+                                   "reason": "Outside the sources I have: HDB resale "
+                                             "transactions and HDB/CPF housing policies."}]}
+
     settings = load_settings()
     client = client or make_client(settings.get("timeout_seconds"))
     today = bundle.get("today") or date.today().isoformat()
@@ -211,12 +258,20 @@ def synthesise(bundle, client=None, usage_log=None):
                 "effective_date": passages[n - 1].get("effective_date")}
                for n in cited]
     return {"answer": reply["answer"], "declined": reply["declined"],
-            "cited": cited, "sources": sources, "events": events}
+            "cited": cited, "sources": sources, "events": events,
+            "needs_clarification": False,
+            "cannot_answer": reply.get("cannot_answer", [])}
 
 
 def format_answer(result):
-    """The answer text followed by the source list, for display."""
+    """The answer text, what could not be answered (with reasons), then
+    the source list, for display."""
     text = result["answer"]
+    cannot_answer = result.get("cannot_answer") or []
+    if cannot_answer:
+        text += "\n\nCan't answer:"
+        for item in cannot_answer:
+            text += f"\n- {item['part']}: {item['reason']}"
     if result.get("sources"):
         text += "\n\nSources:"
         for s in result["sources"]:

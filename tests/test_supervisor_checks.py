@@ -141,3 +141,33 @@ def test_refusal_is_retried():
     record, events = safe_route("q", router=router)
     assert record == good()
     assert "RouterReplyError" in events[0]["detail"]
+
+
+# ---- needs_clarification ----
+
+def test_needs_clarification_forces_route_none():
+    record, events = safe_route("q", router=scripted(good(
+        route="both", check_premise=True, answerable=True,
+        needs_clarification=True, clarifying_question="Which town did you mean?")))
+    assert record["route"] == "none"
+    assert record["check_premise"] is False
+    assert record["answerable"] is False
+    assert record["needs_clarification"] is True
+    assert record["clarifying_question"] == "Which town did you mean?"
+    assert [e["code"] for e in events] == ["invalid_combo", "invalid_combo", "invalid_combo"]
+
+
+def test_needs_clarification_true_without_a_question_is_malformed():
+    router = scripted(good(needs_clarification=True, clarifying_question=None),
+                      good(needs_clarification=False, clarifying_question=None))
+    record, events = safe_route("q", router=router)
+    assert record["needs_clarification"] is False
+    assert len(router.calls) == 2
+    assert events[0]["code"] == "malformed_output"
+
+
+def test_needs_clarification_absent_is_treated_as_false():
+    # Older callers/fakes that omit the field entirely must keep working.
+    record, events = safe_route("q", router=scripted(good()))
+    assert record == good()
+    assert events == []

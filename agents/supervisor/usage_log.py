@@ -5,6 +5,8 @@ import csv
 import hashlib
 import inspect
 import json
+import os
+import tempfile
 import threading
 import time
 import uuid
@@ -19,12 +21,13 @@ import yaml
 
 from agents.supervisor.router import CONFIG_FILE, PROJECT_ROOT
 
-RUN_COLUMNS = [
+LEGACY_RUN_COLUMNS = [
     "logged_at_sgt", "run_id", "source", "pipeline", "variant", "question", "route",
     "model_calls", "input_tokens", "output_tokens", "total_tokens", "estimated_cost_usd",
     "seconds", "retry_cycles", "self_check", "status", "usage_incomplete", "configured_model",
     "input_usd_per_1m", "output_usd_per_1m", "notes",
 ]
+RUN_COLUMNS = LEGACY_RUN_COLUMNS + ["policy_abstained", "policy_outcomes", "answer_declined"]
 CALL_COLUMNS = [
     "logged_at_sgt", "run_id", "pipeline", "usage_entry", "stage", "task_id", "attempt",
     "model_calls", "input_tokens", "output_tokens", "total_tokens", "estimated_cost_usd",
@@ -69,11 +72,61 @@ def _locked(directory):
                 fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
 
 
-def _validate_header(path, columns):
+def _validate_header(path, columns, legacy_columns=None):
     if path.exists() and path.stat().st_size:
         with path.open(newline="", encoding="utf-8-sig") as stream:
-            if next(csv.reader(stream), None) != columns:
+            header = next(csv.reader(stream), None)
+            if header != columns and (legacy_columns is None or header != legacy_columns):
                 raise ValueError(f"Usage CSV header mismatch: {path}; choose a new logging directory")
+
+
+def _upgrade_run_header(path):
+    """Atomically extend the known old schema; historical outcomes stay unknown."""
+    if not path.exists() or not path.stat().st_size:
+        return
+    temporary = None
+    try:
+        with path.open(newline="", encoding="utf-8-sig") as source:
+            reader = csv.DictReader(source)
+            if reader.fieldnames != LEGACY_RUN_COLUMNS:
+                return
+            with tempfile.NamedTemporaryFile(mode="w", newline="", encoding="utf-8-sig",
+                                             dir=path.parent, delete=False) as target:
+                temporary = Path(target.name)
+                writer = csv.DictWriter(target, fieldnames=RUN_COLUMNS)
+                writer.writeheader()
+                writer.writerows(reader)
+        os.replace(temporary, path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
+def _policy_outcomes(bundle):
+    """Keep every logged policy attempt, including abstentions before retries."""
+    outcomes = []
+    attempts = {}
+    for step in bundle.get("steps", []):
+        if step.get("step") != "policy_agent" or not step.get("decision"):
+            continue
+        task_id = step.get("task_id", "policy")
+        attempts[task_id] = attempts.get(task_id, 0) + 1
+        outcomes.append({"task_id": task_id, "attempt": step.get("attempt", attempts[task_id]),
+                         "decision": step["decision"], "reason": step.get("reason")})
+    if outcomes:
+        return outcomes
+    # Saved traces from before step-level outcomes were recorded still hold
+    # the final result, either per task or in the baseline policy_result.
+    records = bundle.get("task_results")
+    if records is None:
+        records = [{"task": {"id": "policy", "agent": "policy"},
+                    "result": bundle.get("policy_result")}]
+    for record in records:
+        result = record.get("result") or {}
+        if record["task"]["agent"] == "policy" and result.get("decision"):
+            outcomes.append({"task_id": record["task"]["id"], "attempt": record.get("attempt", 1),
+                             "decision": result["decision"], "reason": result.get("reason")})
+    return outcomes
 
 
 def _append(path, columns, rows):
@@ -115,6 +168,7 @@ def append_run(bundle, pipeline, *, config=None, source="live_run", run_id=None,
     notes = [error] if error else []
     if incomplete:
         notes.append("Only reported usage is counted; missing usage/cost is unknown.")
+    policy_outcomes = _policy_outcomes(bundle)
     row = {
         "logged_at_sgt": timestamp, "run_id": run_id, "source": source,
         "pipeline": pipeline, "variant": bundle.get("variant", ""),
@@ -128,6 +182,10 @@ def append_run(bundle, pipeline, *, config=None, source="live_run", run_id=None,
         "status": status, "usage_incomplete": incomplete, "configured_model": llm.get("model", ""),
         "input_usd_per_1m": input_rate if input_rate is not None else "",
         "output_usd_per_1m": output_rate if output_rate is not None else "", "notes": " ".join(notes),
+        "policy_abstained": any(o["decision"] == "ABSTAIN" for o in policy_outcomes)
+            if policy_outcomes else "",
+        "policy_outcomes": json.dumps(policy_outcomes, ensure_ascii=False) if policy_outcomes else "",
+        "answer_declined": (bundle.get("answer") or {}).get("declined", ""),
     }
     detail_rows = []
     stage_attempts = {}
@@ -147,8 +205,9 @@ def append_run(bundle, pipeline, *, config=None, source="live_run", run_id=None,
                 if known_input is not None or known_output is not None else "",
         })
     with _locked(directory):
-        for path, columns in ((summary_path, RUN_COLUMNS), (calls_path, CALL_COLUMNS)):
-            _validate_header(path, columns)
+        _validate_header(summary_path, RUN_COLUMNS, LEGACY_RUN_COLUMNS)
+        _validate_header(calls_path, CALL_COLUMNS)
+        _upgrade_run_header(summary_path)
         # Importing the same saved trace twice must not count it twice.
         if source == "trace_import" and summary_path.exists():
             with summary_path.open(newline="", encoding="utf-8-sig") as stream:

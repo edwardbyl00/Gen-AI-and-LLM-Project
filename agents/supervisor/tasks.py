@@ -34,6 +34,12 @@ def route_with_tasks(question, today, usage, route_fn, decompose):
 
 
 def tasks_for_route(question, routing, decompose):
+    # The question is too unclear to search: no agent runs until the user
+    # answers the clarifying question, regardless of what route says (a
+    # route_fn that skips safe_route's repair may not have forced it to
+    # "none" itself).
+    if routing.get("needs_clarification"):
+        return []
     if decompose:
         return routing["tasks"]
     return [{"id": name, "agent": name, "question": question, "required_elements": []}
@@ -49,6 +55,9 @@ def execute_task(task, agent, today, usage, *, decompose, attempt=1, strict=Fals
     try:
         result = agent(task["question"], today, usage_log=usage)
         step["stub"] = bool(result.get("stub"))
+        if task["agent"] == "policy":
+            step["decision"] = result.get("decision")
+            step["reason"] = result.get("reason")
         record["result"] = result
     except Exception as error:
         if strict:
