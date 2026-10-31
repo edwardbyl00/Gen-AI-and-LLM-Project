@@ -28,19 +28,15 @@ How to keep the repository and environment consistent as the team works. The rep
 
    You should see `(.venv)` at the start of your prompt.
 
-   For local CPU/memory measurements and Excel report exports, also install
-   the optional dependencies:
-
-   ```
-   pip install -r requirements-experiments.txt
-   ```
+   This also installs the dependencies in `requirements-experiments.txt`
+   for local CPU/memory measurements and Excel report exports.
 
 4. Copy `.env.example` to a new file named `.env` and paste in the real API key. Never commit `.env`.
 
 ## Standing rules
 
 1. **Activate the environment** (`source .venv/bin/activate`) each time you open a terminal.
-2. **Adding a package:** add its pinned line (`name==exact.version`) to `requirements.txt`, or `requirements-experiments.txt` for optional evaluation/export dependencies, in the same pull request that uses it.
+2. **Adding a package:** add its pinned line (`name==exact.version`) to `requirements.txt`, or `requirements-experiments.txt` for evaluation/export dependencies (included by `requirements.txt`), in the same pull request that uses it.
 3. **Settings live in `config.yaml`**, never typed into code. This covers model version, temperature, seed and `top_k`.
 4. **No direct pushes to `main`.** All changes go through a pull request.
 
@@ -84,8 +80,8 @@ git pull
 pip install -r requirements.txt
 ```
 
-If you use the optional evaluation/export tools, also refresh
-`requirements-experiments.txt` after its changes.
+The same command also refreshes the evaluation/export dependencies in
+`requirements-experiments.txt`.
 
 ## Where things go
 

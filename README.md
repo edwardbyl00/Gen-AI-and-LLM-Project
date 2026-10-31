@@ -13,7 +13,10 @@ Open these CSVs in Excel or another spreadsheet app. See the
 
 The ablation runner saves effective A/B settings, API cost, latency, local
 CPU/memory measurements and reviewed quality scores in local JSON/CSV reports.
-See the [evaluation guide](Docs/supervisor_ablation.md) for setup and comparison.
+See the [evaluation guide](Docs/supervisor_ablation.md) for setup and comparison,
+or the [evaluation walkthrough](Docs/evaluation_walkthrough.md) for a simpler
+step-by-step version of the same process (write questions, run, judge, review,
+export).
 
 Router decomposition (currently off via `supervisor.decompose: false` in
 `config.yaml`; pass `decompose=True` to enable focused tasks) and paired
@@ -27,6 +30,7 @@ This README also includes the reproducible setup for the final P5 Agentic RAG ev
 
 ## Environment
 
+Use Python 3.14.6, the version validated with the pinned dependencies.
 Create (first time only) and activate the project virtual environment from
 the repository root, then install dependencies:
 
@@ -46,8 +50,8 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Add `-r requirements-experiments.txt` to the install step if you need the
-experiment extras.
+`requirements.txt` includes the experiment dependencies for process measurements
+and Excel exports, plus timezone data used by the Singapore timestamps.
 
 API credentials are stored in a local `.env` file. Do not commit `.env`.
 

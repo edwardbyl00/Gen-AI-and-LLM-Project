@@ -1,4 +1,5 @@
-# Optional local process measurements and Excel report export.
-# Install after requirements.txt; verified with the project's Python 3.14 venv.
+# Local process measurements and Excel report export.
+# Included by requirements.txt; can also be installed separately.
+# Verified with the project's Python 3.14 venv.
 psutil==7.2.2
 XlsxWriter==3.3.1
