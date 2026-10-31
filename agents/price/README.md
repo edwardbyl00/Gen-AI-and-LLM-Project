@@ -71,7 +71,7 @@ shared token log, although both approaches accept their own `usage_log`.
 ## Comparing A, B and the plain chatbot
 
 1. `python -m evaluation.build_price_ground_truth` computes the correct
-   answers for the 20 questions in `evaluation/price_questions_P1.csv`
+   answers for the 20 questions in `evaluation/price/price_questions_P1.csv`
    straight from the table (not with the agent's own code).
 2. `python -m evaluation.evaluate_price_agents` runs approach A, approach B
    and the plain chatbot on them (needs the API key) and scores filters,

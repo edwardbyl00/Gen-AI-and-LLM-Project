@@ -552,12 +552,12 @@ def write_report(
 
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--questions", type=Path, default=Path("evaluation/HDB_RAG_Integrated_40Q_Evaluation.csv"))
-    parser.add_argument("--ground-truth", type=Path, default=Path("evaluation/ground_truth_40q.csv"))
+    parser.add_argument("--questions", type=Path, default=Path("evaluation/retrieval/HDB_RAG_Integrated_40Q_Evaluation.csv"))
+    parser.add_argument("--ground-truth", type=Path, default=Path("evaluation/retrieval/ground_truth_40q.csv"))
     parser.add_argument("--chunks", type=Path, default=Path("data/processed/chunks.jsonl"))
     parser.add_argument("--embedding-dir", type=Path, default=Path("data/embeddings/bge-base-en-v1.5"))
-    parser.add_argument("--results", type=Path, default=Path("evaluation/dense_retrieval_results_40q.csv"))
-    parser.add_argument("--metrics", type=Path, default=Path("evaluation/dense_retrieval_metrics.json"))
+    parser.add_argument("--results", type=Path, default=Path("evaluation/retrieval/dense_retrieval_results_40q.csv"))
+    parser.add_argument("--metrics", type=Path, default=Path("evaluation/retrieval/dense_retrieval_metrics.json"))
     parser.add_argument("--report", type=Path, default=Path("reports/dense_retrieval_evaluation.md"))
     parser.add_argument("--failures", type=Path, default=Path("reports/retrieval_failure_analysis.csv"))
     parser.add_argument("--device", choices=("auto", "mps", "cpu"), default="auto")

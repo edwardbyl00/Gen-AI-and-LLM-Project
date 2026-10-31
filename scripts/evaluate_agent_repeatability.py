@@ -15,7 +15,7 @@ RUNS = 3
 
 
 with open(
-    ROOT / "evaluation" / "ground_truth_40q.csv",
+    ROOT / "evaluation" / "retrieval" / "ground_truth_40q.csv",
     encoding="utf-8-sig",
     newline="",
 ) as f:

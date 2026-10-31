@@ -78,12 +78,12 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--questions",
         type=Path,
-        default=Path("evaluation/HDB_RAG_Integrated_40Q_Evaluation.csv"),
+        default=Path("evaluation/retrieval/HDB_RAG_Integrated_40Q_Evaluation.csv"),
     )
     parser.add_argument(
         "--ground-truth",
         type=Path,
-        default=Path("evaluation/ground_truth_40q.csv"),
+        default=Path("evaluation/retrieval/ground_truth_40q.csv"),
     )
     parser.add_argument(
         "--chunks",
@@ -98,17 +98,17 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--baseline-metrics",
         type=Path,
-        default=Path("evaluation/dense_retrieval_metrics.json"),
+        default=Path("evaluation/retrieval/dense_retrieval_metrics.json"),
     )
     parser.add_argument(
         "--results",
         type=Path,
-        default=Path("evaluation/advanced_retrieval_results_40q.csv"),
+        default=Path("evaluation/retrieval/advanced_retrieval_results_40q.csv"),
     )
     parser.add_argument(
         "--metrics",
         type=Path,
-        default=Path("evaluation/advanced_retrieval_metrics.json"),
+        default=Path("evaluation/retrieval/advanced_retrieval_metrics.json"),
     )
     parser.add_argument(
         "--device",

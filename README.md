@@ -155,27 +155,27 @@ The evaluation output labelled `Judge cost USD` refers only to LLM-as-judge eval
 Final answer evaluation:
 
 ```text
-evaluation/agentic_vs_baseline_pilot_10q_judged.json
+evaluation/agentic/agentic_vs_baseline_pilot_10q_judged.json
 ```
 
 Efficiency summary:
 
 ```text
-evaluation/agentic_vs_baseline_pilot_10q_judged_efficiency_summary.json
+evaluation/agentic/agentic_vs_baseline_pilot_10q_judged_efficiency_summary.json
 ```
 
 Advanced retrieval evaluation:
 
 ```text
-evaluation/advanced_retrieval_metrics.json
-evaluation/advanced_retrieval_results_40q.csv
+evaluation/retrieval/advanced_retrieval_metrics.json
+evaluation/retrieval/advanced_retrieval_results_40q.csv
 ```
 
 Dense baseline evaluation:
 
 ```text
-evaluation/dense_retrieval_metrics.json
-evaluation/dense_retrieval_results_40q.csv
+evaluation/retrieval/dense_retrieval_metrics.json
+evaluation/retrieval/dense_retrieval_results_40q.csv
 ```
 
 ## Important P5 Notes

@@ -29,9 +29,9 @@ FIELDS = (
 
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--questions", type=Path, default=Path("evaluation/HDB_RAG_Integrated_40Q_Evaluation.csv"))
-    parser.add_argument("--ground-truth", type=Path, default=Path("evaluation/ground_truth_40q.csv"))
-    parser.add_argument("--baseline-metrics", type=Path, default=Path("evaluation/dense_retrieval_metrics.json"))
+    parser.add_argument("--questions", type=Path, default=Path("evaluation/retrieval/HDB_RAG_Integrated_40Q_Evaluation.csv"))
+    parser.add_argument("--ground-truth", type=Path, default=Path("evaluation/retrieval/ground_truth_40q.csv"))
+    parser.add_argument("--baseline-metrics", type=Path, default=Path("evaluation/retrieval/dense_retrieval_metrics.json"))
     parser.add_argument("--chunks", type=Path, default=Path("data/processed/chunks.jsonl"))
     parser.add_argument("--embedding-dir", type=Path, default=Path("data/embeddings/bge-base-en-v1.5"))
     parser.add_argument("--persist-directory", type=Path, default=Path("data/vector_db/chroma"))

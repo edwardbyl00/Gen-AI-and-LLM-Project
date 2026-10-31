@@ -11,6 +11,141 @@ diff already shows the what. Mark whether it's still uncommitted.
 
 ---
 
+## 2026-10-31 — Added tabular evaluation reports for presentation
+
+**Status:** implementation committed in `adc122f`; changelog entry uncommitted
+
+**Who:** Kay, Cooper and Ed
+
+- Added automatic `report.md` output when preparing stage review and a
+  Markdown report alongside the reviewed JSON summary.
+- Presented variant/category summaries, per-question stage checks, answer
+  quality, diagnostic counts, reviewer findings and recommended fixes in
+  separate tables. Kept full questions and answers in their own table.
+- Displayed scored/total execution counts and distinguished pending review,
+  unknown checks, N/A and zero scores. Escaped question/answer text so pipes,
+  newlines and markup cannot break the tables. Existing reports are preserved.
+
+**Why:** the team needs readable tables for presenting what worked, what
+failed and what to improve, while retaining the detailed JSON for analysis.
+
+**Verified:** 21 diagnostic tests passed, including presentation tables,
+score denominators, reviewer comments, text escaping and output preservation.
+No live question-list results have been generated.
+
+---
+
+## 2026-10-31 — Added question-list evaluation and stage failure diagnosis
+
+**Status:** implementation committed in `adc122f`; changelog entry uncommitted
+
+**Who:** Kay, Cooper and Ed
+
+- Added `agents.supervisor.diagnostics` with offline commands to prepare
+  reviewer references, diagnose saved batch runs and summarise reviewed scores.
+- Separated routing, corpus evidence availability, retrieval, evidence
+  selection, faithfulness, correctness, completeness and appropriate abstention.
+  References remain separate from inference, and unverified fields stay unknown.
+- Preserved policy retrieval candidates separately from passages supplied to
+  synthesis, including candidates later rejected during abstention. This makes
+  it possible to distinguish retrieval misses from evidence-selection issues.
+- Added per-execution reviewer fields for what went well, what went wrong
+  and recommended fixes, plus overall/per-category metrics and denominators.
+  Failed executions remain in the review; missing grades remain pending.
+- Checked reference-question identity, available corpus fingerprints, complete
+  batch schedules, review IDs and score ranges. Added the
+  [stage evaluation guide](stage_evaluation.md) and linked the existing batch guide.
+
+**Why:** a poor answer alone does not reveal whether the problem was routing,
+missing corpus coverage, retrieval, the evidence gate or answer generation.
+Matching a reference chunk is a diagnostic observation, not proof of a correct
+or faithful answer; independent review is still required.
+
+**Verified:** the offline regression run passed 150 tests across diagnostics,
+policy retrieval, usage logging, synthesis, supervisor/P3 and experiment tracking.
+The team will provide a new question list; no live batch or quality improvement
+is claimed by this implementation.
+
+---
+
+## 2026-10-31 — Captured policy abstention decisions in logs
+
+**Status:** implementation committed in `adc122f`; changelog entry uncommitted
+
+**Who:** Kay, Cooper and Ed
+
+- Recorded policy decisions and reasons in the shared agent step log for both
+  the sequential supervisor and P3 graph.
+- Added `policy_abstained`, `policy_outcomes` and `answer_declined` to the run
+  summary CSV. Outcomes include task IDs and attempts, preserving abstentions
+  before successful retries, even when no policy model usage was reported.
+- Kept policy abstention separate from final-answer decline and execution
+  errors. Added an atomic upgrade for the known previous CSV header, retaining
+  history and leaving historical outcome fields blank where values are unknown.
+- Updated the [usage logging guide](usage_logging.md).
+
+**Why:** the policy agent already returned `ABSTAIN` and its reason, but those
+details were missing from the shared step and consumption logs. A completed run
+can legitimately abstain on policy while retaining supported price results.
+
+**Verified:** 111 tests passed across logging, supervisor/P3, decomposition and
+experiment tracking, including abstention without model usage, retry history,
+saved-trace outcomes and CSV history preservation.
+
+---
+
+## 2026-10-31 — Clarified refusals and supported topics for irrelevant questions
+
+**Status:** implementation committed in `adc122f`; changelog entry uncommitted
+
+**Who:** Kay, Cooper and Ed
+
+- Added a consistent refusal for route `none`, explaining that the available
+  sources cover HDB resale transactions and HDB/CPF housing policies, and
+  listing the supported question areas without a synthesis model call.
+- Updated routing, decomposition and synthesis instructions to filter unrelated
+  content, preserve relevant housing conditions and answer supported parts of
+  mixed requests while briefly declining unsupported parts.
+- Included the routing reason in synthesis context and aligned the graph's
+  self-check instructions with mixed-request handling.
+
+**Why:** irrelevant requests should receive a clear limitation and useful
+direction, while unrelated content in a mixed request should not prevent the
+system from answering its supported housing parts.
+
+**Verified:** 115 offline tests passed across synthesis, routing, supervisor/P3
+and decomposition. Tests verified that requests routed to `none` skip retrieval
+and synthesis model calls. Live model classification was not tested.
+
+---
+
+## 2026-10-31 — Removed generated reports; merged routing evaluation results
+
+**Status:** committed in `3d87546` and `b20160e`
+
+**Who:** Kay, Cooper and Ed
+
+- Deleted the `reports/` directory (20 files): chunking, cleaning,
+  deduplication, embedding and routing reports generated by scripts in
+  `scripts/`. These were regenerable pipeline outputs, not inputs consumed
+  by the model or app, so nothing else needed to change.
+- Merged the four timestamped CSVs in `evaluation/results/` (two v1 runs,
+  two v2 runs of the routing supervisor evaluation) into one
+  `routing_supervisor_results_merged.csv`, adding `version`, `timestamp`
+  and `source_file` columns. v1's `false_belief_label`/`false_belief_router`
+  columns were renamed to v2's `check_premise_label`/`check_premise_router`
+  on the way in, since they're the same field under its old and new name
+  (see the 2026-10-25 "false beliefs" entry below for why the field was
+  renamed). The existing `_summary.md` write-up for one of the v1 runs was
+  left as is.
+
+**Why:** both directories had accumulated run-to-run output clutter with
+nothing in the codebase reading the files back, so they were safe to clean
+up; keeping one merged results CSV instead of four separate ones makes it
+possible to compare runs across prompt versions without juggling files.
+
+---
+
 ## 2026-10-29 — Added MLflow parameter, cost and compute experiment tracking
 
 **Status:** uncommitted

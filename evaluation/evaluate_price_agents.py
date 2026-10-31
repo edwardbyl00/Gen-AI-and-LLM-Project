@@ -1,6 +1,6 @@
 """P1 approach study: approach A vs approach B vs the plain chatbot on price questions.
 
-For each question in evaluation/price_ground_truth_P1.csv it records:
+For each question in evaluation/price/price_ground_truth_P1.csv it records:
 - filters_correct  (A and B only): town, flat type AND exact period all match the labels
 - figure_correct   : the figure the question asks for is within 1% of the true value
                      (count questions must match exactly)
@@ -23,7 +23,7 @@ from agents.price.agent import price_agent
 from agents.price.sql_agent import price_agent_sql
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-GROUND_TRUTH = PROJECT_ROOT / "evaluation" / "price_ground_truth_P1.csv"
+GROUND_TRUTH = PROJECT_ROOT / "evaluation" / "price" / "price_ground_truth_P1.csv"
 RESULTS_DIR = PROJECT_ROOT / "evaluation" / "results"
 TOLERANCE = 0.01
 

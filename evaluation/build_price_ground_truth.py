@@ -1,6 +1,6 @@
 """Compute the correct answer for every P1 price test question.
 
-Reads the hand-labelled filters in evaluation/price_questions_P1.csv and
+Reads the hand-labelled filters in evaluation/price/price_questions_P1.csv and
 calculates the true figures straight from the cleaned price table.
 
 This deliberately does NOT reuse the price agent's code, so the agent is
@@ -16,8 +16,8 @@ import pandas as pd
 import yaml
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-QUESTIONS = PROJECT_ROOT / "evaluation" / "price_questions_P1.csv"
-OUTPUT = PROJECT_ROOT / "evaluation" / "price_ground_truth_P1.csv"
+QUESTIONS = PROJECT_ROOT / "evaluation" / "price" / "price_questions_P1.csv"
+OUTPUT = PROJECT_ROOT / "evaluation" / "price" / "price_ground_truth_P1.csv"
 
 
 def true_figures(table, town, flat_type, start, end):

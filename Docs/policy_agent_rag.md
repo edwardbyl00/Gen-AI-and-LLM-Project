@@ -163,7 +163,7 @@ python scripts/evaluate_agentic_answers.py --judge
 
 Key outputs:
 
-- `evaluation/advanced_retrieval_metrics.json`
-- `evaluation/advanced_retrieval_results_40q.csv`
-- `evaluation/agentic_vs_baseline_pilot_10q_judged.json`
-- `evaluation/agentic_vs_baseline_pilot_10q_judged_efficiency_summary.json`
+- `evaluation/retrieval/advanced_retrieval_metrics.json`
+- `evaluation/retrieval/advanced_retrieval_results_40q.csv`
+- `evaluation/agentic/agentic_vs_baseline_pilot_10q_judged.json`
+- `evaluation/agentic/agentic_vs_baseline_pilot_10q_judged_efficiency_summary.json`

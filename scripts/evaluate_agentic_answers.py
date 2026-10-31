@@ -250,6 +250,7 @@ def main():
     ground_truth_path = (
         PROJECT_ROOT
         / "evaluation"
+        / "retrieval"
         / "ground_truth_40q.csv"
     )
 
