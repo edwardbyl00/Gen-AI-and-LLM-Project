@@ -210,7 +210,15 @@ judge (`src/llm_judge.py`, the same one used for the P5 pilot in
 `scripts/evaluate_agentic_answers.py`). It rates `evidence_support`,
 `policy_currency`, `citation_relevance`, `unsupported_claims` and
 `appropriate_abstention` (0-2 each) against the evidence actually supplied
-to synthesis, not against a reference answer:
+to synthesis, not against a reference answer.
+
+**This now runs automatically** at the end of `agents.supervisor.ablation run`
+(default `judge=True`), writing
+`evaluation/ablation/<run-name>_llm_judge_scores.json` right after
+`runs.jsonl` is written. Pass `--no-judge` to skip it (e.g. to avoid the
+extra paid judge calls, or when references are already verified and you only
+want the gated `prepass` scores). To run it by hand against an existing run
+directory instead:
 
 ```sh
 python -m scripts.judge_ablation_answers evaluation/ablation/team_questions_v2

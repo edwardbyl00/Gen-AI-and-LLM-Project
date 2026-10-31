@@ -11,6 +11,23 @@ diff already shows the what. Mark whether it's still uncommitted.
 
 ---
 
+## 2026-10-31 — Run the ungated LLM judge automatically after every ablation run
+
+**Status:** uncommitted
+
+**Who:** Ed
+
+- `agents.supervisor.ablation run` now calls `scripts/judge_ablation_answers.py`
+  automatically once `runs.jsonl` is written, defaulting `judge=True` in
+  `run_experiment()` and writing `evaluation/ablation/<run-name>_llm_judge_scores.json`
+  the same way the script does when run by hand. Added a `--no-judge` CLI flag
+  to skip it (extra paid judge calls, or when you only want the gated
+  `prepass` scores). Why: the ungated judge was previously an easy-to-forget
+  manual step; defaulting it on means every saved run gets a first-read score
+  without someone remembering to invoke the script separately.
+- Documented the new default behavior and the opt-out flag in
+  [stage_evaluation.md](stage_evaluation.md#alternative-judge-without-verified-references).
+
 ## 2026-10-31 — Added an ungated first-read judge and count-based citation precision
 
 **Status:** implementation committed in `b629268`/`e85bbc2`; changelog entry uncommitted

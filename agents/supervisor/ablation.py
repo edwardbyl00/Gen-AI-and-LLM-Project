@@ -174,7 +174,7 @@ def compare_experiments(run_dirs, min_correctness=0.8, min_completeness=0.8):
                                        float(r["mean_cost_usd"] or "inf")))
 
 def run_experiment(questions, out_dir, today, repeats=1, seed=42, answer_fn=None,
-                   pipeline="supervisor", excel=False):
+                   pipeline="supervisor", excel=False, judge=True):
     if repeats < 1:
         raise ValueError("repeats must be positive")
     if pipeline not in PIPELINES:
@@ -303,6 +303,12 @@ def run_experiment(questions, out_dir, today, repeats=1, seed=42, answer_fn=None
     if excel:
         from agents.supervisor.excel_export import export_workbook
         export_workbook([out_dir], out_dir / "experiment.xlsx")
+    if judge:
+        from scripts.judge_ablation_answers import run as run_llm_judge
+        judge_out = out_dir.parent / f"{out_dir.name}_llm_judge_scores.json"
+        print("Running ungated LLM judge (faithfulness-style, no verified reference "
+              "required) -- see Docs/stage_evaluation.md#alternative-judge-without-verified-references")
+        run_llm_judge(out_dir, judge_out)
     return records
 
 
@@ -371,6 +377,8 @@ def main():
     run.add_argument("--dry-run", action="store_true")
     run.add_argument("--pipeline", choices=PIPELINES, default="supervisor")
     run.add_argument("--excel", action="store_true")
+    run.add_argument("--no-judge", dest="judge", action="store_false",
+                      help="Skip the automatic ungated LLM judge pass after the run")
     score = commands.add_parser("score")
     score.add_argument("run_dir", type=Path)
     score.add_argument("grading", type=Path)
@@ -408,13 +416,13 @@ def main():
         print(json.dumps({"questions": len(questions), "pipeline_runs": len(questions) * args.repeats * 2,
                           "variants": VARIANTS, "today": args.today,
                           "pipeline": args.pipeline, "scope": PIPELINES[args.pipeline],
-                          "excel": args.excel,
+                          "excel": args.excel, "judge": args.judge,
                           "effective_variant_parameters": {v: effective_params(preview, args.pipeline, d)
                                                            for v, d in VARIANTS.items()},
                           "llm": preview.get("llm", {}), "policy_top_k": preview.get("agents", {}).get("policy_top_k")}, indent=2))
         return
     run_experiment(questions, args.out, args.today, args.repeats, args.seed, pipeline=args.pipeline,
-                   excel=args.excel)
+                   excel=args.excel, judge=args.judge)
     print(f"Saved {args.out}. Grade grading_blind.csv, then use the score command.")
 
 
