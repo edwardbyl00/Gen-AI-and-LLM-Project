@@ -484,3 +484,193 @@ def test_policy_usage_is_logged():
     p_usage = {"step": "policy_assessor", "input_tokens": 700, "output_tokens": 90, "calls": 1}
     state = run("q", today="2026-10-30", app=graph(policy=Spy(EVIDENCE, usage=p_usage)))
     assert p_usage in state["usage"]
+
+
+# ---------- chat memory ----------
+
+from langgraph.checkpoint.memory import MemorySaver
+
+USAGE = {"step": "router", "input_tokens": 10, "output_tokens": 2}
+
+
+class FakeRewrite:
+    """A fake follow-up rewrite: looks the message up in `rewrites`, else
+    returns it unchanged. Remembers each message and the history it saw."""
+    def __init__(self, rewrites=None, error=None, usage=None):
+        self.rewrites, self.error, self.usage, self.calls = rewrites or {}, error, usage, []
+
+    def __call__(self, message, history, today, usage_log=None):
+        self.calls.append((message, [t["user_question"] for t in history], today))
+        if usage_log is not None and self.usage:
+            usage_log.append(self.usage)
+        if self.error:
+            raise self.error
+        return self.rewrites.get(message, message)
+
+
+def chat_graph(record=RECORD, policy=None, price=None, check=None, route=None, rewrite=None,
+               **kwargs):
+    """The fake graph with a checkpointer, so turns are kept per thread_id."""
+    return build_graph(route or fake_route(record, usage=USAGE, **kwargs), decompose=False,
+                       price_fn=price or Spy(PRICE), policy_fn=policy or Spy(),
+                       synth_fn=FakeSynth(), check_fn=check or FakeCheck(),
+                       self_check_settings=SETTINGS, checkpointer=MemorySaver(),
+                       rewrite_fn=rewrite or FakeRewrite())
+
+
+def test_without_checkpointer_there_is_no_history():
+    state = run("q", today="2026-11-01", app=graph())
+    assert "history" not in state
+
+
+def test_thread_id_needs_a_checkpointer():
+    with pytest.raises(ValueError, match="checkpointer"):
+        run("q", today="2026-11-01", app=graph(), thread_id="chat-1")
+
+
+def test_each_turn_is_added_to_history():
+    app = chat_graph()
+    run("first", today="2026-11-01", app=app, thread_id="chat-1")
+    state = run("second", today="2026-11-01", app=app, thread_id="chat-1")
+    assert [t["user_question"] for t in state["history"]] == ["first", "second"]
+    assert state["history"][-1]["answer"] == state["answer"]
+
+
+def test_threads_keep_separate_histories():
+    app = chat_graph()
+    run("a1", today="2026-11-01", app=app, thread_id="a")
+    run("b1", today="2026-11-01", app=app, thread_id="b")
+    state = run("a2", today="2026-11-01", app=app, thread_id="a")
+    assert [t["user_question"] for t in state["history"]] == ["a1", "a2"]
+
+
+def test_steps_and_usage_cover_this_turn_only():
+    app = chat_graph()
+    first = run("first", today="2026-11-01", app=app, thread_id="chat-1")
+    second = run("second", today="2026-11-01", app=app, thread_id="chat-1")
+    # Only a follow-up (turn 2 on) has a rewrite step; the rest is the same.
+    assert [s["step"] for s in second["steps"]] == ["rewrite"] + [s["step"] for s in first["steps"]]
+    assert second["usage"] == first["usage"]
+    assert second["cost_usd"] == first["cost_usd"]
+    # Each saved turn keeps its own step log, not a running total.
+    assert second["history"][0]["steps"] == first["steps"]
+
+
+def test_errors_and_results_do_not_leak_into_the_next_turn():
+    price = Spy(error=RuntimeError("down"))
+    app = chat_graph(record={**RECORD, "route": "price"}, price=price)
+    first = run("price question", today="2026-11-01", app=app, thread_id="chat-1")
+    assert first["agent_errors"] == {"price": "RuntimeError: down"}
+    price.error = None
+    second = run("next question", today="2026-11-01", app=app, thread_id="chat-1")
+    assert second["agent_errors"] == {}
+    assert second["attempts"] == 0
+    assert second["history"][0]["agent_errors"] == first["agent_errors"]
+
+
+def test_chat_memory_keeps_chats_after_reopening(tmp_path):
+    """chat_memory() saves to SQLite, so a chat survives an app restart."""
+    from agents.graph.graph import chat_memory
+
+    db = tmp_path / "chat" / "chats.sqlite"
+    def app(saver):
+        return build_graph(fake_route(RECORD), decompose=False, price_fn=Spy(), policy_fn=Spy(),
+                           synth_fn=FakeSynth(), check_fn=FakeCheck(), self_check_settings=SETTINGS,
+                           checkpointer=saver, rewrite_fn=FakeRewrite())
+    first = chat_memory(db)
+    run("first", today="2026-11-01", app=app(first), thread_id="chat-1")
+    first.conn.close()
+    reopened = chat_memory(db)
+    state = run("second", today="2026-11-01", app=app(reopened), thread_id="chat-1")
+    reopened.conn.close()
+    assert [t["user_question"] for t in state["history"]] == ["first", "second"]
+
+
+# ---------- follow-up rewrite ----------
+
+def test_first_turn_is_not_rewritten():
+    rewrite = FakeRewrite()
+    state = run("What did 4-room flats in Tampines sell for?", today="2026-11-01",
+                app=chat_graph(rewrite=rewrite), thread_id="chat-1")
+    assert rewrite.calls == []
+    assert steps_named(state, "rewrite") == []
+
+
+def test_graph_without_memory_has_no_rewrite_node():
+    assert "rewrite" not in graph().get_graph().nodes
+    assert "rewrite" in chat_graph().get_graph().nodes
+
+
+def test_follow_up_is_rewritten_before_routing():
+    route = fake_route(RECORD)
+    rewrite = FakeRewrite({"what about Bishan?": "What did 4-room flats in Bishan sell for?"})
+    app = chat_graph(route=route, rewrite=rewrite)
+    run("What did 4-room flats in Tampines sell for?", today="2026-11-01", app=app, thread_id="c")
+    state = run("what about Bishan?", today="2026-11-01", app=app, thread_id="c")
+    # The rewrite saw the earlier turn; the router got the standalone question.
+    assert rewrite.calls == [("what about Bishan?",
+                              ["What did 4-room flats in Tampines sell for?"], "2026-11-01")]
+    assert route.calls[-1] == ("What did 4-room flats in Bishan sell for?", "2026-11-01")
+    turn = state["history"][-1]
+    assert turn["user_question"] == "what about Bishan?"
+    assert turn["question"] == "What did 4-room flats in Bishan sell for?"
+    [step] = steps_named(state, "rewrite")
+    assert step["changed"] is True and step["output"] == turn["question"]
+
+
+def test_rewrite_usage_is_counted():
+    r_usage = {"step": "rewrite", "input_tokens": 300, "output_tokens": 20}
+    app = chat_graph(rewrite=FakeRewrite(usage=r_usage))
+    run("first", today="2026-11-01", app=app, thread_id="c")
+    state = run("second", today="2026-11-01", app=app, thread_id="c")
+    assert r_usage in state["usage"]
+    assert r_usage in state["history"][-1]["usage"]
+
+
+def test_failed_rewrite_keeps_the_message():
+    route = fake_route(RECORD)
+    app = chat_graph(route=route, rewrite=FakeRewrite(error=RuntimeError("timeout")))
+    run("first", today="2026-11-01", app=app, thread_id="c")
+    state = run("what about Bishan?", today="2026-11-01", app=app, thread_id="c")
+    assert route.calls[-1][0] == "what about Bishan?"
+    [step] = steps_named(state, "rewrite")
+    assert step["error"] == "RuntimeError: timeout" and step["changed"] is False
+
+
+def test_chat_context_shows_earlier_turns_and_price_data():
+    from agents.graph.rewrite import MAX_TURNS, chat_context
+
+    turns = [{"user_question": f"q{n}", "question": f"q{n}", "answer": {"answer": f"a{n}"},
+              "price_result": None} for n in range(MAX_TURNS + 1)]
+    turns[-1].update(user_question="and Bishan?", question="What did 4-room flats in Bishan sell for?",
+                     price_result={"town": "BISHAN", "flat_type": "4 ROOM",
+                                   "period_start": "2025-10", "period_end": "2026-09"})
+    context = chat_context(turns, "and 5-room?")
+    assert "q0" not in context  # only the last MAX_TURNS turns
+    assert "Understood as: What did 4-room flats in Bishan sell for?" in context
+    assert "town BISHAN, flat type 4 ROOM, 2025-10 to 2026-09" in context
+    assert context.endswith("New message: and 5-room?")
+
+
+def test_rewrite_question_sends_the_chat_and_reads_the_reply():
+    import json
+    from types import SimpleNamespace
+
+    from agents.graph.rewrite import rewrite_question
+
+    sent = []
+    message = SimpleNamespace(content=json.dumps({"question": "Bishan 4-room?"}), refusal=None)
+    response = SimpleNamespace(choices=[SimpleNamespace(message=message)],
+                               usage=SimpleNamespace(prompt_tokens=50, completion_tokens=5))
+    def create(**kwargs):
+        sent.append(kwargs)
+        return response
+    client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    history = [{"user_question": "Tampines 4-room?", "question": "Tampines 4-room?",
+                "answer": {"answer": "About $620,000."}, "price_result": None}]
+    usage = []
+    assert rewrite_question("and Bishan?", history, "2026-11-01", usage_log=usage,
+                            client=client) == "Bishan 4-room?"
+    assert "2026-11-01" in sent[0]["messages"][0]["content"]
+    assert "User: Tampines 4-room?" in sent[0]["messages"][1]["content"]
+    assert usage == [{"step": "rewrite", "input_tokens": 50, "output_tokens": 5}]
