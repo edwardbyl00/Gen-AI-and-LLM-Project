@@ -13,10 +13,8 @@ Open these CSVs in Excel or another spreadsheet app. See the
 
 The ablation runner saves effective A/B settings, API cost, latency, local
 CPU/memory measurements and reviewed quality scores in local JSON/CSV reports.
-See the [evaluation guide](Docs/supervisor_ablation.md) for setup and comparison,
-or the [evaluation walkthrough](Docs/evaluation_walkthrough.md) for a simpler
-step-by-step version of the same process (write questions, run, judge, review,
-export).
+Follow the [evaluation guide](Docs/stage_evaluation.md) to prepare questions,
+run the batch, get judge scores, review each stage and export the final report.
 
 Router decomposition (currently off via `supervisor.decompose: false` in
 `config.yaml`; pass `decompose=True` to enable focused tasks) and paired

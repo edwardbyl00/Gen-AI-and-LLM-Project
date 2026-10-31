@@ -1,4 +1,30 @@
-# Question-list evaluation and failure diagnosis
+# Evaluation guide
+
+Use this guide to take a question list through a batch run, judge scoring,
+stage diagnosis, human review and a final report. All commands assume you are
+in the project root with the virtual environment active; see the
+[environment setup](../README.md#environment).
+
+## Workflow at a glance
+
+1. Prepare your question CSV and generate a separate reference template.
+2. Validate the batch with `--dry-run`, then run it to save answers and
+   automatic evidence-based LLM judge scores.
+3. Optionally run the stricter reference-based judge after a reviewer verifies
+   the references.
+4. Prepare the local diagnostic report and export the review workbook.
+5. Grade the answers, save the grades in `review.csv`, and generate the summary.
+
+Pipeline inference and judge scoring make paid model calls. Template generation,
+diagnostics, Excel export and summary generation run locally without model calls.
+Unverified references do not prevent inference or report preparation, but checks
+that need verified ground truth remain unknown. Human grades stay pending until
+reviewed.
+
+The examples use `team_questions_v2` as the batch name; replace it consistently
+with your own name and use a fresh output directory for each run.
+
+## What the evaluation checks
 
 Use a question list to assess the complete answer and trace what went well or
 failed at each stage. Checked on 31 October 2026: the saved `new_questions_v1`
@@ -40,6 +66,8 @@ irrelevant, missing evidence, missing user information and dataset boundary.
 Keep every question, including difficult cases and failures.
 
 Copy the fill-in template and replace the example rows with the real list.
+Delete all `EXAMPLE_*` rows before running; otherwise you will evaluate the
+template questions rather than your own list.
 `--out` below is created fresh by the
 batch runner in the next step and must not already exist, so keep the
 questions file and the generated references file one level up, in
@@ -97,6 +125,20 @@ model calls. Use a fresh directory for each experiment and report repeats
 separately from unique question count. The commands below illustrate a fresh
 batch; do not overwrite the saved development batch to rerun changed prompts.
 
+Run the validated batch:
+
+```sh
+python -m agents.supervisor.ablation run evaluation/ablation/team_questions_v2_questions.csv --pipeline graph --out evaluation/ablation/team_questions_v2 --today 2026-10-31 --repeats 1
+```
+
+This writes `runs.jsonl`, `manifest.json`, `efficiency.json`, `comparison.csv`
+and a blinded grading sheet under the output directory. By default, it also
+runs the evidence-based judge and writes
+`evaluation/ablation/team_questions_v2_llm_judge_scores.json`. Use `--no-judge`
+to skip those additional model calls. See
+[judge without verified references](#alternative-judge-without-verified-references)
+for what this score measures and how to rerun it.
+
 ## Judge-gated review: LLM-as-judge first, then human
 
 After inference, optionally run the LLM-as-judge pre-pass before the diagnostic
@@ -128,13 +170,15 @@ done with and without it visible.
 Prepare the diagnostic report, with or without the pre-pass:
 
 ```sh
-python -m agents.supervisor.diagnostics prepare evaluation/ablation/team_questions_v2 --references evaluation/ablation/team_questions_v2_references.json --chunks data/processed/chunks.jsonl --judge-scores evaluation/ablation/team_questions_v2_judge_scores.json --out evaluation/ablation/team_questions_v2/stage_review
+python -m agents.supervisor.diagnostics prepare evaluation/ablation/team_questions_v2 --references evaluation/ablation/team_questions_v2_references.json --chunks data/processed/chunks.jsonl --out evaluation/ablation/team_questions_v2/stage_review
 ```
 
-Drop `--judge-scores` to produce the same report with every row shown as "Not
-judged" — the rest of the workflow, including `summarise`, is unaffected
-either way; the judge's score is never read back into `GRADES` or any scored
-metric, only displayed.
+If you ran the optional reference-based pre-pass, add
+`--judge-scores evaluation/ablation/team_questions_v2_judge_scores.json`.
+Without it, the reference-based judge fields show "Not judged". The rest of
+the workflow, including `summarise`, is unaffected; the judge's score is never
+read back into `GRADES` or any scored metric, only displayed. The automatic
+evidence-based scores can be included separately during Excel export below.
 
 Before relying on these scores, check that the judge itself is trustworthy —
 see [llm_judge_validation.md](llm_judge_validation.md) for the evidence-order
@@ -335,3 +379,24 @@ no additional model calls. Existing reports are not overwritten.
 The existing ablation rubric calls faithfulness `groundedness`; the new review
 uses the explicit name `faithfulness`. Its `review.csv` has a separate schema
 and should be summarised with this command, not passed directly to `ablation score`.
+
+## Troubleshooting
+
+**The reference-based judge skipped every row.** Check that the references have
+`ground_truth_verified: true` and a known `coverage_status`. Only successful
+policy-route executions qualify. Use the automatic evidence-based judge for a
+first read while references are pending; its scores do not establish correctness.
+
+**Excel export cannot import `xlsxwriter`.** Refresh the environment with
+`python -m pip install -r requirements.txt`. This includes the experiment and
+Excel export dependencies.
+
+**The batch output directory already exists.** Choose a fresh `--out` name to
+keep the previous run and its settings available for comparison.
+
+**Answers seem unrelated to your questions.** Check the input CSV for leftover
+`EXAMPLE_*` template rows and confirm the question path passed to the runner.
+
+**Correctness is pending or recall is unknown.** Fill in and verify references,
+then prepare diagnostics again in a fresh review directory. Correctness also
+requires human grading; running a judge does not fill the human grade columns.

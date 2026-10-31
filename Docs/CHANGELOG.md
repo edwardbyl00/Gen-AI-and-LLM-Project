@@ -11,6 +11,28 @@ diff already shows the what. Mark whether it's still uncommitted.
 
 ---
 
+## 2026-10-31 — Consolidated the evaluation documentation into one guide
+
+**Status:** committed with this entry
+
+**Who:** Ed
+
+- Combined the step-by-step walkthrough and stage evaluation reference in
+  [the evaluation guide](stage_evaluation.md), keeping the batch commands,
+  judge options, diagnostic checks, grading rules and report export instructions.
+- Removed the duplicate walkthrough and updated the README to point to the
+  single guide. Added workflow navigation and troubleshooting so the team can
+  run and review an evaluation without switching between two guides.
+- Made the diagnostic preparation command work without the optional
+  reference-based judge file, and explained how to include it when available.
+
+**Why:** one maintained guide makes the workflow easier to follow and avoids
+duplicating instructions that could drift apart.
+
+**Verified:** checked 14 guide links and heading anchors, confirmed no stale
+walkthrough links remained, and ran `git diff --check`. Documentation only;
+no model calls or evaluation runs were made.
+
 ## 2026-10-31 — Run the ungated LLM judge automatically after every ablation run
 
 **Status:** uncommitted
