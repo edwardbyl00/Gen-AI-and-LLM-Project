@@ -5,38 +5,123 @@ stage diagnosis, human review and a final report. All commands assume you are
 in the project root with the virtual environment active; see the
 [environment setup](../README.md#environment).
 
-## Workflow at a glance
+## Copy-and-paste steps (macOS / Linux)
 
-1. Prepare your question CSV and generate a separate reference template.
-2. Validate the batch with `--dry-run`, then run it to save answers and
-   automatic evidence-based LLM judge scores.
-3. Optionally run the stricter reference-based judge after a reviewer verifies
-   the references.
-4. Prepare the local diagnostic report and export the review workbook.
-5. Grade the answers, save the grades in `review.csv`, and generate the summary.
+Run these blocks in order in the **same terminal**, from the project root.
+Steps 1–5 produce a review workbook. Step 6 produces the human-graded summary.
+The detailed sections below explain the checks and optional reference-based judge.
 
-Pipeline inference and judge scoring make paid model calls. Template generation,
-diagnostics, Excel export and summary generation run locally without model calls.
-Unverified references do not prevent inference or report preparation, but checks
-that need verified ground truth remain unknown. Human grades stay pending until
-reviewed.
+### 1. Set the batch name and edit the questions
 
-The examples use `team_questions_v2` as the batch name; replace it consistently
-with your own name and use a fresh output directory for each run.
+Change only `BATCH` and `QUERY_DATE` here when starting a different evaluation.
+Existing question files are preserved.
+
+```sh
+source .venv/bin/activate
+BATCH=team_questions_v2
+QUERY_DATE=2026-10-31
+QUESTIONS="evaluation/ablation/${BATCH}_questions.csv"
+REFERENCES="evaluation/ablation/${BATCH}_references.json"
+RUN="evaluation/ablation/${BATCH}"
+mkdir -p evaluation/ablation
+if [ ! -f "$QUESTIONS" ]; then
+  cp evaluation/templates/unseen_evaluation_questions.template.csv "$QUESTIONS"
+fi
+```
+
+**Stop here and edit the question CSV.** Keep the header
+`question_id,question,category`; replace all `EXAMPLE_*` rows with your questions,
+then save it. Do this before generating the references in step 2.
+
+### 2. Generate matching references
+
+This creates blank, **unverified** references for the questions you just saved.
+An existing reference file is backed up first, including any human work in it.
+If you already completed matching verified references, skip this block and keep
+them. After editing questions, regenerate and review the affected references;
+the IDs and question text must match the saved run.
+
+```sh
+if [ -f "$REFERENCES" ]; then
+  mv "$REFERENCES" "${REFERENCES}.backup.$(date +%Y%m%d%H%M%S)"
+fi
+python -m agents.supervisor.diagnostics template "$QUESTIONS" --out "$REFERENCES"
+```
+
+You can leave the new references unverified for a first diagnostic report.
+Correctness and reference-based checks need independently verified references.
+
+### 3. Run the evaluation
+
+Validate first (no model calls):
+
+```sh
+python -m agents.supervisor.ablation run "$QUESTIONS" --pipeline graph --out "$RUN" --today "$QUERY_DATE" --repeats 1 --dry-run
+```
+
+Then run it (**paid model calls**, including the automatic evidence-based judge):
+
+```sh
+python -m agents.supervisor.ablation run "$QUESTIONS" --pipeline graph --out "$RUN" --today "$QUERY_DATE" --repeats 1
+```
+
+Reusing `BATCH` overwrites generated run results and clears old reviews and
+default judge scores. Change `BATCH` in step 1 to retain an earlier run.
+Do not edit the questions between this step and report preparation.
+
+### 4. Prepare the diagnostic report
+
+This is local and makes no model calls. A timestamp gives each report a new
+folder, so repeating this block does not overwrite human grades.
+
+```sh
+REVIEW="$RUN/stage_review_$(date +%Y%m%d%H%M%S)"
+python -m agents.supervisor.diagnostics prepare "$RUN" --references "$REFERENCES" --chunks data/processed/chunks.jsonl --out "$REVIEW"
+```
+
+### 5. Export the Excel workbook
+
+```sh
+python -m agents.supervisor.diagnostics export-excel "$REVIEW" --llm-judge-scores "${RUN}_llm_judge_scores.json" --out "$REVIEW/review.xlsx"
+```
+
+Open `review.xlsx` in the folder created in step 4. If step 3 used `--no-judge`,
+omit `--llm-judge-scores "${RUN}_llm_judge_scores.json"` from this command.
+The workbook contains the results, stage details and judge scores; human grades
+remain blank until reviewed.
+
+### 6. Grade and summarise (when ready)
+
+Fill the human grade columns in `$REVIEW/review.csv` using 0, 0.5, 1 or `NA`,
+and add your findings. See [Review and report](#review-and-report) for the rubric.
+If you graded in Excel, copy the grades and notes into `review.csv`; edited
+workbooks are not imported automatically. Save the CSV, then run:
+
+```sh
+python -m agents.supervisor.diagnostics summarise "$REVIEW/diagnostics.json" "$REVIEW/review.csv" --out "$REVIEW/summary.json"
+```
+
+The final reports are `summary.json` and `summary.md` in the review folder.
+Run this once per output name; to summarise revised grades, use a new name such
+as `summary_v2.json`.
+
+## Detailed reference
+
+The sections below explain the same workflow, its optional judge pass and how
+to interpret the results. They are reference material, not additional required
+steps after the copy-and-paste sequence.
 
 ## What the evaluation checks
 
 Use a question list to assess the complete answer and trace what went well or
-failed at each stage. Checked on 31 October 2026: the saved `new_questions_v1`
-development batch contains six unique questions and 12 graph executions across
-A and B, with 22 recorded agent attempts. Its references are still unverified,
-so it does not establish routing accuracy, retrieval recall or correctness.
+failed at each stage. Unverified references do not establish routing accuracy,
+retrieval recall or correctness — only a reviewer-verified reference does.
 
-The saved manifest records that batch's actual questions and settings; mutable
-input CSVs and current prompts may have changed since inference. The compact
-review workbook is at
-`evaluation/ablation/new_questions_v1/compact_review/review.xlsx`.
-It is a generated local artifact and may not exist in a fresh clone.
+The saved manifest records a batch's actual questions and settings; mutable
+input CSVs and current prompts may have changed since inference. The exported
+review workbook lives at `evaluation/ablation/<BATCH>/stage_review_<timestamp>/review.xlsx`
+(see [step 5](#5-export-the-excel-workbook)). It is a generated local artifact
+and may not exist in a fresh clone.
 
 Reference preparation, diagnostics, summary and report export are offline.
 Pipeline inference and the optional judge passes make model calls; judge
@@ -68,8 +153,8 @@ Keep every question, including difficult cases and failures.
 Copy the fill-in template and replace the example rows with the real list.
 Delete all `EXAMPLE_*` rows before running; otherwise you will evaluate the
 template questions rather than your own list.
-`--out` below is created fresh by the
-batch runner in the next step and must not already exist, so keep the
+`--out` below is created or reused by the
+batch runner in the next step. Keep the
 questions file and the generated references file one level up, in
 `evaluation/ablation/` itself:
 
@@ -121,9 +206,9 @@ python -m agents.supervisor.ablation run evaluation/ablation/team_questions_v2_q
 The dry run validates the input and schedule. Remove `--dry-run` to execute the
 experiment once the question list and references are ready. One repeat means two
 pipeline executions per question (A and B), each potentially making multiple
-model calls. Use a fresh directory for each experiment and report repeats
-separately from unique question count. The commands below illustrate a fresh
-batch; do not overwrite the saved development batch to rerun changed prompts.
+model calls. Report repeats separately from unique question count. Reusing the
+same `--out` reruns the whole batch and replaces the previous generated outputs;
+use a different directory to compare experiments or changed prompts.
 
 Run the validated batch:
 
@@ -391,8 +476,13 @@ first read while references are pending; its scores do not establish correctness
 `python -m pip install -r requirements.txt`. This includes the experiment and
 Excel export dependencies.
 
-**The batch output directory already exists.** Choose a fresh `--out` name to
-keep the previous run and its settings available for comparison.
+**I want to rerun the same batch.** Repeat the run command with the same `--out`.
+It overwrites the generated run files, removes `stage_review`, `compact_review`
+and custom review folders containing both `diagnostics.json` and `review.csv`,
+and clears the default sibling judge-score files, including with `--no-judge`.
+Regenerate diagnostics, judge scores and human grades for the new results.
+Unrelated files and input CSVs are preserved. Custom judge/report files saved
+elsewhere must be refreshed separately. Use a new `--out` to retain both runs.
 
 **Answers seem unrelated to your questions.** Check the input CSV for leftover
 `EXAMPLE_*` template rows and confirm the question path passed to the runner.

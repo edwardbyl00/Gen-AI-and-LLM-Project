@@ -6,6 +6,7 @@ import hashlib
 import json
 import math
 import random
+import shutil
 import statistics
 import sys
 import time
@@ -203,7 +204,22 @@ def run_experiment(questions, out_dir, today, repeats=1, seed=42, answer_fn=None
     if settings.get("agents", {}).get("policy") != "real":
         raise ValueError("End-to-end evaluation requires agents.policy: real")
     out_dir = Path(out_dir)
-    out_dir.mkdir(parents=True, exist_ok=False)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    # Invalidate derived results before new inference, including --no-judge reruns.
+    # Leave inputs and unrelated files in the output directory untouched.
+    for name in ("manifest.json", "runs.jsonl", "efficiency.json", "comparison.csv",
+                 "grading_blind.csv", "review_key.csv", "quality_scores.json",
+                 "reviewed_grades.json", "experiment.xlsx"):
+        (out_dir / name).unlink(missing_ok=True)
+    for directory in out_dir.iterdir():
+        if directory.is_dir() and not directory.is_symlink() and (
+            directory.name in ("stage_review", "compact_review")
+            or ((directory / "diagnostics.json").is_file()
+                and (directory / "review.csv").is_file())
+        ):
+            shutil.rmtree(directory)
+    for suffix in ("_judge_scores.json", "_llm_judge_scores.json"):
+        (out_dir.parent / f"{out_dir.name}{suffix}").unlink(missing_ok=True)
     paths = list((PROJECT_ROOT / "agents").rglob("*.py")) + list((PROJECT_ROOT / "agents").rglob("*.md"))
     paths += list((PROJECT_ROOT / "src").rglob("*.py")) + [CONFIG_FILE]
     paths += [PROJECT_ROOT / "requirements.txt", PROJECT_ROOT / "requirements-experiments.txt"]
@@ -370,7 +386,8 @@ def main():
     commands = parser.add_subparsers(dest="command", required=True)
     run = commands.add_parser("run")
     run.add_argument("questions", type=Path)
-    run.add_argument("--out", type=Path, required=True)
+    run.add_argument("--out", type=Path, required=True,
+                     help="Output directory; existing generated run results and reviews are overwritten")
     run.add_argument("--today", default=datetime.now(ZoneInfo("Asia/Singapore")).date().isoformat())
     run.add_argument("--repeats", type=int, default=1)
     run.add_argument("--seed", type=int, default=42)

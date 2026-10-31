@@ -136,8 +136,9 @@ Dry-run validates input and prints the number of pipeline runs, with no model
 calls or output files. A real run requires real policy configuration, API
 credentials, the transaction data and the prepared local policy index. It makes
 paid API calls. Three repeats with N questions make 6N pipeline executions;
-individual executions can make multiple model calls. Choose a fresh output
-directory; existing runs cannot be overwritten.
+individual executions can make multiple model calls. Reusing an output directory
+overwrites generated run results and clears old review folders and default
+judge-score files. Choose a different directory to retain the previous run.
 
 The runner fixes the date and shuffles A/B order within each question/repeat
 using a saved seed. Both use identical shared model/retrieval settings. Model
@@ -237,7 +238,8 @@ prices. It does not establish that the entire final answer passed review.
 
 An interrupted run preserves completed JSONL records. The grading exports are
 written only at normal completion; do not mix a partial run with a completed
-experiment. Start a fresh directory for a complete comparable run.
+experiment. Rerun the whole batch to replace it, or choose a fresh directory to
+retain the interrupted results.
 
 ## Export a comparison workbook (Excel)
 

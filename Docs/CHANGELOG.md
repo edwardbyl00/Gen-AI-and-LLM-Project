@@ -11,6 +11,44 @@ diff already shows the what. Mark whether it's still uncommitted.
 
 ---
 
+## 2026-10-31 — Simplified evaluation commands for copying and pasting
+
+**Status:** uncommitted
+
+**Who:** Ed
+
+- Added six ordered steps at the start of the evaluation guide, with the batch
+  name and date set once and reused in every command.
+- Put question editing before reference generation, backed up existing
+  references before regeneration, and used separate timestamped review folders
+  to avoid overwriting human grades when preparing another report.
+- Kept the detailed rubric and optional judge instructions below the practical
+  steps. Explained which commands make paid calls and how to produce the final
+  summary from the reviewed CSV.
+
+**Why:** commands should be easy to paste in sequence without mismatched paths,
+stale example references or an existing review directory blocking the next step.
+
+## 2026-10-31 — Allow ablation runs to overwrite generated results
+
+**Status:** uncommitted
+
+**Who:** Ed
+
+- Reusing `ablation run --out` now replaces generated run files rather than
+  raising `FileExistsError`. Old quality scores, Excel exports, review folders
+  and default sibling judge-score files are cleared before new inference so
+  they cannot be mistaken for results from the new run. Input and unrelated
+  files are preserved; dry runs remain read-only.
+- Updated the CLI help and evaluation guides, and added a regression test for
+  rerunning with fewer repeats and no judge while preserving inputs and notes.
+
+**Why:** the same evaluation command can be rerun without manually deleting its
+output directory or picking a new name.
+
+**Verified:** 20 experiment/decomposition tests passed with the LLM judge
+mocked; no paid model calls or existing evaluation runs were made.
+
 ## 2026-10-31 — Consolidated the evaluation documentation into one guide
 
 **Status:** committed with this entry

@@ -141,8 +141,6 @@ def test_paired_runner_blinding_scoring_and_failure_accounting(tmp_path):
     b = next(s for s in scores["efficiency"] if s["variant"] == "B_decomposition" and s["group"] == "all")
     assert b["pipeline_errors"] == b["usage_incomplete_runs"] == 2
     assert b["runs"] == 4
-    with pytest.raises(FileExistsError):
-        ablation.run_experiment(questions, out, "2026-10-28", answer_fn=answer)
     # Even a fully graded subset must not be mistaken for a complete experiment.
     lines = (out / "runs.jsonl").read_text().splitlines()
     (out / "runs.jsonl").write_text("\n".join(lines[:-1]) + "\n")

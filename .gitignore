@@ -242,6 +242,9 @@ data/vector_db/
 # macOS metadata
 .DS_Store
 
+# Excel lock files left behind while a workbook is open
+~$*.xlsx
+
 # Local R session history
 .Rhistory
 

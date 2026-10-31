@@ -104,6 +104,38 @@ def test_local_batch_keeps_results_measurements_and_grading(tmp_path, measuremen
     assert (out / 'comparison.csv').exists()
 
 
+def test_rerun_replaces_results_and_invalidates_old_reviews(tmp_path, measurement_config):
+    out = tmp_path / 'rerun'
+    ablation.run_experiment(questions(), out, '2026-10-31', repeats=2,
+                           answer_fn=fake_answer, judge=False)
+    for name in ('quality_scores.json', 'reviewed_grades.json', 'experiment.xlsx'):
+        (out / name).write_text('old result')
+    for name in ('stage_review', 'compact_review', 'custom_review'):
+        review = out / name
+        review.mkdir()
+        (review / 'diagnostics.json').write_text('{}')
+        (review / 'review.csv').write_text('old grades')
+    for suffix in ('_judge_scores.json', '_llm_judge_scores.json'):
+        (tmp_path / f'rerun{suffix}').write_text('old judge scores')
+    (out / 'questions.csv').write_text('keep inputs')
+    (out / 'notes').mkdir()
+    (out / 'notes' / 'notes.txt').write_text('keep notes')
+
+    records = ablation.run_experiment(questions(), out, '2026-11-01',
+                                    answer_fn=fake_answer, judge=False)
+
+    assert len(records) == 2
+    assert len((out / 'runs.jsonl').read_text().splitlines()) == 2
+    assert json.loads((out / 'manifest.json').read_text())['today'] == '2026-11-01'
+    for name in ('quality_scores.json', 'reviewed_grades.json', 'experiment.xlsx',
+                 'stage_review', 'compact_review', 'custom_review'):
+        assert not (out / name).exists()
+    assert not (tmp_path / 'rerun_judge_scores.json').exists()
+    assert not (tmp_path / 'rerun_llm_judge_scores.json').exists()
+    assert (out / 'questions.csv').read_text() == 'keep inputs'
+    assert (out / 'notes' / 'notes.txt').read_text() == 'keep notes'
+
+
 def test_config_change_stops_batch_after_saving_completed_record(tmp_path, measurement_config):
     config, path = measurement_config
     calls = []
