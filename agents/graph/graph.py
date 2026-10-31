@@ -13,6 +13,14 @@ The self check (agents/graph/self_check.py) sends a weak answer back once:
                         --none---> synthesis (declines)
     self_check --weak--> synthesis (with feedback) or the failed agent(s)
 
+With a checkpointer (chat mode), a rewrite node (agents/graph/rewrite.py)
+turns a follow-up into a standalone question before the supervisor sees
+it, and a remember node appends the finished turn to history, kept per
+thread_id:
+
+    START -> rewrite -> supervisor -> ...
+    self_check --pass--> remember -> END
+
 Input:  question, today, optional decompose override
 
 Decomposition is planned once by the shared supervisor router. P3 executes
@@ -22,11 +30,16 @@ Output: routing (route, check_premise, answerable, reason,
         price_result, policy_result, agent_errors, answer (answer, declined,
         cited, sources, events, needs_clarification, cannot_answer),
         self_check (verdict, problems, retry), attempts, steps (step log)
-        and usage (token counts)
+        and usage (token counts); in chat mode also history (one entry
+        per turn, so every turn keeps its own analysis)
 
 Usage (real model calls, needs OPENAI_API_KEY in .env; the policy agent
 also needs the local vector store in data/vector_db/):
     python -m agents.graph.graph "Can I use CPF for a resale flat?"
+    python -m agents.graph.graph --thread test-1 "What about Bishan?"
+
+--thread continues (or starts) that chat, saved in logs/chat/chats.sqlite,
+the same file as the chat page (ui/chat_app.py).
 """
 
 import inspect
@@ -34,9 +47,11 @@ import json
 import operator
 import time
 from datetime import date
+from pathlib import Path
 from typing import Annotated, Literal, NotRequired, Optional, TypedDict
 
 from langgraph.graph import END, START, StateGraph
+from langgraph.types import Overwrite
 
 from agents.supervisor.adapters import get_policy_agent
 from agents.supervisor.checks import safe_route
@@ -44,7 +59,11 @@ from agents.supervisor.synthesis import FALLBACK_ANSWER, synthesise
 from agents.supervisor.router import estimate_cost_usd
 from agents.supervisor.tasks import execute_task, resolve_decompose, route_with_tasks, tasks_for_route
 from agents.supervisor.usage_log import track_run
+from agents.graph.rewrite import rewrite_question
 from agents.graph.self_check import code_checks, feedback_text, llm_check, load_self_check_settings
+
+# Chat memory for --thread and the chat page; logs/chat/ is in .gitignore.
+CHAT_DB = Path(__file__).resolve().parents[2] / "logs" / "chat" / "chats.sqlite"
 
 
 class Routing(TypedDict):
@@ -90,6 +109,10 @@ class State(TypedDict, total=False):
     # Lists that every node appends to rather than overwrites.
     steps: Annotated[list, operator.add]
     usage: Annotated[list, operator.add]
+    # Chat mode only: what the user typed, and the finished earlier turns.
+    # history is the one field kept from turn to turn; run() resets the rest.
+    user_question: str
+    history: list
 
 
 def make_supervisor_node(route_fn=safe_route, decompose=None, failure_usage_log=None):
@@ -261,6 +284,46 @@ def route_after_self_check(state):
     return state["self_check"]["retry"] or [END]
 
 
+def make_rewrite_node(rewrite_fn=rewrite_question):
+    """Chat mode: rewrite a follow-up as a standalone question.
+
+    rewrite_fn(message, history, today, usage_log=...) returns the question.
+    The first turn of a chat has no history, so nothing is called or logged.
+    If the rewrite fails, the message goes on unchanged."""
+    def rewrite(state):
+        history = state.get("history") or []
+        if not history:
+            return {}
+        message = state.get("user_question", state["question"])
+        usage = []
+        start = time.perf_counter()
+        step = {"step": "rewrite"}
+        try:
+            question = rewrite_fn(message, history, state["today"], usage_log=usage)
+        except Exception as error:
+            question = message
+            step["error"] = f"{type(error).__name__}: {error}"
+        step.update(seconds=round(time.perf_counter() - start, 2),
+                    output=question, changed=question != message)
+        return {"question": question, "steps": [step], "usage": usage}
+    return rewrite
+
+
+# What each history entry keeps: enough to show the turn's analysis again.
+TURN_KEYS = ("question", "today", "routing", "price_result", "policy_result",
+             "task_results", "agent_errors", "answer", "self_check", "attempts", "steps", "usage")
+
+
+def make_remember_node():
+    """Chat mode: append the finished turn to this thread's history."""
+    def remember(state):
+        turn = {key: state.get(key) for key in TURN_KEYS}
+        turn["user_question"] = state.get("user_question", state["question"])
+        turn["cost_usd"] = estimate_cost_usd(state.get("usage", []))
+        return {"history": (state.get("history") or []) + [turn]}
+    return remember
+
+
 ROUTE_TO_NODES = {
     "price": ["price_agent"],
     "policy": ["policy_agent"],
@@ -275,7 +338,12 @@ def route_after_supervisor(state):
 
 
 def build_graph(route_fn=safe_route, price_fn=None, policy_fn=None, synth_fn=synthesise,
-                check_fn=llm_check, self_check_settings=None, decompose=None, usage_log=None):
+                check_fn=llm_check, self_check_settings=None, decompose=None, usage_log=None,
+                checkpointer=None, rewrite_fn=rewrite_question):
+    """checkpointer (e.g. MemorySaver()) turns on chat mode: state is saved
+    per thread_id, a rewrite node makes follow-ups standalone and a remember
+    node keeps each turn. Without one, the graph is unchanged: one question
+    in, one answer out."""
     def capture(node):
         def wrapped(state):
             update = node(state)
@@ -291,21 +359,50 @@ def build_graph(route_fn=safe_route, price_fn=None, policy_fn=None, synth_fn=syn
     graph.add_node("synthesis", capture(make_synthesis_node(synth_fn)))
     graph.add_node("self_check", capture(make_self_check_node(check_fn, self_check_settings)))
 
-    graph.add_edge(START, "supervisor")
+    if checkpointer is None:
+        graph.add_edge(START, "supervisor")
+    else:
+        graph.add_node("rewrite", capture(make_rewrite_node(rewrite_fn)))
+        graph.add_edge(START, "rewrite")
+        graph.add_edge("rewrite", "supervisor")
     graph.add_conditional_edges("supervisor", route_after_supervisor,
                                 ["price_agent", "policy_agent", "synthesis"])
     # For route both, the agents run in the same step, so synthesis runs once, after both.
     graph.add_edge("price_agent", "synthesis")
     graph.add_edge("policy_agent", "synthesis")
     graph.add_edge("synthesis", "self_check")
+    if checkpointer is None:
+        graph.add_conditional_edges("self_check", route_after_self_check,
+                                    ["synthesis", "price_agent", "policy_agent", END])
+        return graph.compile()
+    graph.add_node("remember", make_remember_node())
     graph.add_conditional_edges("self_check", route_after_self_check,
-                                ["synthesis", "price_agent", "policy_agent", END])
-    return graph.compile()
+                                {"synthesis": "synthesis", "price_agent": "price_agent",
+                                 "policy_agent": "policy_agent", END: "remember"})
+    graph.add_edge("remember", END)
+    return graph.compile(checkpointer=checkpointer)
+
+
+def chat_memory(path=CHAT_DB):
+    """A SQLite checkpointer for chat mode: every thread saved in one file.
+
+    check_same_thread=False because Streamlit runs each rerun on a different thread."""
+    import sqlite3
+    from langgraph.checkpoint.sqlite import SqliteSaver
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    saver = SqliteSaver(sqlite3.connect(path, check_same_thread=False))
+    saver.setup()  # create the tables now, so a new file can list its (no) chats
+    return saver
 
 
 @track_run("graph")
-def run(question, today=None, app=None, decompose=None, usage_log=None, log_usage=None):
-    """Run P3 with optional per-request decomposition and external usage capture."""
+def run(question, today=None, app=None, decompose=None, usage_log=None, log_usage=None,
+        thread_id=None):
+    """Run P3 with optional per-request decomposition and external usage capture.
+
+    thread_id (needs an app built with a checkpointer) continues that chat:
+    history carries over, every per-turn field starts fresh."""
     start = time.perf_counter()
     supplied_app = app is not None
     app = app or build_graph(usage_log=usage_log)
@@ -315,7 +412,18 @@ def run(question, today=None, app=None, decompose=None, usage_log=None, log_usag
                "steps": [], "usage": []}
     if decompose is not None:
         initial["decompose"] = resolve_decompose(decompose)
-    result = app.invoke(initial)
+    config = None
+    if thread_id is not None:
+        if not getattr(app, "checkpointer", None):
+            raise ValueError("thread_id needs an app built with build_graph(checkpointer=...)")
+        # The saved state would otherwise leak into this turn: the reducers
+        # would add this turn's steps, usage and errors to the last turn's.
+        initial = {**initial, "user_question": question, "task_results": None,
+                   "decompose": resolve_decompose(decompose),
+                   "steps": Overwrite([]), "usage": Overwrite([]),
+                   "agent_errors": Overwrite({}), "task_records": Overwrite({})}
+        config = {"configurable": {"thread_id": thread_id}}
+    result = app.invoke(initial, config)
     if supplied_app and usage_log is not None:
         usage_log.extend(result["usage"])
     result["cost_usd"] = estimate_cost_usd(result["usage"])
@@ -324,8 +432,16 @@ def run(question, today=None, app=None, decompose=None, usage_log=None, log_usag
 
 
 if __name__ == "__main__":
-    import sys
+    import argparse
 
-    question = " ".join(sys.argv[1:]) or "Can I use CPF for a resale flat?"
-    state = run(question)
+    parser = argparse.ArgumentParser(description="Ask the agent graph a question.")
+    parser.add_argument("question", nargs="*")
+    parser.add_argument("--thread", help="continue (or start) this chat, kept in "
+                                         "logs/chat/chats.sqlite")
+    args = parser.parse_args()
+    question = " ".join(args.question) or "Can I use CPF for a resale flat?"
+    if args.thread:
+        state = run(question, app=build_graph(checkpointer=chat_memory()), thread_id=args.thread)
+    else:
+        state = run(question)
     print(json.dumps(state, indent=2))

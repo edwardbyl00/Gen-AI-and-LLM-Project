@@ -251,6 +251,8 @@ evaluation/ablation/
 
 # Local question and API usage history
 logs/usage/
+# Local chat memory (every question and answer from ui/chat_app.py)
+logs/chat/
 
 # Scratch exports (e.g. ad hoc excel_export.py output); canonical experiment
 # output lives under evaluation/ablation/<run>/experiment.xlsx instead.
