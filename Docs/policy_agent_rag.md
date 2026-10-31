@@ -168,14 +168,23 @@ was higher latency and token usage; independent review is still needed.
 
 Run the full regression suite:
 
-```powershell
+```sh
 python tests/run_all.py
 ```
 
 Run the final judged baseline-vs-agentic pilot:
 
+**Windows (PowerShell):**
+
 ```powershell
 $env:PYTHONPATH=".;src"
+python scripts/evaluate_agentic_answers.py --judge
+```
+
+**macOS / Linux (bash/zsh):**
+
+```bash
+export PYTHONPATH=".:src"
 python scripts/evaluate_agentic_answers.py --judge
 ```
 

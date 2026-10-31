@@ -27,11 +27,27 @@ This README also includes the reproducible setup for the final P5 Agentic RAG ev
 
 ## Environment
 
-Activate the project virtual environment from the repository root:
+Create (first time only) and activate the project virtual environment from
+the repository root, then install dependencies:
+
+**Windows (PowerShell):**
 
 ```powershell
+python -m venv .venv
 .\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 ```
+
+**macOS / Linux (bash/zsh):**
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Add `-r requirements-experiments.txt` to the install step if you need the
+experiment extras.
 
 API credentials are stored in a local `.env` file. Do not commit `.env`.
 
@@ -85,7 +101,7 @@ The main finding was that naive hybrid retrieval did not consistently outperform
 
 ## Run the Regression Suite
 
-```powershell
+```sh
 python tests/run_all.py
 ```
 
@@ -105,8 +121,17 @@ The consolidated suite covers:
 
 From the repository root:
 
+**Windows (PowerShell):**
+
 ```powershell
 $env:PYTHONPATH=".;src"
+python scripts/evaluate_agentic_answers.py --judge
+```
+
+**macOS / Linux (bash/zsh):**
+
+```bash
+export PYTHONPATH=".:src"
 python scripts/evaluate_agentic_answers.py --judge
 ```
 
