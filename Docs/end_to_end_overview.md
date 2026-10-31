@@ -73,6 +73,7 @@ guide explains how to choose between them.
 | Optional experiment tracking | MLflow | [mlflow_experiments.md](mlflow_experiments.md) |
 | Routing/answer evaluation runs | `evaluation/results/`, `evaluation/answers/` | [supervisor_guide.md §4](supervisor_guide.md#4-evaluate-label-run-grade-score) |
 | Paired A/B decomposition evaluation | `evaluation/ablation/` | [supervisor_ablation.md](supervisor_ablation.md) |
+| LLM-as-judge bias/agreement checks | `evaluation/agentic/judge_swap_check.json`, `human_label_sample.csv` | [llm_judge_validation.md](llm_judge_validation.md) |
 
 ## 4. Setup and conventions
 
