@@ -114,7 +114,7 @@ def run_prepass(run_dir, references_path, out_path):
 
     records = [
         json.loads(line)
-        for line in (run_dir / "runs.jsonl").read_text().splitlines()
+        for line in (run_dir / "runs.jsonl").read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
 
