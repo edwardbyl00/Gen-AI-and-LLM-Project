@@ -21,8 +21,13 @@ Price tasks ask only for historical resale transaction statistics or context.
 Policy tasks ask only for rules, procedures or eligibility, without asking the
 policy source to supply historical price statistics. Preserve any connection
 needed to interpret the policy (for example that the purchase is resale).
-For comparisons, separate price tasks may request different towns or periods;
-do not ask an agent to produce a statistic its interface cannot supply.
+The price agent looks up one town, one flat type and one period per task.
+For a comparison across towns, flat types or periods, create one price task
+per town, flat type or period being compared (for example, Tampines vs Bishan
+4-room flats: one task for Tampines 4-room, one for Bishan 4-room); never put
+two towns in one price task. Do not ask an agent to produce a statistic its
+interface cannot supply, such as a difference or ranking; synthesis compares
+the separate results.
 
 For the geographic price proxy allowed by R8, preserve the requested
 location and explicitly name the supported containing/nearby town in the
