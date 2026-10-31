@@ -5,16 +5,22 @@ stage diagnosis, human review and a final report. All commands assume you are
 in the project root with the virtual environment active; see the
 [environment setup](../README.md#environment).
 
-## Copy-and-paste steps (macOS / Linux)
+## Copy-and-paste steps
 
 Run these blocks in order in the **same terminal**, from the project root.
 Steps 1–5 produce a review workbook. Step 6 produces the human-graded summary.
 The detailed sections below explain the checks and optional reference-based judge.
 
+Pick one shell and stick with it for the whole sequence — the variables set in
+step 1 (`$QUESTIONS`, `$REFERENCES`, `$RUN`, `$REVIEW`) only exist in the
+terminal session that set them.
+
 ### 1. Set the batch name and edit the questions
 
 Change only `BATCH` and `QUERY_DATE` here when starting a different evaluation.
 Existing question files are preserved.
+
+**macOS / Linux (bash/zsh):**
 
 ```sh
 source .venv/bin/activate
@@ -29,6 +35,21 @@ if [ ! -f "$QUESTIONS" ]; then
 fi
 ```
 
+**Windows (PowerShell):**
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+$BATCH = "team_questions_v2"
+$QUERY_DATE = "2026-10-31"
+$QUESTIONS = "evaluation/ablation/${BATCH}_questions.csv"
+$REFERENCES = "evaluation/ablation/${BATCH}_references.json"
+$RUN = "evaluation/ablation/${BATCH}"
+New-Item -ItemType Directory -Force -Path evaluation/ablation | Out-Null
+if (-not (Test-Path $QUESTIONS)) {
+  Copy-Item evaluation/templates/unseen_evaluation_questions.template.csv $QUESTIONS
+}
+```
+
 **Stop here and edit the question CSV.** Keep the header
 `question_id,question,category`; replace all `EXAMPLE_*` rows with your questions,
 then save it. Do this before generating the references in step 2.
@@ -41,11 +62,22 @@ If you already completed matching verified references, skip this block and keep
 them. After editing questions, regenerate and review the affected references;
 the IDs and question text must match the saved run.
 
+**macOS / Linux (bash/zsh):**
+
 ```sh
 if [ -f "$REFERENCES" ]; then
   mv "$REFERENCES" "${REFERENCES}.backup.$(date +%Y%m%d%H%M%S)"
 fi
 python -m agents.supervisor.diagnostics template "$QUESTIONS" --out "$REFERENCES"
+```
+
+**Windows (PowerShell):**
+
+```powershell
+if (Test-Path $REFERENCES) {
+  Move-Item $REFERENCES "${REFERENCES}.backup.$(Get-Date -Format yyyyMMddHHmmss)"
+}
+python -m agents.supervisor.diagnostics template $QUESTIONS --out $REFERENCES
 ```
 
 You can leave the new references unverified for a first diagnostic report.
@@ -55,15 +87,20 @@ Correctness and reference-based checks need independently verified references.
 
 Validate first (no model calls):
 
+**macOS / Linux (bash/zsh):**
+
 ```sh
 python -m agents.supervisor.ablation run "$QUESTIONS" --pipeline graph --out "$RUN" --today "$QUERY_DATE" --repeats 1 --dry-run
 ```
 
-Then run it (**paid model calls**, including the automatic evidence-based judge):
+**Windows (PowerShell):**
 
-```sh
-python -m agents.supervisor.ablation run "$QUESTIONS" --pipeline graph --out "$RUN" --today "$QUERY_DATE" --repeats 1
+```powershell
+python -m agents.supervisor.ablation run $QUESTIONS --pipeline graph --out $RUN --today $QUERY_DATE --repeats 1 --dry-run
 ```
+
+Then run it (**paid model calls**, including the automatic evidence-based judge)
+by dropping `--dry-run` from either command above.
 
 Reusing `BATCH` overwrites generated run results and clears old reviews and
 default judge scores. Change `BATCH` in step 1 to retain an earlier run.
@@ -74,15 +111,32 @@ Do not edit the questions between this step and report preparation.
 This is local and makes no model calls. A timestamp gives each report a new
 folder, so repeating this block does not overwrite human grades.
 
+**macOS / Linux (bash/zsh):**
+
 ```sh
 REVIEW="$RUN/stage_review_$(date +%Y%m%d%H%M%S)"
 python -m agents.supervisor.diagnostics prepare "$RUN" --references "$REFERENCES" --chunks data/processed/chunks.jsonl --out "$REVIEW"
 ```
 
+**Windows (PowerShell):**
+
+```powershell
+$REVIEW = "$RUN/stage_review_$(Get-Date -Format yyyyMMddHHmmss)"
+python -m agents.supervisor.diagnostics prepare $RUN --references $REFERENCES --chunks data/processed/chunks.jsonl --out $REVIEW
+```
+
 ### 5. Export the Excel workbook
+
+**macOS / Linux (bash/zsh):**
 
 ```sh
 python -m agents.supervisor.diagnostics export-excel "$REVIEW" --llm-judge-scores "${RUN}_llm_judge_scores.json" --out "$REVIEW/review.xlsx"
+```
+
+**Windows (PowerShell):**
+
+```powershell
+python -m agents.supervisor.diagnostics export-excel $REVIEW --llm-judge-scores "${RUN}_llm_judge_scores.json" --out "$REVIEW/review.xlsx"
 ```
 
 Open `review.xlsx` in the folder created in step 4. If step 3 used `--no-judge`,
@@ -97,7 +151,15 @@ and add your findings. See [Review and report](#review-and-report) for the rubri
 If you graded in Excel, copy the grades and notes into `review.csv`; edited
 workbooks are not imported automatically. Save the CSV, then run:
 
+**macOS / Linux (bash/zsh):**
+
 ```sh
+python -m agents.supervisor.diagnostics summarise "$REVIEW/diagnostics.json" "$REVIEW/review.csv" --out "$REVIEW/summary.json"
+```
+
+**Windows (PowerShell):**
+
+```powershell
 python -m agents.supervisor.diagnostics summarise "$REVIEW/diagnostics.json" "$REVIEW/review.csv" --out "$REVIEW/summary.json"
 ```
 
@@ -397,10 +459,12 @@ with `agents.supervisor.stage_review_excel` (also wired as
 reads what `prepare` and `judge_ablation_answers.py` already wrote:
 
 ```sh
-python -m agents.supervisor.diagnostics export-excel evaluation/ablation/team_questions_v2/stage_review \
-    --llm-judge-scores evaluation/ablation/team_questions_v2_llm_judge_scores.json \
-    --out evaluation/ablation/team_questions_v2/stage_review/review.xlsx
+python -m agents.supervisor.diagnostics export-excel evaluation/ablation/team_questions_v2/stage_review --llm-judge-scores evaluation/ablation/team_questions_v2_llm_judge_scores.json --out evaluation/ablation/team_questions_v2/stage_review/review.xlsx
 ```
+
+(Written as one line deliberately — a `\`-continued multi-line version can
+paste incorrectly in some terminals, see [Step 5](#5-export-the-excel-workbook)
+for the same command built from shell variables.)
 
 `--llm-judge-scores` is optional; omit it if that file doesn't exist yet.
 The workbook has at most three sheets:
