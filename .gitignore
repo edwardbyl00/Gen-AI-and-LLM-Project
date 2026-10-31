@@ -238,6 +238,7 @@ data/raw/
 data/embeddings/
 # Locally generated persistent vector database
 data/vector_db/
+evaluation/ablation/
 
 # macOS metadata
 .DS_Store
