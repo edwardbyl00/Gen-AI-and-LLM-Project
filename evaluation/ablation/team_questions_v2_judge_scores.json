@@ -1,0 +1,70 @@
+{
+  "max_score": 10,
+  "scores": {},
+  "skipped": [
+    {
+      "review_id": "f50e8a0af9acf207",
+      "reason": "not_eligible_for_ground_truth_judge"
+    },
+    {
+      "review_id": "a9b4a34f0264acec",
+      "reason": "not_eligible_for_ground_truth_judge"
+    },
+    {
+      "review_id": "109e5a0874fc0a28",
+      "reason": "not_eligible_for_ground_truth_judge"
+    },
+    {
+      "review_id": "29859b5f0f22ac34",
+      "reason": "not_eligible_for_ground_truth_judge"
+    },
+    {
+      "review_id": "345bbc41d881d656",
+      "reason": "not_eligible_for_ground_truth_judge"
+    },
+    {
+      "review_id": "c41fa4326bb93954",
+      "reason": "not_eligible_for_ground_truth_judge"
+    },
+    {
+      "review_id": "a6aff02b3314e0f3",
+      "reason": "not_eligible_for_ground_truth_judge"
+    },
+    {
+      "review_id": "7469b9a57ec84c22",
+      "reason": "not_eligible_for_ground_truth_judge"
+    },
+    {
+      "review_id": "90587dc218a27367",
+      "reason": "not_eligible_for_ground_truth_judge"
+    },
+    {
+      "review_id": "47f092fa459fef42",
+      "reason": "not_eligible_for_ground_truth_judge"
+    },
+    {
+      "review_id": "54a5f591e0c08cca",
+      "reason": "not_eligible_for_ground_truth_judge"
+    },
+    {
+      "review_id": "2eb65bde3ff76db5",
+      "reason": "not_eligible_for_ground_truth_judge"
+    },
+    {
+      "review_id": "26a82f0034cb1ff6",
+      "reason": "not_eligible_for_ground_truth_judge"
+    },
+    {
+      "review_id": "84ebeb81e1384d5e",
+      "reason": "not_eligible_for_ground_truth_judge"
+    },
+    {
+      "review_id": "66af7fa0d1c6c535",
+      "reason": "not_eligible_for_ground_truth_judge"
+    },
+    {
+      "review_id": "838d3eae13a4eb28",
+      "reason": "not_eligible_for_ground_truth_judge"
+    }
+  ]
+}
