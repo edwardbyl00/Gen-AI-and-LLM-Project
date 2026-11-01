@@ -102,3 +102,19 @@ def test_clarification_and_cannot_answer_are_shown():
     out = page.answer_card_html(bundle)
     assert "Need more detail" in out
     assert "Can&#39;t answer" in out and "no forecasts" in out
+
+
+def test_headline_covers_both_parts_of_a_both_question():
+    """'Can I use my CPF ... and how much would it cost?' must not lose the CPF answer."""
+    page = load_page_helpers()
+    price = {"town": "CLEMENTI", "flat_type": "3 ROOM", "period_start": "2025-10",
+             "period_end": "2026-09", "median_price": 434000, "n_deals": 206}
+    bundle = {"routing": {"route": "both"}, "price_result": price,
+              "answer": {"declined": False, "answer": "Yes. You can use CPF Ordinary Account savings "
+                         "to buy an HDB resale flat, including a 3-room resale flat.[4][6] More text."}}
+    line = page.headline(bundle)
+    assert line.startswith("Yes, you can use CPF Ordinary Account savings to buy an HDB resale flat.")
+    assert "3-room flats in Clementi sold for a median of $434,000" in line
+    assert "[4]" not in line
+    bundle["routing"]["route"] = "price"
+    assert page.headline(bundle).startswith("3-room flats in Clementi")

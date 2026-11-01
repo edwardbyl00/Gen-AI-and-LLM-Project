@@ -245,9 +245,21 @@ def highlight(text):
                   lambda m: f"<b>{m.group(0)}</b>", text)
 
 
-def headline(answer, prices):
-    """One line that answers the question (same rule as ui/app.py). With one price lookup,
-    built from its figures; otherwise the answer's first sentence."""
+def opening_line(text):
+    """The answer's opening sentence, without citation marks (same rule as ui/app.py)."""
+    text = re.sub(r"\s*\[\d+\]", "", str(text)).strip()
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+    first = sentences[0] if sentences else ""
+    if len(first.split()) <= 2 and len(sentences) > 1:
+        clause = sentences[1].split(",")[0].rstrip(".!? ")
+        first = f"{first.rstrip('.!')}, {clause[0].lower() + clause[1:]}." if clause else first
+    return first
+
+
+def headline(answer, prices, route=None):
+    """One line that answers the question (same rule as ui/app.py). With one price lookup
+    it uses the figures; a question about prices and rules gets the opening plus the figures;
+    otherwise the answer's opening sentence."""
     with_deals = [p for p in prices if p.get("n_deals") and p.get("median_price") is not None]
     if not answer.get("declined") and len(prices) == 1 and with_deals:
         p = with_deals[0]
@@ -257,8 +269,9 @@ def headline(answer, prices):
         months = ""
         if p.get("period_start") and p.get("period_end"):
             months = f" from {month_name(p['period_start'])} to {month_name(p['period_end'])}"
-        return f"{flats[0].upper() + flats[1:]} {where} sold for a median of {money(p['median_price'])}{months}."
-    return re.split(r"(?<=[.!?])\s+", str(answer["answer"]).strip(), maxsplit=1)[0]
+        line = f"{flats[0].upper() + flats[1:]} {where} sold for a median of {money(p['median_price'])}{months}."
+        return f"{opening_line(answer['answer'])} {line}" if route == "both" else line
+    return opening_line(answer["answer"])
 
 
 def short(text, limit=40):
@@ -314,7 +327,8 @@ def show_answer(turn):
         st.markdown(f'<div class="ag-rewrite">Understood as: <i>{html.escape(turn["question"])}'
                     "</i></div>", unsafe_allow_html=True)
     prices = price_results(turn)
-    one_line, full = headline(answer, prices), str(answer["answer"]).strip()
+    route = (turn.get("routing") or {}).get("route")
+    one_line, full = headline(answer, prices, route), str(answer["answer"]).strip()
     more = ""
     if full and full != one_line:
         more = ('<details class="ag-more"><summary>Read the full answer</summary>'

@@ -324,20 +324,42 @@ def highlight(text):
                   lambda m: f"<b>{m.group(0)}</b>", text)
 
 
-def headline(bundle):
-    """One line that answers the question; the full answer sits behind 'Read the full answer'."""
-    answer, price = bundle["answer"], bundle.get("price_result") or {}
-    if not answer.get("declined") and price.get("n_deals") and price.get("median_price") is not None:
-        months = ""
-        if price.get("period_start") and price.get("period_end"):
-            months = f" from {month_name(price['period_start'])} to {month_name(price['period_end'])}"
-        ft, town = price.get("flat_type"), price.get("town")
-        flats = "Flats" if ft == "ALL" else f"{nice(ft)} flats"
-        where = "across Singapore" if town == "ALL" else f"in {nice(town)}"
-        return (f"{flats[0].upper() + flats[1:]} {where} sold for a median of "
-                f"{money(price['median_price'])}{months}.")
-    first = re.split(r"(?<=[.!?])\s+", str(answer["answer"]).strip(), maxsplit=1)[0]
+def price_line(price):
+    """'3-room flats in Clementi sold for a median of $434,000 from Oct 2025 to Sep 2026.'"""
+    months = ""
+    if price.get("period_start") and price.get("period_end"):
+        months = f" from {month_name(price['period_start'])} to {month_name(price['period_end'])}"
+    ft, town = price.get("flat_type"), price.get("town")
+    flats = "Flats" if ft == "ALL" else f"{nice(ft)} flats"
+    where = "across Singapore" if town == "ALL" else f"in {nice(town)}"
+    return f"{flats[0].upper() + flats[1:]} {where} sold for a median of {money(price['median_price'])}{months}."
+
+
+def opening_line(text):
+    """The answer's opening sentence, without citation marks. A bare 'Yes.' or 'No.'
+    takes the main clause of the next sentence, so the line still says something."""
+    text = re.sub(r"\s*\[\d+\]", "", str(text)).strip()
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+    first = sentences[0] if sentences else ""
+    if len(first.split()) <= 2 and len(sentences) > 1:
+        clause = sentences[1].split(",")[0].rstrip(".!? ")
+        first = f"{first.rstrip('.!')}, {clause[0].lower() + clause[1:]}." if clause else first
     return first
+
+
+def headline(bundle):
+    """One line that answers the question; the full answer sits behind 'Read the full answer'.
+    A price question gets the price figures, a rules question the answer's opening, and a
+    question about both gets the opening followed by the price figures."""
+    answer, price = bundle["answer"], bundle.get("price_result") or {}
+    route = (bundle.get("routing") or {}).get("route")
+    has_figures = (not answer.get("declined") and price.get("n_deals")
+                   and price.get("median_price") is not None)
+    if has_figures and route == "both":
+        return f"{opening_line(answer['answer'])} {price_line(price)}"
+    if has_figures:
+        return price_line(price)
+    return opening_line(answer["answer"])
 
 
 def answer_card_html(bundle):
