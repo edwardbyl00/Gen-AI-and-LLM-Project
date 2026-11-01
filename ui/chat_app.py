@@ -1,4 +1,4 @@
-"""AskGov SG chat interface (P3).
+"""HomeWise chat interface (P3; HomeWise look by P1).
 
 A chat version of P1's demo page (ui/app.py), running P3's LangGraph graph
 with memory. Every chat is a LangGraph thread saved in a local SQLite file,
@@ -15,6 +15,7 @@ run its whole page), with a self check step and verdict added.
 
 import html
 import os
+import re
 import sys
 import uuid
 from datetime import datetime
@@ -43,63 +44,111 @@ STEP_NAMES = {
 
 CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap');
-html, body, [class*="st-"], .stMarkdown, button, input, textarea {
-  font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600;800&family=DM+Sans:wght@400;500;700&display=swap');
+html, body, .stMarkdown, p, label, input, textarea, button {
+  font-family: 'DM Sans', system-ui, sans-serif;
 }
-.block-container { max-width: 820px; padding-top: 2.5rem; }
+[data-testid="stIconMaterial"] { font-family: 'Material Symbols Rounded' !important; }
+.block-container, [data-testid="stMainBlockContainer"] { max-width: 860px; padding-top: 3rem !important; }
 
-.ag-header { margin-bottom: 1rem; }
-.ag-header h1 { font-size: 2.6rem; line-height: 1.1; margin: 0 0 .4rem; color: #102A43;
-  letter-spacing: -0.01em; }
-.ag-header p { font-size: 1.1rem; color: #486581; margin: 0; max-width: 34em; }
+/* Header: logo and name, like the title slide and the main page */
+.ag-header { display: flex; align-items: center; gap: 1rem; margin-bottom: .2rem; }
+.ag-header svg { width: 84px; height: 84px; flex: none; }
+.ag-title { font-family: 'Fraunces', Georgia, serif; font-size: 2.7rem; line-height: 1; font-weight: 800; }
+.ag-home { color: #3B2418; } .ag-wise { color: #D9702A; }
+.ag-header p { font-size: 1.05rem; color: #6B4A36; margin: .35rem 0 0; }
+.ag-road { position: relative; height: 40px; margin: .2rem 0 .8rem; }
+.ag-road svg { position: absolute; left: 0; top: 0; width: 100%; height: 40px; }
 
-.ag-status { font-size: .95rem; color: #486581; margin: .25rem 0 .5rem; }
-.ag-status b { color: #0F7C7A; }
-.ag-status.ag-declined b { color: #9F580A; }
-.ag-status.ag-clarify b { color: #3E63DD; }
-.ag-rewrite { font-size: .9rem; color: #486581; margin-bottom: .4rem; }
+/* Chat bubbles as white cards */
+[data-testid="stChatMessage"] { background: #FFFFFF; border: 1px solid #F0E2D4; border-radius: 18px;
+  padding: 1rem 1.1rem; box-shadow: 0 4px 14px rgba(59,36,24,.05); }
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) { background: #FDF0E4; }
+[data-testid="stChatMessageAvatarAssistant"] { background: #E8833A !important; }
+[data-testid="stChatMessageAvatarUser"] { background: #3B2418 !important; }
+[data-testid="stChatInput"] { border: 2px solid #E3C7AE !important; border-radius: 14px !important;
+  background: #FFFFFF !important; }
+[data-testid="stChatInput"]:focus-within { border-color: #D9702A !important; }
+[data-testid="stChatInputSubmitButton"] { background: #B85A22 !important; color: #FFFFFF !important; }
 
-.ag-cannot { background: #FFFBEA; border: 1px solid #F3D9A4; border-radius: 10px;
-  padding: .7rem .9rem; margin: .6rem 0; font-size: .92rem; color: #102A43; }
-.ag-cannot b { color: #9F580A; }
+/* Sidebar chat list */
+section[data-testid="stSidebar"] button { border-radius: 999px; }
+section[data-testid="stSidebar"] h2 { font-family: 'Fraunces', Georgia, serif; color: #3B2418; }
+
+.ag-status { font-size: .95rem; color: #6B4A36; margin: .5rem 0 .5rem; }
+.ag-status b { color: #2F6B2A; }
+.ag-status.ag-declined b { color: #9C4A1B; }
+.ag-status.ag-clarify b { color: #6B4A36; }
+.ag-rewrite { font-size: .9rem; color: #8A6A55; margin-bottom: .4rem; }
+.ag-headline { font-family: 'Fraunces', Georgia, serif; font-size: 1.35rem; line-height: 1.35;
+  font-weight: 600; color: #3B2418; }
+.ag-headline b { color: #B85A22; font-weight: 800; }
+.ag-more { margin-top: .6rem; }
+.ag-more summary { cursor: pointer; color: #B85A22; font-weight: 700; font-size: .95rem; list-style: none; }
+.ag-more summary::-webkit-details-marker { display: none; }
+.ag-more summary::after { content: " \\25BE"; }
+.ag-more[open] summary::after { content: " \\25B4"; }
+.ag-more[open] summary { margin-bottom: .4rem; }
+.ag-answer { font-size: 1rem; line-height: 1.6; color: #6B4A36; }
+.ag-answer b { color: #3B2418; }
+
+.ag-cannot { background: #FFF8EF; border: 1px solid #F3D9B8; border-radius: 12px;
+  padding: .7rem .9rem; margin: .6rem 0; font-size: .95rem; color: #3B2418; }
+.ag-cannot b { color: #9C4A1B; }
 .ag-cannot ul { margin: .3rem 0 0; padding-left: 1.2rem; }
 
-.ag-strip { background: #FFFFFF; border: 1px solid #D9E2EC; border-radius: 12px;
-  padding: 1.1rem 1.25rem 1.4rem; margin: 1rem 0; }
-.ag-strip h3 { font-size: 1.05rem; margin: 0 0 .2rem; color: #102A43; }
-.ag-strip .ag-scope { color: #486581; font-size: .95rem; margin-bottom: .3rem; }
-.ag-track { position: relative; height: 10px; border-radius: 5px; background: #D9E2EC;
-  margin: 2.6rem .5rem 0; }
+/* Price facts as a card with an orange strip on top */
+.ag-strip { background: #FFFFFF; border: 1px solid #F0E2D4; border-top: 6px solid #E8833A;
+  border-radius: 16px; padding: 1.1rem 1.25rem 1.4rem; margin: 1rem 0; }
+.ag-strip h3 { font-family: 'Fraunces', Georgia, serif !important; font-size: 1.15rem !important;
+  font-weight: 600 !important; margin: 0 0 .2rem !important; padding: 0 !important; color: #3B2418 !important; }
+.ag-strip .ag-scope { color: #8A6A55; font-size: .95rem; margin-bottom: .3rem; }
+.ag-track { position: relative; height: 10px; border-radius: 5px;
+  background: linear-gradient(90deg, #F6D3B5, #C99273); margin: 2.6rem .5rem 0; }
 .ag-mark { position: absolute; top: -6px; width: 4px; height: 22px; border-radius: 2px;
   transform: translateX(-50%); }
-.ag-mark.ag-median { background: #E8A33D; }
-.ag-mark.ag-mean { background: #0F7C7A; }
+.ag-mark.ag-median { background: #3B2418; }
+.ag-mark.ag-mean { background: #E8833A; }
 .ag-mark span { position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
-  white-space: nowrap; font-size: .9rem; color: #102A43; }
-.ag-mark.ag-mean span { bottom: auto; top: 28px; color: #0F7C7A; }
+  white-space: nowrap; font-size: .9rem; color: #3B2418; font-weight: 700; }
+.ag-mark.ag-mean span { bottom: auto; top: 28px; color: #B85A22; }
 .ag-ends { display: flex; justify-content: space-between; margin-top: 2.4rem;
-  font-size: .9rem; color: #486581; }
-.ag-ends b { color: #102A43; font-size: 1.05rem; }
-.ag-note { font-size: .9rem; color: #486581; margin-top: .8rem; }
-.ag-few { color: #9F580A; }
+  font-size: .9rem; color: #8A6A55; }
+.ag-ends b { color: #3B2418; font-size: 1.05rem; }
+.ag-note { font-size: .9rem; color: #6B4A36; margin-top: .8rem; }
+.ag-few { color: #9C4A1B; }
 
+/* Steps as stops along a dashed road */
 .ag-steps { list-style: none; padding: 0; margin: .25rem 0 0; }
-.ag-steps li { position: relative; padding: 0 0 1rem 1.6rem; color: #102A43; }
+.ag-steps li { position: relative; padding: 0 0 1rem 1.6rem; color: #3B2418; }
 .ag-steps li::before { content: ""; position: absolute; left: 4px; top: .35rem; width: 10px;
-  height: 10px; border-radius: 50%; background: #0F7C7A; }
+  height: 10px; border-radius: 50%; background: #E8833A; }
 .ag-steps li::after { content: ""; position: absolute; left: 8px; top: 1.1rem; bottom: -.2rem;
-  width: 2px; background: #D9E2EC; }
+  border-left: 2px dashed #C9A98C; }
 .ag-steps li:last-child::after { display: none; }
 .ag-steps li.ag-error::before { background: #B42318; }
-.ag-steps li.ag-weak::before { background: #E8A33D; }
-.ag-steps small { color: #829AB1; margin-left: .35rem; }
-.ag-footer { font-size: .85rem; color: #829AB1; margin-top: 2rem; }
+.ag-steps li.ag-weak::before { background: #D9A441; }
+.ag-steps small { color: #8A6A55; margin-left: .35rem; }
+div[data-testid="stExpander"] details { background: #FFFFFF; border: 1px solid #F0E2D4 !important;
+  border-radius: 14px !important; }
+div[data-testid="stExpander"] summary p { font-weight: 700; color: #B85A22; }
+.ag-footer { font-size: .85rem; color: #8A6A55; margin-top: 2rem; text-align: center; }
 
-@media (max-width: 640px) { .ag-header h1 { font-size: 2rem; } }
+@media (max-width: 640px) { .ag-title { font-size: 2rem; } .ag-header svg { width: 60px; height: 60px; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 """
+
+LOGO_FILE = Path(__file__).parent / "homewise_logo.svg"
+ROAD_SVG = (
+    '<svg viewBox="0 0 860 40" preserveAspectRatio="none" aria-hidden="true">'
+    '<path d="M0 24 C 90 6, 170 6, 250 20 S 410 36, 490 22 S 650 6, 730 20 S 820 34, 860 30" '
+    'fill="none" stroke="#F6D3B5" stroke-width="10" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'
+    '<path d="M0 24 C 90 6, 170 6, 250 20 S 410 36, 490 22 S 650 6, 730 20 S 820 34, 860 30" '
+    'fill="none" stroke="#B98A6E" stroke-width="1.5" stroke-dasharray="6 6" vector-effect="non-scaling-stroke"/>'
+    "</svg>"
+)
+
 
 
 # ---------- the graph and its memory ----------
@@ -184,6 +233,34 @@ def position(value, low, high):
     return max(0.0, min(100.0, (value - low) / (high - low) * 100))
 
 
+def safe(text):
+    """Text placed inside our own HTML: escaped, and $ kept as a plain dollar sign."""
+    return html.escape(str(text)).replace("$", "&#36;")
+
+
+def highlight(text):
+    """Bold the key facts in an answer: prices, and how many deals or flats it is based on."""
+    text = re.sub(r"&#36;\d{1,3}(?:,\d{3})*", lambda m: f"<b>{m.group(0)}</b>", text)
+    return re.sub(r"\b\d{1,3}(?:,\d{3})*(?= (?:\d-room )?(?:resale )?(?:flats|deals))",
+                  lambda m: f"<b>{m.group(0)}</b>", text)
+
+
+def headline(answer, prices):
+    """One line that answers the question (same rule as ui/app.py). With one price lookup,
+    built from its figures; otherwise the answer's first sentence."""
+    with_deals = [p for p in prices if p.get("n_deals") and p.get("median_price") is not None]
+    if not answer.get("declined") and len(prices) == 1 and with_deals:
+        p = with_deals[0]
+        ft, town = p.get("flat_type"), p.get("town")
+        flats = "Flats" if ft == "ALL" else f"{nice(ft)} flats"
+        where = "across Singapore" if town == "ALL" else f"in {nice(town)}"
+        months = ""
+        if p.get("period_start") and p.get("period_end"):
+            months = f" from {month_name(p['period_start'])} to {month_name(p['period_end'])}"
+        return f"{flats[0].upper() + flats[1:]} {where} sold for a median of {money(p['median_price'])}{months}."
+    return re.split(r"(?<=[.!?])\s+", str(answer["answer"]).strip(), maxsplit=1)[0]
+
+
 def short(text, limit=40):
     text = " ".join(str(text).split())
     return text if len(text) <= limit else text[:limit - 1] + "…"
@@ -236,8 +313,14 @@ def show_answer(turn):
     if turn["question"] != turn["user_question"]:
         st.markdown(f'<div class="ag-rewrite">Understood as: <i>{html.escape(turn["question"])}'
                     "</i></div>", unsafe_allow_html=True)
-    st.markdown(plain_text(answer["answer"]))
     prices = price_results(turn)
+    one_line, full = headline(answer, prices), str(answer["answer"]).strip()
+    more = ""
+    if full and full != one_line:
+        more = ('<details class="ag-more"><summary>Read the full answer</summary>'
+                f'<div class="ag-answer">{highlight(safe(full))}</div></details>')
+    st.markdown(f'<div class="ag-headline">{highlight(safe(one_line))}</div>{more}',
+                unsafe_allow_html=True)
     price = prices[0] if prices else None
     if answer.get("needs_clarification"):
         status = ('<div class="ag-status ag-clarify"><b>Need more detail.</b> '
@@ -328,7 +411,7 @@ def show_details(turn):
 
 # ---------- the page ----------
 
-st.set_page_config(page_title="AskGov SG Chat", page_icon="🏠", layout="centered")
+st.set_page_config(page_title="HomeWise Chat", page_icon="🏠", layout="centered")
 st.markdown(CSS, unsafe_allow_html=True)
 
 if not HAS_LLM_KEY:
@@ -353,12 +436,13 @@ with st.sidebar:
                      type="secondary", disabled=current, help=title):
             st.session_state["thread_id"] = thread_id
             st.rerun()
-    st.caption(f"Saved in {CHAT_DB.relative_to(PROJECT_ROOT)}.")
+    st.caption("Your chats are saved on this computer.")
 
-st.markdown('<div class="ag-header"><h1>AskGov SG</h1>'
-            "<p>Ask about HDB resale prices or CPF housing rules, then keep asking. "
-            "Answers come from official pages and real resale deals, with the sources "
-            "shown.</p></div>", unsafe_allow_html=True)
+logo_svg = LOGO_FILE.read_text(encoding="utf-8") if LOGO_FILE.exists() else ""
+st.markdown(f'<div class="ag-header">{logo_svg}<div>'
+            '<div class="ag-title"><span class="ag-home">Home</span><span class="ag-wise">Wise</span></div>'
+            "<p>Ask about HDB resale prices or CPF housing rules, then keep asking.</p></div></div>"
+            f'<div class="ag-road">{ROAD_SVG}</div>', unsafe_allow_html=True)
 
 thread_id = st.session_state["thread_id"]
 for turn in chat_history(app, thread_id):

@@ -28,37 +28,39 @@ def all_markdown(app):
 def test_page_loads_in_demo_mode():
     app = demo_app()
     assert not app.exception
-    assert "AskGov SG" in all_markdown(app)
+    text = all_markdown(app)
+    assert 'class="ag-home">Home</span><span class="ag-wise">Wise' in text
+    assert "How It Works" in text            # start screen explains the system
 
 
-def test_demo_price_answer_shows_answer_strip_and_steps():
+def test_demo_price_answer_shows_answer_price_facts_and_steps():
     app = run_example(0)
     assert not app.exception
     text = all_markdown(app)
-    assert "Answer" in [h.value for h in app.subheader]
-    # Dollar signs are escaped, so Streamlit shows prices instead of a maths formula.
-    assert "\\$665,000" in text
-    # The price strip, with median, average and both ends.
-    assert "Price Facts: 4-Room Flats in Tampines" in text
-    assert "Median &#36;665,000" in text and "Lowest Deal" in text
-    assert "Oct 2025 to Sep 2026" in text
-    assert any(e.label == "How This Answer Was Made" for e in app.expander)
-    # Main information first: the answer comes before the details and the examples.
-    order = [h.value for h in app.subheader]
-    assert order.index("Answer") < order.index("More Details")
+    assert "Answered from 902 past resale deals" in text
+    # Dollar signs are written as &#36;, so Streamlit shows prices instead of a maths formula.
+    assert "<b>&#36;665,000</b>" in text and "$665" not in text
+    assert "<b>902</b>" in text                # key facts in bold
+    assert "4-room flats in Tampines sold for a median of" in text   # one-line headline
+    assert "Read the full answer" in text
+    assert "4-Room Flats in Tampines" in text
+    assert "Lowest Deal" in text and "Oct 2025 to Sep 2026" in text
+    assert "How This Answer Was Made" in text and "Checked resale deals" in text
+    assert "How It Works" not in text        # start screen gone once there is an answer
+    assert any(e.label.startswith("Behind the Scenes") for e in app.expander)
 
 
-def test_demo_unknown_place_shows_no_strip_figures():
+def test_demo_unknown_place_shows_no_price_figures():
     app = run_example(2)
     assert not app.exception
     text = all_markdown(app)
-    assert "Median" not in text            # no invented figures
+    assert "Median Price" not in text        # no invented figures
     assert "not one of the HDB towns" in text
     assert "Not fully answered" in text
 
 
 def test_demo_mode_explains_missing_sample():
-    app = run_example(3)                   # the CPF question has no saved sample
+    app = run_example(3)                     # the CPF question has no saved sample
     assert not app.exception
     assert any("only has answers" in w.value for w in app.warning)
 
@@ -66,15 +68,37 @@ def test_demo_mode_explains_missing_sample():
 def test_typed_question_uses_the_form():
     app = demo_app()
     app.text_input(key="question").input("What did 4-room flats in Tampines sell for recently?")
-    app.button[0].click().run()            # the form's Ask button
+    app.button[0].click().run()              # the form's Ask button
     assert not app.exception
     assert "Price Facts" in all_markdown(app)
 
 
-def test_examples_move_below_the_answer():
-    app = demo_app()
-    assert "Or Try One of These" in all_markdown(app)
-    app.button(key="example_0").click().run()
-    text = all_markdown(app)
-    assert "Try Another Question" in text
-    assert text.index("Price Facts") < text.index("Try Another Question")
+def load_page_helpers():
+    """Load ui/app.py with a stand-in for Streamlit, to test its HTML helpers directly."""
+    import importlib.util
+    import sys
+    from unittest import mock
+    fake = mock.MagicMock()
+    fake.session_state = {}
+    fake.radio.side_effect = lambda label, options, **k: options[2] if label == "System" else options[0]
+    fake.text_input.return_value = ""
+    fake.form_submit_button.return_value = False
+    fake.columns.side_effect = lambda spec, **k: [mock.MagicMock()
+                                                 for _ in range(spec if isinstance(spec, int) else len(spec))]
+    spec = importlib.util.spec_from_file_location("homewise_page", APP)
+    page = importlib.util.module_from_spec(spec)
+    with mock.patch.dict(sys.modules, {"streamlit": fake}):
+        spec.loader.exec_module(page)
+    return page
+
+
+def test_clarification_and_cannot_answer_are_shown():
+    """The team's 'Need more detail' status and 'Can't answer' list appear in the HomeWise design."""
+    page = load_page_helpers()
+    bundle = {"answer": {"answer": "Which town do you mean?", "declined": False,
+                         "needs_clarification": True,
+                         "cannot_answer": [{"part": "Next year's price", "reason": "no forecasts"}]},
+              "price_result": None, "steps": []}
+    out = page.answer_card_html(bundle)
+    assert "Need more detail" in out
+    assert "Can&#39;t answer" in out and "no forecasts" in out
