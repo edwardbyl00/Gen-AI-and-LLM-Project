@@ -6,12 +6,12 @@ phase's behavior changes, update that phase's own doc; only update this one
 if a stage is added, removed, or its entry point moves.
 
 Checked against the local code and configuration on **31 October 2026**.
-The current configuration uses baseline routing (`supervisor.decompose: false`),
+The current configuration uses decomposed routing (`supervisor.decompose: true`),
 real policy retrieval with `policy_top_k: 10`, price approach A and one graph
 self-check retry with LLM review enabled. A/B evaluation overrides decomposition
 per execution. Read [config.yaml](../config.yaml) for the applied local settings.
 
-## 1. From raw documents to a queryable index (P4 → P5 infra)
+## 1. From raw documents to a queryable index
 
 Runs ahead of time, not per question. Only needed again if the source
 documents or chunking/embedding settings change.
@@ -37,24 +37,24 @@ Output: `data/processed/chunks.jsonl` plus the gitignored, locally-built
 The HDB resale price table used by the price agent is prepared separately —
 see [the price agent's rebuild steps](../agents/price/README.md#rebuild-the-price-data).
 
-## 2. One question, end to end (P1/P2/P3/P5 at request time)
+## 2. One question, end to end
 
 ```mermaid
 flowchart TD
     Q[Question] --> ROUTE["Supervisor router<br/>agents/supervisor/router.py"]
     ROUTE --> SAFE["safe_route() checks/repairs<br/>agents/supervisor/checks.py"]
     SAFE --> TASKS{"decompose?<br/>supervisor.decompose in config.yaml"}
-    TASKS -->|"false (A, current default)"| ONE["One task per selected agent"]
-    TASKS -->|"true (B)"| MANY["Router's focused per-agent tasks"]
+    TASKS -->|"false (A)"| ONE["One task per selected agent"]
+    TASKS -->|"true (B, current default)"| MANY["Router's focused per-agent tasks"]
     ONE --> EXEC
     MANY --> EXEC["execute_task() per task<br/>agents/supervisor/tasks.py"]
-    EXEC --> PRICE["Price agent (P1)<br/>agents/price/"]
-    EXEC --> POLICY["Policy agent (P5)<br/>src/policy_agent.py<br/>retrieve -> assess -> self-correct -> reassess"]
+    EXEC --> PRICE["Price agent<br/>agents/price/"]
+    EXEC --> POLICY["Policy agent<br/>src/policy_agent.py<br/>retrieve -> assess -> self-correct -> reassess"]
     PRICE --> SYNTH
     POLICY --> SYNTH["Synthesis: write answer, check citations<br/>agents/supervisor/synthesis.py"]
     SYNTH --> MODE{Graph entry point?}
     MODE -->|No| OUT[Answer with sources]
-    MODE -->|Yes| CHECK["P3 self-check loop<br/>agents/graph/graph.py, self_check.py"]
+    MODE -->|Yes| CHECK["Self-check loop<br/>agents/graph/graph.py, self_check.py"]
     CHECK -->|Pass or retry limit reached| OUT
     CHECK -.->|Revise answer| SYNTH
     CHECK -.->|Retry failed task| EXEC
@@ -69,7 +69,7 @@ flowchart TD
 | Optional: parallel branches + self-check | [agents/graph/graph.py](../agents/graph/graph.py), [self_check.py](../agents/graph/self_check.py) | [supervisor_ablation.md](supervisor_ablation.md) |
 
 Two entry points run this: `agents.supervisor.pipeline.handle_question()`
-(no self-check) and `agents.graph.graph.run()` (adds P3's self-check loop).
+(no self-check) and `agents.graph.graph.run()` (adds the self-check loop).
 Both read the same `supervisor.decompose` setting and share the `tasks.py`
 helpers, so they select agents and execute tasks identically — the ablation
 guide explains how to choose between them.
@@ -95,6 +95,6 @@ get an environment that can run every stage above.
 
 Historical/background docs that don't describe current behavior:
 [price_agent_synthesis_review.md](price_agent_synthesis_review.md) (an early
-P1 review of synthesis rules), [data_prep_policy_handoff.md](data_prep_policy_handoff.md)'s
+review of synthesis rules), [data_prep_policy_handoff.md](data_prep_policy_handoff.md)'s
 original scope split, and [CHANGELOG.md](CHANGELOG.md) (why things changed
 over time, not how the system works today).
