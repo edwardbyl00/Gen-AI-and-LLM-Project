@@ -7,8 +7,6 @@ what flats sold for, what the HDB and CPF rules say, or both at once. It looks t
 answer up first, shows you where every fact came from, and tells you plainly when
 it cannot answer instead of guessing.
 
-Built for CS614 Generative AI with Large Language Models, Group 1.
-
 <p align="center">
   <img src="Docs/images/app_home.png" alt="The HomeWise home page" width="90%">
 </p>
