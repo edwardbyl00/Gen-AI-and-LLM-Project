@@ -26,8 +26,9 @@ judge:
 
 supervisor:
   # Default decomposition setting for the sequential pipeline and P3 graph.
-  # The ablation runner overrides this per request to compare A and B.
-  decompose: false
+  # On by default: it answers mixed price-and-policy questions far more often
+  # (report section 7.2). The ablation runner overrides this per request to compare A and B.
+  decompose: true
 
 usage_logging:
   enabled: true

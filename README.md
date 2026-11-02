@@ -16,8 +16,8 @@ CPU/memory measurements and reviewed quality scores in local JSON/CSV reports.
 Follow the [evaluation guide](Docs/stage_evaluation.md) to prepare questions,
 run the batch, get judge scores, review each stage and export the final report.
 
-Router decomposition (currently off via `supervisor.decompose: false` in
-`config.yaml`; pass `decompose=True` to enable focused tasks) and paired
+Router decomposition (currently on via `supervisor.decompose: true` in
+`config.yaml`; pass `decompose=False` for the A baseline) and paired
 A/B evaluation are described in the [supervisor ablation and unseen-question
 guide](Docs/supervisor_ablation.md), including the team's input format,
 blinded grading and cost/quality comparison. The P3 graph uses the same

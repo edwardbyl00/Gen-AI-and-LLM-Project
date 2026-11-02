@@ -2,8 +2,19 @@
 
 import pytest
 
+import agents.supervisor.tasks as task_module
 from agents.graph.graph import build_graph, run
 from agents.supervisor.adapters import get_policy_agent
+
+
+@pytest.fixture(autouse=True)
+def baseline_config(tmp_path, monkeypatch):
+    """These tests cover the graph without decomposition, so they read a config with
+    decompose: false whatever the project default is (decomposition has its own tests
+    in test_graph_decomposition.py). Same approach as that file."""
+    config = tmp_path / "config.yaml"
+    config.write_text("supervisor:\n  decompose: false\n")
+    monkeypatch.setattr(task_module, "CONFIG_FILE", config)
 
 
 def fake_route(record, events=None, usage=None):
