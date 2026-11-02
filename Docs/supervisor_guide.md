@@ -7,8 +7,9 @@ Scope: P2 routing, orchestration, synthesis, agent adapters and evaluation. Revi
 Start with `handle_question()` in [pipeline.py](../agents/supervisor/pipeline.py). The routing and synthesis prompts define the decision rules; the tables below explain the returned fields.
 
 The flow below is the A baseline. `config.yaml` currently sets
-`supervisor.decompose: false`. Pass `decompose=True` to add router-generated
-focused tasks, per-task execution and synthesis from all task results (B).
+`supervisor.decompose: true`, which adds router-generated focused tasks,
+per-task execution and synthesis from all task results (B). Pass
+`decompose=False` to run the A baseline.
 The paired evaluator runs both variants explicitly. See the [ablation and unseen-question
 guide](supervisor_ablation.md) for its interfaces, paired evaluation commands
 and team grading workflow. P3's graph (`agents/graph/graph.py`) uses the same
