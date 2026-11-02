@@ -18,6 +18,7 @@ import json
 import os
 import re
 import sys
+import uuid
 from datetime import datetime
 from pathlib import Path
 
@@ -34,6 +35,7 @@ HAS_LLM_KEY = bool(os.getenv("OPENAI_API_KEY") or os.getenv("LLM_API_KEY"))
 SAMPLES_FILE = Path(__file__).parent / "sample_answers.json"
 LOGO_FILE = Path(__file__).parent / "homewise_logo.svg"
 DEMO, FULL, CHATBOT = "Demo Mode (Saved Samples)", "Full System", "Plain Chatbot (Baseline)"
+CHAT = "Chat (Follow-ups)"
 EXAMPLES = [
     "What did 4-room flats in Tampines sell for recently?",
     "Will 4-room flats in Tampines cost more next year?",
@@ -255,6 +257,66 @@ def get_answer(question, mode, approach):
     from agents.supervisor.pipeline import handle_question
     price_fn = price_agent if approach == "A" else price_agent_sql
     return handle_question(question, price_fn=price_fn)
+
+
+# ---------- chat mode (follow-up questions, from the chat page) ----------
+
+def show_chat():
+    """The Chat button: P3's chat from ui/chat_app.py, inside this page. Each answer
+    stays on screen and follow-ups are asked underneath; chats are saved and listed
+    in the sidebar."""
+    from chat_view import (CHAT_CSS, ask, chat_graph, chat_history, plain_text, saved_chats,
+                           short, show_answer, show_details)
+    st.markdown(f"<style>{CHAT_CSS}</style>", unsafe_allow_html=True)
+    app, connection = chat_graph()
+    if "thread_id" not in st.session_state:
+        st.session_state["thread_id"] = uuid.uuid4().hex
+
+    with st.sidebar:
+        st.divider()
+        if st.button("New Chat", type="primary", width="stretch"):
+            st.session_state["thread_id"] = uuid.uuid4().hex
+            st.rerun()
+        st.header("Chats")
+        chats = saved_chats(app, connection)
+        if not chats:
+            st.caption("No saved chats yet.")
+        for chat_id, title in chats:
+            current = chat_id == st.session_state["thread_id"]
+            if st.button(short(title), key=f"chat_{chat_id}", width="stretch",
+                         disabled=current, help=title):
+                st.session_state["thread_id"] = chat_id
+                st.rerun()
+        st.caption("Your chats are saved on this computer.")
+
+    thread_id = st.session_state["thread_id"]
+    turns = chat_history(app, thread_id)
+    if not turns:
+        st.markdown('<div class="ag-try">Ask about HDB resale prices or CPF housing rules, '
+                    "then keep asking.</div>", unsafe_allow_html=True)
+        show_examples()
+    for turn in turns:
+        with st.chat_message("user"):
+            st.markdown(plain_text(turn["user_question"]))
+        with st.chat_message("assistant"):
+            show_answer(turn)
+            show_details(turn)
+
+    question = st.chat_input("Ask a question, or a follow-up")
+    if not question and st.session_state.pop("ask_now", False):
+        question = st.session_state.get("question")
+    if question and question.strip():
+        with st.chat_message("user"):
+            st.markdown(plain_text(question.strip()))
+        with st.chat_message("assistant"):
+            with st.spinner("Finding the answer..."):
+                try:
+                    ask(app, thread_id, question.strip())
+                except Exception as error:  # shown on the page instead of crashing the demo
+                    st.error(f"The answer could not be produced: {type(error).__name__}: {error}. "
+                             "Check the API key in .env, or switch to Demo.")
+                    return
+        st.rerun()  # redraw the chat from the saved history, and add it to the sidebar
 
 
 # ---------- small formatting helpers ----------
@@ -588,8 +650,8 @@ brand_col.markdown(
     unsafe_allow_html=True)
 with mode_col:
     # The presenter's switch: live answers, the plain chatbot baseline, or saved demo answers.
-    mode = st.radio("Mode", [FULL, CHATBOT, DEMO], index=0 if HAS_LLM_KEY else 2, horizontal=True,
-                    format_func=lambda m: {FULL: "Live", CHATBOT: "Plain Chatbot", DEMO: "Demo"}[m],
+    mode = st.radio("Mode", [FULL, CHAT, DEMO], index=0 if HAS_LLM_KEY else 2, horizontal=True,
+                    format_func=lambda m: {FULL: "Live", CHAT: "Chat", DEMO: "Demo"}[m],
                     label_visibility="collapsed", key="mode")
     if mode != DEMO and not HAS_LLM_KEY:
         st.markdown('<div class="ag-modenote">No API key found, so live answers will fail. '
@@ -603,40 +665,43 @@ with st.sidebar:
                                                "B": "B: Text-to-SQL"}[a],
                         disabled=mode != FULL)
     if HAS_LLM_KEY:
-        st.caption("LLM key detected. Live and Plain Chatbot use live model calls.")
+        st.caption("LLM key detected. Live and Chat use live model calls.")
     else:
         st.caption("Add OPENAI_API_KEY or LLM_API_KEY to .env for live answers. Demo needs no key.")
 
-with st.form("ask_form", border=False):
-    q_col, b_col = st.columns([6, 1], vertical_alignment="bottom")
-    question = q_col.text_input("Your Question", key="question",
-                                placeholder="For example: What did 5-room flats in Bishan go for recently?")
-    submitted = b_col.form_submit_button("Ask", type="primary", width="stretch")
+if mode == CHAT:
+    show_chat()
+else:
+    with st.form("ask_form", border=False):
+        q_col, b_col = st.columns([6, 1], vertical_alignment="bottom")
+        question = q_col.text_input("Your Question", key="question",
+                                    placeholder="For example: What did 5-room flats in Bishan go for recently?")
+        submitted = b_col.form_submit_button("Ask", type="primary", width="stretch")
 
-show_examples()
+    show_examples()
 
-bundle, failed = None, None
-ask_now = st.session_state.pop("ask_now", False)
-asked = (submitted or ask_now) and question.strip()
-if asked:
-    with st.spinner("Finding the answer..."):
-        try:
-            bundle = get_answer(question.strip(), mode, approach)
-        except Exception as error:  # shown on the page instead of crashing the demo
-            failed = f"{type(error).__name__}: {error}"
+    bundle, failed = None, None
+    ask_now = st.session_state.pop("ask_now", False)
+    asked = (submitted or ask_now) and question.strip()
+    if asked:
+        with st.spinner("Finding the answer..."):
+            try:
+                bundle = get_answer(question.strip(), mode, approach)
+            except Exception as error:  # shown on the page instead of crashing the demo
+                failed = f"{type(error).__name__}: {error}"
 
-if failed:
-    st.error(f"The answer could not be produced: {failed}. Check the API key in .env, "
-             "or switch to Demo Mode.")
-elif asked and bundle is None:
-    st.warning("Demo mode only has answers for the first three example questions. "
-               "Switch to Full System to ask anything else.")
+    if failed:
+        st.error(f"The answer could not be produced: {failed}. Check the API key in .env, "
+                 "or switch to Demo Mode.")
+    elif asked and bundle is None:
+        st.warning("Demo mode only has answers for the first three example questions. "
+                   "Switch to Full System to ask anything else.")
 
-if bundle is not None:
-    show_main(bundle)       # answer and price facts side by side, on the first screen
-    show_details(bundle)    # how it was made, one click away
-elif not asked:
-    st.markdown(START_HTML, unsafe_allow_html=True)
+    if bundle is not None:
+        show_main(bundle)       # answer and price facts side by side, on the first screen
+        show_details(bundle)    # how it was made, one click away
+    elif not asked:
+        st.markdown(START_HTML, unsafe_allow_html=True)
 
 st.markdown('<div class="ag-footer">General information only, not financial advice. '
             "Check the official HDB and CPF pages before you decide.</div>",

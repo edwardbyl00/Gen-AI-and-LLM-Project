@@ -83,6 +83,8 @@ def load_page_helpers():
     fake.radio.side_effect = lambda label, options, **k: options[2] if label == "System" else options[0]
     fake.text_input.return_value = ""
     fake.form_submit_button.return_value = False
+    fake.chat_input.return_value = None
+    fake.button.return_value = False
     fake.columns.side_effect = lambda spec, **k: [mock.MagicMock()
                                                  for _ in range(spec if isinstance(spec, int) else len(spec))]
     spec = importlib.util.spec_from_file_location("homewise_page", APP)
@@ -118,3 +120,4 @@ def test_headline_covers_both_parts_of_a_both_question():
     assert "[4]" not in line
     bundle["routing"]["route"] = "price"
     assert page.headline(bundle).startswith("3-room flats in Clementi")
+

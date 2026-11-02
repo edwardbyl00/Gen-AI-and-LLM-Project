@@ -7,6 +7,8 @@ what flats sold for, what the HDB and CPF rules say, or both at once. It looks t
 answer up first, shows you where every fact came from, and tells you plainly when
 it cannot answer instead of guessing.
 
+Built for CS614 Generative AI with Large Language Models, Group 1.
+
 <p align="center">
   <img src="Docs/images/app_home.png" alt="The HomeWise home page" width="90%">
 </p>
@@ -120,7 +122,7 @@ works in [Results so far](#results-so-far).
 <summary><b>💬 Chat memory and cost tracking</b></summary>
 <br>
 
-- **Chat memory (chat page only):** a follow-up like *"What about Bishan?"* is
+- **Chat memory (Chat button and chat page):** a follow-up like *"What about Bishan?"* is
   rewritten into a full question using the last few messages, so the agents know
   what you mean. Chats are saved on your own computer.
 - **Cost and speed:** every AI call records its tokens, cost and time in
@@ -258,8 +260,8 @@ Switch with the buttons at the top right of the page.
 
 | Mode | What it does | Needs a key? |
 | --- | --- | :---: |
-| **Live** | The full HomeWise system. Starts here when a key is found. | ✅ |
-| **Plain Chatbot** | The same AI with no agents and no sources, so you can compare. | ✅ |
+| **Live** | The full HomeWise system, one question at a time. Starts here when a key is found. | ✅ |
+| **Chat** | The full HomeWise system as a chat: ask follow-ups like *"What about Bishan?"* under each answer. Chats are saved and listed in the side panel. | ✅ |
 | **Demo** | Three saved answers built from the real price data. A safe backup if the internet or API is down. | ❌ |
 
 The **»** at the top left opens a side panel where you can switch the price agent
@@ -267,8 +269,8 @@ between version A and version B.
 
 ### The chat page
 
-For a back-and-forth conversation with follow-up questions, run the chat page
-instead (one page at a time):
+The **Chat** button on the main page is the same chat. You can also run it on its own
+page (one page at a time):
 
 ```bash
 streamlit run ui/chat_app.py
