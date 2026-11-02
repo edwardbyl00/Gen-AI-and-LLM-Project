@@ -14,9 +14,9 @@ root. Keep `.env` out of Git.
 
 ## Main Page (`app.py`)
 
-- **Mode switch** (top right): **Live** runs the full system, **Plain Chatbot**
-  runs the same model with no agents or sources, and **Demo** shows saved answers
-  with no API calls. The page starts on Live when a key is found, otherwise on Demo.
+- **Mode switch** (top right): **Live** runs the full system one question at a
+  time, **Chat** runs the chat page's chat inside this page (follow-up questions,
+  saved chats in the side panel), and **Demo** shows saved answers with no API calls. The page starts on Live when a key is found, otherwise on Demo.
 - **Answer card:** a one-line headline, then *Read the full answer* for the full
   text and its sources. For price questions the headline is built from the price
   figures; for rules questions it is the answer's opening line; for questions about
@@ -35,7 +35,7 @@ real data; the answer text was written to show the layout.
 
 ## Chat Page (`chat_app.py`)
 
-The chat version of the main page: follow-up questions are rewritten using the
+The same chat as the main page's Chat button, on its own page: follow-up questions are rewritten using the
 conversation, every chat is saved on this computer, and each answer keeps its own
 sources, steps, self-check verdict and cost. It needs an API key and has no Demo
 mode. Answers use the same headline and *Read the full answer* style as the main
@@ -47,6 +47,7 @@ page.
 | --- | --- |
 | `app.py` | Main page |
 | `chat_app.py` | Chat page |
+| `chat_view.py` | The chat itself (graph, memory, how each turn is drawn), shared by both pages |
 | `homewise_logo.svg` | Logo shown in both headers |
 | `sample_answers.json` | Saved answers for Demo mode |
 | `../.streamlit/config.toml` | Theme colours shared by both pages |
