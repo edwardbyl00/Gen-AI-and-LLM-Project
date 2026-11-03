@@ -1,0 +1,61 @@
+question_id,question,difficulty,asks,system,seconds,tokens,error,filters_correct,figure_given,true_figure,figure_correct,no_data_correct
+HO_P1_01,What was the median resale price of a 4-room flat in Tampines in 2024?,clear,median,A_filter_tool,7.23,1097,,True,625000.0,625000.0,True,n/a
+HO_P1_01,What was the median resale price of a 4-room flat in Tampines in 2024?,clear,median,B_text_to_sql,2.78,747,,True,625000.0,625000.0,True,n/a
+HO_P1_01,What was the median resale price of a 4-room flat in Tampines in 2024?,clear,median,chatbot,6.58,245,,n/a,590000.0,625000.0,False,n/a
+HO_P1_02,median price 3rm amk last year,abbreviation,median,A_filter_tool,4.01,1085,,True,440000.0,440000.0,True,n/a
+HO_P1_02,median price 3rm amk last year,abbreviation,median,B_text_to_sql,2.57,737,,True,440000.0,440000.0,True,n/a
+HO_P1_02,median price 3rm amk last year,abbreviation,median,chatbot,1.75,234,,n/a,470000.0,440000.0,False,n/a
+HO_P1_03,What have 5-room flats in Punggol been going for lately?,vague_time,median,A_filter_tool,3.67,1085,,True,780000.0,780000.0,True,n/a
+HO_P1_03,What have 5-room flats in Punggol been going for lately?,vague_time,median,B_text_to_sql,2.55,743,,True,780000.0,780000.0,True,n/a
+HO_P1_03,What have 5-room flats in Punggol been going for lately?,vague_time,median,chatbot,1.63,240,,n/a,690000.0,780000.0,False,n/a
+HO_P1_04,How many executive flats were sold in Pasir Ris in 2023?,clear,count,A_filter_tool,3.59,1093,,True,134.0,134.0,True,n/a
+HO_P1_04,How many executive flats were sold in Pasir Ris in 2023?,clear,count,B_text_to_sql,2.57,743,,True,134.0,134.0,True,n/a
+HO_P1_04,How many executive flats were sold in Pasir Ris in 2023?,clear,count,chatbot,1.6,240,,n/a,95.0,134.0,False,n/a
+HO_P1_05,What's the cheapest 3-room flat sold in Bedok since 2025?,open_period,min,A_filter_tool,3.67,1089,,True,300000.0,300000.0,True,n/a
+HO_P1_05,What's the cheapest 3-room flat sold in Bedok since 2025?,open_period,min,B_text_to_sql,2.29,742,,True,300000.0,300000.0,True,n/a
+HO_P1_05,What's the cheapest 3-room flat sold in Bedok since 2025?,open_period,min,chatbot,3.02,241,,n/a,285000.0,300000.0,False,n/a
+HO_P1_06,Most expensive 4-room in Queenstown in March 2026?,single_month,max,A_filter_tool,3.44,1093,,True,1300000.0,1300000.0,True,n/a
+HO_P1_06,Most expensive 4-room in Queenstown in March 2026?,single_month,max,B_text_to_sql,2.78,742,,True,1300000.0,1300000.0,True,n/a
+HO_P1_06,Most expensive 4-room in Queenstown in March 2026?,single_month,max,chatbot,1.6,240,,n/a,1380000.0,1300000.0,False,n/a
+HO_P1_07,Average resale price of 2-room flats in Jurong West over the past 6 months,last_n_months,mean,A_filter_tool,3.42,1092,,True,362120.0,362120.0,True,n/a
+HO_P1_07,Average resale price of 2-room flats in Jurong West over the past 6 months,last_n_months,mean,B_text_to_sql,2.44,746,,True,362120.0,362120.0,True,n/a
+HO_P1_07,Average resale price of 2-room flats in Jurong West over the past 6 months,last_n_months,mean,chatbot,2.01,243,,n/a,362000.0,362120.0,True,n/a
+HO_P1_08,how much do 4 room flats cost in whampoa these days,place_alias,median,A_filter_tool,3.31,1088,,True,905000.0,905000.0,True,n/a
+HO_P1_08,how much do 4 room flats cost in whampoa these days,place_alias,median,B_text_to_sql,2.54,746,,True,905000.0,905000.0,True,n/a
+HO_P1_08,how much do 4 room flats cost in whampoa these days,place_alias,median,chatbot,1.71,239,,n/a,690000.0,905000.0,False,n/a
+HO_P1_09,What is the median resale price of a 5-room flat in Singapore in 2025?,no_town,median,A_filter_tool,3.2,1094,,True,736000.0,736000.0,True,n/a
+HO_P1_09,What is the median resale price of a 5-room flat in Singapore in 2025?,no_town,median,B_text_to_sql,3.87,738,,True,736000.0,736000.0,True,n/a
+HO_P1_09,What is the median resale price of a 5-room flat in Singapore in 2025?,no_town,median,chatbot,2.02,246,,n/a,730000.0,736000.0,True,n/a
+HO_P1_10,How much did resale flats in Bishan sell for in 2022?,no_flat_type,median,A_filter_tool,3.46,1091,,True,700000.0,700000.0,True,n/a
+HO_P1_10,How much did resale flats in Bishan sell for in 2022?,no_flat_type,median,B_text_to_sql,2.32,734,,True,700000.0,700000.0,True,n/a
+HO_P1_10,How much did resale flats in Bishan sell for in 2022?,no_flat_type,median,chatbot,1.6,241,,n/a,700000.0,700000.0,True,n/a
+HO_P1_11,What did 4-room flats in Sengkang go for from January to June 2025?,date_range,median,A_filter_tool,3.44,1101,,True,650000.0,650000.0,True,n/a
+HO_P1_11,What did 4-room flats in Sengkang go for from January to June 2025?,date_range,median,B_text_to_sql,2.54,748,,True,650000.0,650000.0,True,n/a
+HO_P1_11,What did 4-room flats in Sengkang go for from January to June 2025?,date_range,median,chatbot,1.51,245,,n/a,610000.0,650000.0,False,n/a
+HO_P1_12,Median price of a 3 room flat in the CBD last year?,place_alias,median,A_filter_tool,3.43,1089,,True,535000.0,535000.0,True,n/a
+HO_P1_12,Median price of a 3 room flat in the CBD last year?,place_alias,median,B_text_to_sql,2.4,741,,True,535000.0,535000.0,True,n/a
+HO_P1_12,Median price of a 3 room flat in the CBD last year?,place_alias,median,chatbot,1.58,239,,n/a,610000.0,535000.0,False,n/a
+HO_P1_13,What will 4-room flats in Tampines cost in 2027?,future,none,A_filter_tool,3.34,1086,,False,,,n/a,False
+HO_P1_13,What will 4-room flats in Tampines cost in 2027?,future,none,B_text_to_sql,2.37,742,,True,,,n/a,True
+HO_P1_13,What will 4-room flats in Tampines cost in 2027?,future,none,chatbot,1.62,242,,n/a,,,n/a,False
+HO_P1_14,4rm Woodlands price past 12 months,last_n_months,median,A_filter_tool,3.28,1080,,True,550000.0,550000.0,True,n/a
+HO_P1_14,4rm Woodlands price past 12 months,last_n_months,median,B_text_to_sql,2.44,736,,True,550000.0,550000.0,True,n/a
+HO_P1_14,4rm Woodlands price past 12 months,last_n_months,median,chatbot,1.48,234,,n/a,530000.0,550000.0,False,n/a
+HO_P1_15,What did multi-generation flats sell for in Yishun recently?,rare_type,median,A_filter_tool,3.84,1085,,True,1190000.0,1190000.0,True,n/a
+HO_P1_15,What did multi-generation flats sell for in Yishun recently?,rare_type,median,B_text_to_sql,2.45,743,,True,1190000.0,1190000.0,True,n/a
+HO_P1_15,What did multi-generation flats sell for in Yishun recently?,rare_type,median,chatbot,1.97,239,,n/a,930000.0,1190000.0,False,n/a
+HO_P1_16,How much is a 5-room resale flat in Tengah?,unknown_place,none,A_filter_tool,3.31,1079,,True,,,n/a,True
+HO_P1_16,How much is a 5-room resale flat in Tengah?,unknown_place,none,B_text_to_sql,2.54,739,,True,,,n/a,True
+HO_P1_16,How much is a 5-room resale flat in Tengah?,unknown_place,none,chatbot,4.2,237,,n/a,,,n/a,False
+HO_P1_17,Median price of 4-room flats in Toa Payoh between 2019 and 2021,date_range,median,A_filter_tool,2.09,1102,,True,578000.0,578000.0,True,n/a
+HO_P1_17,Median price of 4-room flats in Toa Payoh between 2019 and 2021,date_range,median,B_text_to_sql,2.08,748,,True,578000.0,578000.0,True,n/a
+HO_P1_17,Median price of 4-room flats in Toa Payoh between 2019 and 2021,date_range,median,chatbot,1.56,245,,n/a,520000.0,578000.0,False,n/a
+HO_P1_18,what did exec flats in choa chu kang go for in q1 2026,quarter,median,A_filter_tool,2.22,1099,,True,822888.0,822888.0,True,n/a
+HO_P1_18,what did exec flats in choa chu kang go for in q1 2026,quarter,median,B_text_to_sql,2.04,748,,True,822888.0,822888.0,True,n/a
+HO_P1_18,what did exec flats in choa chu kang go for in q1 2026,quarter,median,chatbot,1.58,242,,n/a,760000.0,822888.0,False,n/a
+HO_P1_19,How many 3-room resale flats were sold in Geylang in the last 3 months?,last_n_months,count,A_filter_tool,3.3,1092,,True,86.0,86.0,True,n/a
+HO_P1_19,How many 3-room resale flats were sold in Geylang in the last 3 months?,last_n_months,count,B_text_to_sql,2.46,747,,True,86.0,86.0,True,n/a
+HO_P1_19,How many 3-room resale flats were sold in Geylang in the last 3 months?,last_n_months,count,chatbot,1.58,245,,n/a,42.0,86.0,False,n/a
+HO_P1_20,What's the typical price of a 4-room flat in Bedok?,no_time,median,A_filter_tool,3.42,1081,,True,593000.0,593000.0,True,n/a
+HO_P1_20,What's the typical price of a 4-room flat in Bedok?,no_time,median,B_text_to_sql,2.4,740,,True,593000.0,593000.0,True,n/a
+HO_P1_20,What's the typical price of a 4-room flat in Bedok?,no_time,median,chatbot,1.67,239,,n/a,610000.0,593000.0,False,n/a
